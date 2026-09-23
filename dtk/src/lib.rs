@@ -1,15 +1,29 @@
 //! Safe Rust bindings for DTK6 (dtkwidget).
 //!
-//! Lifetime: all Qt objects are freed via the Qt parent-child mechanism; Rust wrappers
-//! are non-owning raw pointers. Top-level windows (no parent) die with QApplication.
-//! ponytail: no thread safety (Qt GUIs are single-threaded anyway); wrappers are !Send.
+//! Lifetime: Qt parents own their children; Rust object wrappers are non-owning
+//! views and must not be used after the underlying QObject is destroyed. Unparented
+//! objects need an explicit `delete_later()` (or a suitable Qt owner).
+//! Qt GUI objects are single-threaded; wrappers are !Send/!Sync.
 
 use dtk_sys::ffi;
 use std::marker::PhantomData;
+use std::rc::Rc;
+
+pub mod threading;
+pub use threading::GuiSender;
 
 /// null for None (Qt parent pointer)
 fn opt_ptr(w: Option<&QWidget>) -> *mut ffi::QWidget {
-    w.map_or(std::ptr::null_mut(), |w| w.ptr)
+    require_application();
+    w.map_or(std::ptr::null_mut(), QWidget::live_ptr)
+}
+
+/// Qt widgets and event-driven QObjects must not be created before QApplication.
+pub(crate) fn require_application() {
+    assert!(
+        unsafe { ffi::application_is_gui() },
+        "create DApplication before constructing Qt objects"
+    );
 }
 
 /// `impl Default` for wrappers whose `new()` is the default ctor
@@ -24,108 +38,160 @@ macro_rules! impl_default {
 }
 pub(crate) use impl_default;
 
+// Generated classes use C++ static_cast for secondary Qt bases; hand-bound
+// Qt classes have QObject/QWidget as their primary (offset-zero) base.
+macro_rules! qt_object_base {
+    ($ptr:expr) => { $ptr.cast::<ffi::QObject>() };
+    ($ptr:expr, $cast:path) => { unsafe { $cast($ptr) } as *mut ffi::QObject };
+}
+macro_rules! qt_widget_base_ty {
+    (object) => { () };
+    (widget) => { *mut ffi::QWidget };
+}
+macro_rules! qt_widget_base {
+    (object, $ptr:expr) => { () };
+    (widget, $ptr:expr) => { $ptr.cast::<ffi::QWidget>() };
+    (widget, $ptr:expr, $cast:path) => { unsafe { $cast($ptr) } as *mut ffi::QWidget };
+}
+
 macro_rules! widget_wrapper {
-    ($name:ident, $ffi:ty) => {
-        object_wrapper!($name, $ffi);
+    ($name:ident, $ffi:ty $(, $object_cast:path, $widget_cast:path)?) => {
+        object_wrapper_impl!($name, $ffi, widget $(, $object_cast)? ; $($widget_cast)?);
         impl $name {
-            /// use as QWidget* (base-class ops / adding to layouts)
+            pub(crate) fn widget_ptr(&self) -> *mut ffi::QWidget {
+                self.live_ptr();
+                self._widget
+            }
+            /// Share the existing guard with a QWidget base-class view.
             pub fn as_widget(&self) -> QWidget {
-                QWidget::from_raw(self.ptr.cast())
+                QWidget::from_guarded(self.widget_ptr(), self.guard.clone())
             }
             pub fn show(&self) {
-                unsafe { ffi::widget_show(self.ptr.cast()) }
+                unsafe { ffi::widget_show(self.widget_ptr()) }
             }
             pub fn hide(&self) {
-                unsafe { ffi::widget_hide(self.ptr.cast()) }
+                unsafe { ffi::widget_hide(self.widget_ptr()) }
             }
             pub fn resize(&self, w: i32, h: i32) {
-                unsafe { ffi::widget_resize(self.ptr.cast(), w, h) }
+                unsafe { ffi::widget_resize(self.widget_ptr(), w, h) }
             }
             /// widget size in pixels (window: includes the DTK titlebar)
             pub fn width(&self) -> i32 {
-                unsafe { ffi::widget_width(self.ptr.cast()) }
+                unsafe { ffi::widget_width(self.widget_ptr()) }
             }
             pub fn height(&self) -> i32 {
-                unsafe { ffi::widget_height(self.ptr.cast()) }
+                unsafe { ffi::widget_height(self.widget_ptr()) }
             }
             pub fn move_to(&self, x: i32, y: i32) {
-                unsafe { ffi::widget_move(self.ptr.cast(), x, y) }
+                unsafe { ffi::widget_move(self.widget_ptr(), x, y) }
             }
             pub fn set_enabled(&self, on: bool) {
-                unsafe { ffi::widget_set_enabled(self.ptr.cast(), on) }
+                unsafe { ffi::widget_set_enabled(self.widget_ptr(), on) }
             }
             pub fn set_window_title(&self, title: &str) {
-                unsafe { ffi::widget_set_window_title(self.ptr.cast(), title) }
+                unsafe { ffi::widget_set_window_title(self.widget_ptr(), title) }
             }
             pub fn set_window_icon(&self, icon: &QIcon) {
-                unsafe { ffi::widget_set_window_icon(self.ptr.cast(), icon.ptr) }
+                unsafe { ffi::widget_set_window_icon(self.widget_ptr(), icon.ptr) }
             }
             pub fn set_fixed_size(&self, w: i32, h: i32) {
-                unsafe { ffi::widget_set_fixed_size(self.ptr.cast(), w, h) }
+                unsafe { ffi::widget_set_fixed_size(self.widget_ptr(), w, h) }
             }
             pub fn raise(&self) {
-                unsafe { ffi::widget_raise(self.ptr.cast()) }
+                unsafe { ffi::widget_raise(self.widget_ptr()) }
             }
-            /// schedule a repaint
             pub fn update(&self) {
-                unsafe { ffi::widget_update(self.ptr.cast()) }
+                unsafe { ffi::widget_update(self.widget_ptr()) }
             }
-            /// grab keyboard focus
             pub fn set_focus(&self) {
-                unsafe { ffi::widget_set_focus(self.ptr.cast()) }
+                unsafe { ffi::widget_set_focus(self.widget_ptr()) }
             }
             pub fn activate_window(&self) {
-                unsafe { ffi::widget_activate_window(self.ptr.cast()) }
+                unsafe { ffi::widget_activate_window(self.widget_ptr()) }
             }
             pub fn close(&self) {
-                unsafe { ffi::widget_close(self.ptr.cast()) }
+                unsafe { ffi::widget_close(self.widget_ptr()) }
             }
             pub fn is_visible(&self) -> bool {
-                unsafe { ffi::widget_is_visible(self.ptr.cast()) }
+                unsafe { ffi::widget_is_visible(self.widget_ptr()) }
             }
-            /// use qt::focus::NO_FOCUS etc. for policy
             pub fn set_focus_policy(&self, policy: i32) {
-                unsafe { ffi::widget_set_focus_policy(self.ptr.cast(), policy) }
+                unsafe { ffi::widget_set_focus_policy(self.widget_ptr(), policy) }
             }
             pub fn set_font(&self, font: &QFont) {
-                unsafe { ffi::widget_set_font(self.ptr.cast(), font.ptr) }
+                unsafe { ffi::widget_set_font(self.widget_ptr(), font.ptr) }
             }
-            /// qt::cursor::* shape; stays until unset_cursor
             pub fn set_cursor(&self, shape: i32) {
-                unsafe { ffi::widget_set_cursor(self.ptr.cast(), shape) }
+                unsafe { ffi::widget_set_cursor(self.widget_ptr(), shape) }
             }
             pub fn unset_cursor(&self) {
-                unsafe { ffi::widget_unset_cursor(self.ptr.cast()) }
+                unsafe { ffi::widget_unset_cursor(self.widget_ptr()) }
             }
-            /// heap copy of the current palette
             pub fn palette(&self) -> QPalette {
-                QPalette::from_raw(unsafe { ffi::widget_palette(self.ptr.cast()) })
+                QPalette::from_raw(unsafe { ffi::widget_palette(self.widget_ptr()) })
             }
             pub fn set_palette(&self, pal: &QPalette) {
-                unsafe { ffi::widget_set_palette(self.ptr.cast(), pal.ptr) }
+                unsafe { ffi::widget_set_palette(self.widget_ptr(), pal.ptr) }
             }
-            /// use qt::standard_pixmap::* constants for icon
             pub fn standard_icon_pixmap(&self, icon: i32, size: i32) -> QPixmap {
-                QPixmap::from_raw(unsafe { ffi::standard_icon_pixmap(self.ptr.cast(), icon, size) })
-            }
-            /// deferred delete (next event-loop turn)
-            pub fn delete_later(&self) {
-                unsafe { ffi::object_delete_later(self.ptr.cast()) }
-            }
-            /// leak the Rust handle; Qt parent-child still owns the object.
-            /// kills `std::mem::forget` boilerplate for top-level widgets.
-            pub fn leak(self) {
-                // ManuallyDrop (not forget): handles are Copy, forget would be a no-op warning
-                let _ = std::mem::ManuallyDrop::new(self);
+                QPixmap::from_raw(unsafe { ffi::standard_icon_pixmap(self.widget_ptr(), icon, size) })
             }
         }
     };
 }
 
-macro_rules! object_wrapper {
-    ($name:ident, $ffi:ty) => {
-        /// non-owning handle: Qt parent-child owns the object, Copy is just another view
-        #[derive(Clone, Copy)]
+/// Owns exactly one heap allocation returned by a generated non-QObject
+/// constructor. Unlike a borrowed pointer getter, this calls its C++ deleter.
+/// Dereferencing exposes only a shared view; ownership is never duplicated.
+pub struct OwnedOpaque<T> {
+    inner: T,
+    deleter: fn(&T),
+}
+
+impl<T> OwnedOpaque<T> {
+    pub(crate) fn from_owned(inner: T, deleter: fn(&T)) -> Self {
+        Self { inner, deleter }
+    }
+}
+
+impl<T> std::ops::Deref for OwnedOpaque<T> {
+    type Target = T;
+    fn deref(&self) -> &T {
+        &self.inner
+    }
+}
+
+impl<T> Drop for OwnedOpaque<T> {
+    fn drop(&mut self) {
+        (self.deleter)(&self.inner);
+    }
+}
+
+#[cfg(test)]
+mod owned_opaque_tests {
+    use super::*;
+    use std::cell::Cell;
+    use std::rc::Rc;
+
+    #[test]
+    fn unique_owner_calls_deleter_once() {
+        struct Probe(Rc<Cell<usize>>);
+        let drops = Rc::new(Cell::new(0));
+        let owner = OwnedOpaque::from_owned(Probe(drops.clone()), |probe| {
+            probe.0.set(probe.0.get() + 1);
+        });
+        let borrowed = &*owner;
+        assert_eq!(borrowed.0.get(), 0);
+        drop(owner);
+        assert_eq!(drops.get(), 1);
+    }
+}
+
+macro_rules! opaque_wrapper_impl {
+    ($name:ident, $ffi:ty, $($attrs:tt)*) => {
+        /// Non-owning C++ pointer view; QObject methods are added separately
+        /// only for types with a verified Qt ancestor.
+        $($attrs)*
         pub struct $name {
             pub(crate) ptr: *mut $ffi,
             _not_send: PhantomData<*mut ()>,
@@ -139,31 +205,6 @@ macro_rules! object_wrapper {
                     _not_send: PhantomData,
                 }
             }
-            /// use as QObject* (signals)
-            #[allow(dead_code)] // some classes connect no signals; kept for the generator
-            pub(crate) fn as_qobject(&self) -> *mut ffi::QObject {
-                self.ptr.cast()
-            }
-        }
-        impl Signal0 for $name {
-            fn qobject_ptr(&self) -> *mut ffi::QObject {
-                self.as_qobject()
-            }
-        }
-        impl SignalI32 for $name {
-            fn qobject_ptr(&self) -> *mut ffi::QObject {
-                self.as_qobject()
-            }
-        }
-        impl SignalBool for $name {
-            fn qobject_ptr(&self) -> *mut ffi::QObject {
-                self.as_qobject()
-            }
-        }
-        impl SignalI32I32 for $name {
-            fn qobject_ptr(&self) -> *mut ffi::QObject {
-                self.as_qobject()
-            }
         }
         impl std::fmt::Debug for $name {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -173,125 +214,232 @@ macro_rules! object_wrapper {
     };
 }
 
-/// generic QWidget handle (base-class view only); Copy: non-owning view, Qt owns the widget
-#[derive(Clone, Copy)]
+macro_rules! opaque_wrapper {
+    ($name:ident, $ffi:ty) => {
+        opaque_wrapper_impl!($name, $ffi, #[derive(Clone, Copy)]);
+    };
+}
+
+// Opaque types with `new()` have a unique owner. Borrowed views are deliberately
+// not Copy, so the owner cannot be copied out through Deref.
+macro_rules! owned_opaque_wrapper {
+    ($name:ident, $ffi:ty) => {
+        opaque_wrapper_impl!($name, $ffi,);
+    };
+}
+
+macro_rules! object_wrapper_impl {
+    ($name:ident, $ffi:ty, $kind:ident $(, $object_cast:path)? ; $($widget_cast:path)?) => {
+        /// Non-owning checked view; the Qt parent or explicit delete_later
+        /// manages the QObject, while clones share the same QPointer guard.
+        #[derive(Clone)]
+        pub struct $name {
+            pub(crate) ptr: *mut $ffi,
+            qobject: *mut ffi::QObject,
+            _widget: qt_widget_base_ty!($kind),
+            pub(crate) guard: std::rc::Rc<dtk_sys::ObjectGuard>,
+            _not_send: PhantomData<*mut ()>,
+        }
+        impl $name {
+            #[allow(dead_code)]
+            pub(crate) fn from_raw(ptr: *mut $ffi) -> Self {
+                $crate::require_application();
+                assert!(!ptr.is_null());
+                let qobject = qt_object_base!(ptr $(, $object_cast)?);
+                let widget = qt_widget_base!($kind, ptr $(, $widget_cast)?);
+                Self {
+                    ptr,
+                    qobject,
+                    _widget: widget,
+                    guard: std::rc::Rc::new(unsafe { dtk_sys::ObjectGuard::from_object(qobject) }),
+                    _not_send: PhantomData,
+                }
+            }
+            pub fn is_alive(&self) -> bool {
+                self.guard.is_alive()
+            }
+            pub(crate) fn live_ptr(&self) -> *mut $ffi {
+                assert!(self.is_alive(), concat!(stringify!($name), " was destroyed by Qt"));
+                self.ptr
+            }
+            #[allow(dead_code)]
+            pub(crate) fn as_qobject(&self) -> *mut ffi::QObject {
+                self.live_ptr();
+                self.qobject
+            }
+            /// Defer QObject destruction to Qt's event loop.
+            pub fn delete_later(&self) {
+                unsafe { ffi::object_delete_later(self.as_qobject()) }
+            }
+        }
+        unsafe impl Signal0 for $name {
+            fn qobject_ptr(&self) -> *mut ffi::QObject { self.as_qobject() }
+        }
+        unsafe impl SignalI32 for $name {
+            fn qobject_ptr(&self) -> *mut ffi::QObject { self.as_qobject() }
+        }
+        unsafe impl SignalBool for $name {
+            fn qobject_ptr(&self) -> *mut ffi::QObject { self.as_qobject() }
+        }
+        unsafe impl SignalI32I32 for $name {
+            fn qobject_ptr(&self) -> *mut ffi::QObject { self.as_qobject() }
+        }
+        impl std::fmt::Debug for $name {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                write!(f, concat!(stringify!($name), "({:p})"), self.ptr)
+            }
+        }
+    };
+}
+
+macro_rules! object_wrapper {
+    ($name:ident, $ffi:ty $(, $object_cast:path)?) => {
+        object_wrapper_impl!($name, $ffi, object $(, $object_cast)? ;);
+    };
+}
+
+/// Non-owning QWidget view; Qt owns the object, while the shared QPointer guard
+/// prevents this handle and its clones from dereferencing it after destruction.
+#[derive(Clone)]
 pub struct QWidget {
     pub(crate) ptr: *mut ffi::QWidget,
+    guard: Rc<dtk_sys::ObjectGuard>,
     _not_send: PhantomData<*mut ()>,
 }
 
 impl QWidget {
     pub(crate) fn from_raw(ptr: *mut ffi::QWidget) -> Self {
+        require_application();
+        assert!(!ptr.is_null());
+        Self::from_guarded(
+            ptr,
+            Rc::new(unsafe { dtk_sys::ObjectGuard::from_widget(ptr) }),
+        )
+    }
+
+    pub(crate) fn from_guarded(ptr: *mut ffi::QWidget, guard: Rc<dtk_sys::ObjectGuard>) -> Self {
+        assert!(!ptr.is_null() && guard.is_alive());
         Self {
             ptr,
+            guard,
             _not_send: PhantomData,
         }
+    }
+
+    pub fn is_alive(&self) -> bool {
+        self.guard.is_alive()
+    }
+
+    pub(crate) fn live_ptr(&self) -> *mut ffi::QWidget {
+        assert!(self.is_alive(), "QWidget was destroyed by Qt");
+        self.ptr
     }
     pub fn new(parent: Option<&QWidget>) -> Self {
         let p = opt_ptr(parent);
         Self::from_raw(unsafe { ffi::widget_new(p) })
     }
     pub fn show(&self) {
-        unsafe { ffi::widget_show(self.ptr) }
+        unsafe { ffi::widget_show(self.live_ptr()) }
     }
     /// deliver mouse moves without a button held (they propagate to the parent)
     pub fn set_mouse_tracking(&self, on: bool) {
-        unsafe { ffi::widget_set_mouse_tracking(self.ptr, on) }
+        unsafe { ffi::widget_set_mouse_tracking(self.live_ptr(), on) }
     }
     pub fn hide(&self) {
-        unsafe { ffi::widget_hide(self.ptr) }
+        unsafe { ffi::widget_hide(self.live_ptr()) }
     }
     pub fn width(&self) -> i32 {
-        unsafe { ffi::widget_width(self.ptr) }
+        unsafe { ffi::widget_width(self.live_ptr()) }
     }
     pub fn height(&self) -> i32 {
-        unsafe { ffi::widget_height(self.ptr) }
+        unsafe { ffi::widget_height(self.live_ptr()) }
     }
     /// schedule a repaint
     pub fn update(&self) {
-        unsafe { ffi::widget_update(self.ptr) }
+        unsafe { ffi::widget_update(self.live_ptr()) }
     }
     /// grab keyboard focus
     pub fn set_focus(&self) {
-        unsafe { ffi::widget_set_focus(self.ptr) }
+        unsafe { ffi::widget_set_focus(self.live_ptr()) }
     }
     /// qt::cursor::* shape; stays until unset_cursor
     pub fn set_cursor(&self, shape: i32) {
-        unsafe { ffi::widget_set_cursor(self.ptr, shape) }
+        unsafe { ffi::widget_set_cursor(self.live_ptr(), shape) }
     }
     pub fn unset_cursor(&self) {
-        unsafe { ffi::widget_unset_cursor(self.ptr) }
+        unsafe { ffi::widget_unset_cursor(self.live_ptr()) }
     }
     /// deepin-terminal style: install the tab bar as titlebar custom widget
     /// (zero-margin layout, vertically centered)
     pub fn titlebar_set_tabbar(&self, tabbar: &QWidget) {
-        unsafe { ffi::main_window_titlebar_set_tabbar(self.ptr, tabbar.ptr) }
+        unsafe { ffi::main_window_titlebar_set_tabbar(self.live_ptr(), tabbar.live_ptr()) }
     }
     /// add a widget into the titlebar, left-aligned (DMainWindow only)
     pub fn titlebar_add_widget(&self, child: &QWidget) {
-        unsafe { ffi::main_window_titlebar_add_widget(self.ptr, child.ptr) }
+        unsafe { ffi::main_window_titlebar_add_widget(self.live_ptr(), child.live_ptr()) }
     }
     /// set the titlebar icon (DMainWindow only; no-op otherwise)
     pub fn set_titlebar_icon(&self, icon: &QIcon) {
-        unsafe { ffi::widget_set_titlebar_icon(self.ptr, icon.ptr) }
+        unsafe { ffi::widget_set_titlebar_icon(self.live_ptr(), icon.ptr) }
     }
     /// IME candidate window anchor: cursor rect in widget coords (PaintWidget only)
     pub fn set_ime_cursor_rect(&self, x: i32, y: i32, w: i32, h: i32) {
-        unsafe { ffi::paint_widget_set_ime_rect(self.ptr, x, y, w, h) }
+        unsafe { ffi::paint_widget_set_ime_rect(self.live_ptr(), x, y, w, h) }
     }
     pub fn resize(&self, w: i32, h: i32) {
-        unsafe { ffi::widget_resize(self.ptr, w, h) }
+        unsafe { ffi::widget_resize(self.live_ptr(), w, h) }
     }
     pub fn move_to(&self, x: i32, y: i32) {
-        unsafe { ffi::widget_move(self.ptr, x, y) }
+        unsafe { ffi::widget_move(self.live_ptr(), x, y) }
     }
     /// deepin-terminal-style tab labels: centered, elided clear of the close button
     pub fn install_tab_label_style(&self) {
-        unsafe { ffi::tabbar_install_style(self.ptr) }
+        unsafe { ffi::tabbar_install_style(self.live_ptr()) }
     }
     /// force the tab bar's internal layout (and ancestors) to relayout now, not
     /// on the next event pass; call after add/remove/set_tab_text to avoid a
     /// 1-frame misaligned paint
     pub fn flush_layout(&self) {
-        unsafe { ffi::tabbar_flush_layout(self.ptr) }
+        unsafe { ffi::tabbar_flush_layout(self.live_ptr()) }
     }
     /// unlatch QTabBar's scroll buttons: once shown, their own width keeps the
     /// "scroll needed" condition true forever. Hiding re-runs DTK's mirror logic
     /// (buttons hidden, spacers zeroed); Qt re-shows them on the next layout if
     /// scrolling is genuinely needed, so this is safe to call any time.
     pub fn unlatch_scroll_buttons(&self) {
-        unsafe { ffi::tabbar_unlatch_scroll_buttons(self.ptr) }
+        unsafe { ffi::tabbar_unlatch_scroll_buttons(self.live_ptr()) }
     }
-    /// reparent (widget keeps geometry; shown with the new parent)
+    /// Reparent as in Qt: the widget becomes hidden and must be shown again.
     pub fn set_parent(&self, parent: &QWidget) {
-        unsafe { ffi::widget_set_parent(self.ptr, parent.ptr) }
+        unsafe { ffi::widget_set_parent(self.live_ptr(), parent.live_ptr()) }
     }
     /// deferred delete (next event-loop turn)
     pub fn delete_later(&self) {
-        unsafe { ffi::object_delete_later(self.ptr.cast()) }
+        unsafe { ffi::object_delete_later(self.live_ptr().cast()) }
     }
     /// key sequence like "Ctrl+Shift+C"; fires while the widget lives.
     /// Returns the callback id for [`unregister_callback`].
     pub fn add_shortcut(&self, key: &str, f: impl FnMut() + 'static) -> usize {
+        let ptr = self.live_ptr();
         let id = dtk_sys::register_cb0(f);
-        unsafe { ffi::shortcut_new(self.ptr, key, id) };
+        unsafe { ffi::shortcut_new(ptr, key, id) };
         id
     }
 }
 
-impl Signal0 for QWidget {
+unsafe impl Signal0 for QWidget {
     fn qobject_ptr(&self) -> *mut ffi::QObject {
-        self.ptr.cast()
+        self.live_ptr().cast()
     }
 }
-impl SignalI32 for QWidget {
+unsafe impl SignalI32 for QWidget {
     fn qobject_ptr(&self) -> *mut ffi::QObject {
-        self.ptr.cast()
+        self.live_ptr().cast()
     }
 }
-impl SignalBool for QWidget {
+unsafe impl SignalBool for QWidget {
     fn qobject_ptr(&self) -> *mut ffi::QObject {
-        self.ptr.cast()
+        self.live_ptr().cast()
     }
 }
 
@@ -354,11 +502,12 @@ pub enum PaintWidgetEvent {
 impl PaintWidget {
     /// handler receives every event; register nothing else
     pub fn new(parent: Option<&QWidget>, handler: impl FnMut(PaintWidgetEvent) + 'static) -> Self {
+        let parent_ptr = opt_ptr(parent);
         let mut handler = handler;
         let id = dtk_sys::register_cb_pw(move |ev| {
             let ev = match ev {
-                dtk_sys::PwEvent::Paint(p, w, h) => {
-                    PaintWidgetEvent::Paint(Painter { ptr: p }, w, h)
+                dtk_sys::PwEvent::Paint { painter, w, h, .. } => {
+                    PaintWidgetEvent::Paint(Painter { ptr: painter }, w, h)
                 }
                 dtk_sys::PwEvent::Key {
                     key,
@@ -397,47 +546,48 @@ impl PaintWidget {
             };
             handler(ev);
         });
-        Self::from_raw(unsafe { ffi::paint_widget_new(id, opt_ptr(parent)) })
+        Self::from_raw(unsafe { ffi::paint_widget_new(id, parent_ptr) })
     }
     /// test/helper: synchronously deliver a key-press (bypasses the OS event source)
     pub fn inject_key(&self, key: i32, mods: i32, text: &str) {
-        unsafe { ffi::paint_widget_inject_key(self.ptr, key, mods, text) }
+        unsafe { ffi::paint_widget_inject_key(self.live_ptr(), key, mods, text) }
     }
     /// IME candidate window anchor: cursor rect in widget coords (call when it moves)
     pub fn set_ime_cursor_rect(&self, x: i32, y: i32, w: i32, h: i32) {
-        unsafe { ffi::paint_widget_set_ime_rect(self.ptr, x, y, w, h) }
+        unsafe { ffi::paint_widget_set_ime_rect(self.live_ptr(), x, y, w, h) }
     }
 }
 
 /// vertical scrollbar (DScrollBar = QScrollBar in DTK6); child of a widget
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ScrollBar {
     w: QWidget,
 }
 
 impl ScrollBar {
     pub fn new(parent: &QWidget) -> Self {
+        require_application();
         Self {
-            w: QWidget::from_raw(unsafe { ffi::scrollbar_new(parent.ptr) }),
+            w: QWidget::from_raw(unsafe { ffi::scrollbar_new(parent.live_ptr()) }),
         }
     }
     pub fn as_widget(&self) -> QWidget {
-        QWidget::from_raw(self.w.ptr)
+        self.w.clone()
     }
     pub fn set_range(&self, min: i32, max: i32) {
-        unsafe { ffi::scrollbar_set_range(self.w.ptr, min, max) }
+        unsafe { ffi::scrollbar_set_range(self.w.live_ptr(), min, max) }
     }
     pub fn maximum(&self) -> i32 {
-        unsafe { ffi::scrollbar_maximum(self.w.ptr) }
+        unsafe { ffi::scrollbar_maximum(self.w.live_ptr()) }
     }
     pub fn set_value(&self, v: i32) {
-        unsafe { ffi::scrollbar_set_value(self.w.ptr, v) }
+        unsafe { ffi::scrollbar_set_value(self.w.live_ptr(), v) }
     }
     pub fn value(&self) -> i32 {
-        unsafe { ffi::scrollbar_value(self.w.ptr) }
+        unsafe { ffi::scrollbar_value(self.w.live_ptr()) }
     }
     pub fn set_page_step(&self, v: i32) {
-        unsafe { ffi::scrollbar_set_page_step(self.w.ptr, v) }
+        unsafe { ffi::scrollbar_set_page_step(self.w.live_ptr(), v) }
     }
     /// valueChanged(int); 0 on failure
     pub fn on_value_changed(&self, f: impl FnMut(i32) + 'static) -> usize {
@@ -450,56 +600,101 @@ pub struct Clipboard;
 
 impl Clipboard {
     pub fn set_text(text: &str) {
+        require_application();
         unsafe { ffi::clipboard_set_text(text, 0) }
     }
     pub fn text() -> String {
+        require_application();
         unsafe { ffi::clipboard_text(0) }
     }
     /// X11 primary selection (copy-on-select)
     pub fn set_selection(text: &str) {
+        require_application();
         unsafe { ffi::clipboard_set_text(text, 1) }
     }
     pub fn selection() -> String {
+        require_application();
         unsafe { ffi::clipboard_text(1) }
     }
 }
 
-/// popup menu (DMenu = QMenu typedef in DTK6); actions take plain callbacks
-#[derive(Clone, Copy)]
-pub struct DMenu {
-    ptr: *mut ffi::QMenu,
-    _not_send: PhantomData<*mut ()>,
+// QAction is a QObject, not a QWidget; its Qt parent controls lifetime.
+object_wrapper!(QAction, ffi::QAction);
+
+impl QAction {
+    pub fn new(text: &str, parent: &impl Signal0) -> Self {
+        require_application();
+        Self::from_raw(unsafe { ffi::action_new(text, parent.qobject_ptr()) })
+    }
+    pub fn set_enabled(&self, enabled: bool) {
+        unsafe { ffi::action_set_enabled(self.live_ptr(), enabled) }
+    }
+    pub fn is_enabled(&self) -> bool {
+        unsafe { ffi::action_is_enabled(self.live_ptr()) }
+    }
+    pub fn set_visible(&self, visible: bool) {
+        unsafe { ffi::action_set_visible(self.live_ptr(), visible) }
+    }
+    pub fn is_visible(&self) -> bool {
+        unsafe { ffi::action_is_visible(self.live_ptr()) }
+    }
+    pub fn set_text(&self, text: &str) {
+        unsafe { ffi::action_set_text(self.live_ptr(), text) }
+    }
+    pub fn text(&self) -> String {
+        unsafe { ffi::action_text(self.live_ptr()) }
+    }
+    pub fn trigger(&self) {
+        unsafe { ffi::action_trigger(self.live_ptr()) }
+    }
+    /// Connect `triggered(bool)`, including the checked state for checkable actions.
+    pub fn on_triggered(&self, f: impl FnMut(bool) + 'static) -> usize {
+        self.connect_signal_bool("triggered(bool)", f)
+    }
 }
+
+// Popup menu (DMenu = QMenu typedef in DTK6); parent owns its actions.
+widget_wrapper!(DMenu, ffi::QMenu);
 
 impl DMenu {
     pub fn new(parent: &QWidget) -> Self {
-        Self {
-            ptr: unsafe { ffi::menu_new(parent.ptr) },
-            _not_send: PhantomData,
-        }
+        require_application();
+        Self::from_raw(unsafe { ffi::menu_new(parent.live_ptr()) })
     }
-    /// append an action; f fires on trigger (menu lives until closed; WA_DeleteOnClose on popup)
-    pub fn add_action(&self, text: &str, f: impl FnMut() + 'static) {
+    /// Append an action; its callback is released when the action/menu is destroyed.
+    /// Returns an id for [`unregister_callback`] if early cancellation is needed.
+    pub fn add_action(&self, text: &str, f: impl FnMut() + 'static) -> usize {
+        let ptr = self.live_ptr();
         let id = dtk_sys::register_cb0(f);
-        unsafe { ffi::menu_add_action_cb(self.ptr, text, id) }
+        unsafe { ffi::menu_add_action_cb(ptr, text, id) };
+        id
     }
     pub fn add_separator(&self) {
-        unsafe { ffi::menu_add_separator(self.ptr) }
+        unsafe { ffi::menu_add_separator(self.live_ptr()) }
     }
-    /// popup at (x, y) in ref widget coords; the menu self-deletes on close
+    /// Add an existing QAction without changing its QObject parent/ownership.
+    /// Parent the action to this menu if it should live and die with the menu.
+    pub fn add_action_object(&self, action: &QAction) {
+        unsafe { ffi::menu_add_existing_action(self.live_ptr(), action.live_ptr()) }
+    }
+    /// Popup at (x, y) in ref widget coords; like QMenu, closing only hides it.
     pub fn popup(&self, ref_: &QWidget, x: i32, y: i32) {
-        unsafe { ffi::menu_popup(self.ptr, ref_.ptr, x, y) }
+        unsafe { ffi::menu_popup(self.live_ptr(), ref_.live_ptr(), x, y) }
     }
 }
 
-/// connect an arg-less signal on any widget (e.g. clicked, timeout)
-pub trait Signal0 {
+/// Connect an arg-less signal on a QObject (e.g. clicked or timeout).
+/// # Safety
+/// Implementors must return a live, correctly adjusted QObject pointer on the
+/// calling Qt thread, or reject the call before returning a dangling pointer.
+pub unsafe trait Signal0 {
     fn qobject_ptr(&self) -> *mut ffi::QObject;
     /// Full Qt signature, e.g. "clicked(bool)" / "timeout()"; signal args are ignored.
     /// Returns the callback id for [`unregister_callback`]; 0 = connect failed.
     fn connect_signal(&self, signal: &str, f: impl FnMut() + 'static) -> usize {
+        let sender = self.qobject_ptr();
         let id = dtk_sys::register_cb0(f);
-        if unsafe { ffi::relay_connect0(self.qobject_ptr(), signal, id) } {
+        if unsafe { ffi::relay_connect0(sender, signal, id) } {
             id
         } else {
             dtk_sys::unregister_cb(id); // roll back registration
@@ -508,13 +703,17 @@ pub trait Signal0 {
     }
 }
 
-/// signal with one i32 arg (e.g. currentRowChanged(int))
-pub trait SignalI32 {
+/// Signal with one i32 arg (e.g. currentRowChanged(int)).
+/// # Safety
+/// `qobject_ptr()` must return a live, correctly adjusted QObject pointer on
+/// the Qt owner's thread, or reject the call before returning a dangling one.
+pub unsafe trait SignalI32 {
     fn qobject_ptr(&self) -> *mut ffi::QObject;
     /// Returns the callback id for [`unregister_callback`]; 0 = connect failed.
     fn connect_signal_i32(&self, signal: &str, f: impl FnMut(i32) + 'static) -> usize {
+        let sender = self.qobject_ptr();
         let id = dtk_sys::register_cb_i32(f);
-        if unsafe { ffi::relay_connect_i32(self.qobject_ptr(), signal, id) } {
+        if unsafe { ffi::relay_connect_i32(sender, signal, id) } {
             id
         } else {
             dtk_sys::unregister_cb(id);
@@ -523,13 +722,17 @@ pub trait SignalI32 {
     }
 }
 
-/// signal with one bool arg (e.g. checkedChanged(bool))
-pub trait SignalBool {
+/// Signal with one bool arg (e.g. checkedChanged(bool)).
+/// # Safety
+/// `qobject_ptr()` must return a live, correctly adjusted QObject pointer on
+/// the Qt owner's thread, or reject the call before returning a dangling one.
+pub unsafe trait SignalBool {
     fn qobject_ptr(&self) -> *mut ffi::QObject;
     /// Returns the callback id for [`unregister_callback`]; 0 = connect failed.
     fn connect_signal_bool(&self, signal: &str, f: impl FnMut(bool) + 'static) -> usize {
+        let sender = self.qobject_ptr();
         let id = dtk_sys::register_cb_bool(f);
-        if unsafe { ffi::relay_connect_bool(self.qobject_ptr(), signal, id) } {
+        if unsafe { ffi::relay_connect_bool(sender, signal, id) } {
             id
         } else {
             dtk_sys::unregister_cb(id);
@@ -538,13 +741,17 @@ pub trait SignalBool {
     }
 }
 
-/// signal with two i32 args (e.g. tabMoved(int,int))
-pub trait SignalI32I32 {
+/// Signal with two i32 args (e.g. tabMoved(int,int)).
+/// # Safety
+/// `qobject_ptr()` must return a live, correctly adjusted QObject pointer on
+/// the Qt owner's thread, or reject the call before returning a dangling one.
+pub unsafe trait SignalI32I32 {
     fn qobject_ptr(&self) -> *mut ffi::QObject;
     /// Returns the callback id for [`unregister_callback`]; 0 = connect failed.
     fn connect_signal_i32_i32(&self, signal: &str, f: impl FnMut(i32, i32) + 'static) -> usize {
+        let sender = self.qobject_ptr();
         let id = dtk_sys::register_cb_i32_i32(f);
-        if unsafe { ffi::relay_connect_i32_i32(self.qobject_ptr(), signal, id) } {
+        if unsafe { ffi::relay_connect_i32_i32(sender, signal, id) } {
             id
         } else {
             dtk_sys::unregister_cb(id);
@@ -563,15 +770,28 @@ pub struct DApplication {
     _not_send: PhantomData<*mut ()>,
 }
 
-/// real process argv for QApplication; U+001F separator: cannot appear in a real argv entry
-fn env_args_joined() -> String {
-    std::env::args().collect::<Vec<_>>().join("\u{1f}")
+/// Preserve Linux argv bytes (including non-UTF-8 and control characters).
+/// Qt needs writable, NUL-terminated `char*` entries that outlive QApplication.
+fn env_args_raw() -> (Vec<u8>, Vec<usize>) {
+    use std::os::unix::ffi::OsStrExt;
+    let mut bytes = Vec::new();
+    let mut lengths = Vec::new();
+    for arg in std::env::args_os() {
+        let arg = arg.as_bytes();
+        lengths.push(arg.len());
+        bytes.extend_from_slice(arg);
+    }
+    (bytes, lengths)
 }
 
 impl DApplication {
     pub fn new(name: &str) -> Self {
-        let args = env_args_joined();
-        let ptr = unsafe { ffi::application_new(name, &args) };
+        let (bytes, lengths) = env_args_raw();
+        let ptr = unsafe { ffi::application_new(name, bytes, lengths) };
+        assert!(
+            !ptr.is_null(),
+            "only one Qt application can exist at a time"
+        );
         Self {
             ptr,
             _not_send: PhantomData,
@@ -580,8 +800,12 @@ impl DApplication {
     /// with quit guard: QEvent::Quit asks the guard; false swallows the event (Rust retries itself)
     pub fn new_with_quit_guard(name: &str, guard: impl FnMut() -> bool + 'static) -> Self {
         let id = dtk_sys::register_cb_guard(guard);
-        let args = env_args_joined();
-        let ptr = unsafe { ffi::application_new_ex(name, &args, id) };
+        let (bytes, lengths) = env_args_raw();
+        let ptr = unsafe { ffi::application_new_ex(name, bytes, lengths, id) };
+        if ptr.is_null() {
+            dtk_sys::unregister_cb(id);
+            panic!("only one Qt application can exist at a time");
+        }
         Self {
             ptr,
             _not_send: PhantomData,
@@ -591,9 +815,11 @@ impl DApplication {
         unsafe { ffi::application_exec(self.ptr) }
     }
     pub fn quit() {
+        require_application();
         unsafe { ffi::application_quit() }
     }
     pub fn set_quit_on_last_window_closed(quit: bool) {
+        require_application();
         unsafe { ffi::application_set_quit_on_last_window_closed(quit) }
     }
     pub fn set_application_display_name(name: &str) {
@@ -608,15 +834,18 @@ impl DApplication {
     }
     /// true while a modal dialog or popup menu is active
     pub fn popup_active() -> bool {
+        require_application();
         unsafe { ffi::app_popup_active() }
     }
     /// QPalette::Window as (r, g, b) — use to detect light vs dark DTK theme
     pub fn palette_window_rgb() -> (u8, u8, u8) {
+        require_application();
         let rgb = unsafe { ffi::app_palette_window_rgb() };
         ((rgb >> 16) as u8, (rgb >> 8) as u8, rgb as u8)
     }
     /// DPalette::Highlight as (r, g, b) — theme accent color
     pub fn palette_highlight_rgb() -> (u8, u8, u8) {
+        require_application();
         let rgb = unsafe { ffi::app_palette_highlight_rgb() };
         ((rgb >> 16) as u8, (rgb >> 8) as u8, rgb as u8)
     }
@@ -629,6 +858,7 @@ widget_wrapper!(DTitlebar, ffi::DTitlebar);
 
 impl DMainWindow {
     pub fn new() -> Self {
+        require_application();
         Self::from_raw(unsafe { ffi::mainwindow_new() })
     }
     /// with event callbacks: on_close returning false keeps the window open (event ignore)
@@ -636,39 +866,42 @@ impl DMainWindow {
         on_show: impl FnMut() + 'static,
         on_close: impl FnMut() -> bool + 'static,
     ) -> Self {
+        require_application();
         let show_id = dtk_sys::register_cb0(on_show);
         let close_id = dtk_sys::register_cb_guard(on_close);
         Self::from_raw(unsafe { ffi::mainwindow_new_ex(show_id, close_id) })
     }
     pub fn titlebar(&self) -> DTitlebar {
-        DTitlebar::from_raw(unsafe { ffi::mainwindow_titlebar(self.ptr) })
+        DTitlebar::from_raw(unsafe { ffi::mainwindow_titlebar(self.live_ptr()) })
     }
     pub fn set_central_widget(&self, w: &QWidget) {
-        unsafe { ffi::mainwindow_set_central_widget(self.ptr, w.ptr) }
+        unsafe { ffi::mainwindow_set_central_widget(self.live_ptr(), w.live_ptr()) }
     }
     pub fn set_window_radius(&self, radius: i32) {
-        unsafe { ffi::mainwindow_set_window_radius(self.ptr, radius) }
+        unsafe { ffi::mainwindow_set_window_radius(self.live_ptr(), radius) }
     }
     pub fn set_enable_blur_window(&self, enable: bool) {
-        unsafe { ffi::mainwindow_set_enable_blur(self.ptr, enable) }
+        unsafe { ffi::mainwindow_set_enable_blur(self.live_ptr(), enable) }
     }
-    pub fn take_central_widget(&self) -> QWidget {
-        QWidget::from_raw(unsafe { ffi::mainwindow_take_central_widget(self.ptr) })
+    /// Take ownership from the window; Qt returns None if no central widget is set.
+    pub fn take_central_widget(&self) -> Option<QWidget> {
+        let ptr = unsafe { ffi::mainwindow_take_central_widget(self.live_ptr()) };
+        (!ptr.is_null()).then(|| QWidget::from_raw(ptr))
     }
 }
 
 impl DTitlebar {
     pub fn set_title(&self, title: &str) {
-        unsafe { ffi::titlebar_set_title(self.ptr, title) }
+        unsafe { ffi::titlebar_set_title(self.live_ptr(), title) }
     }
     pub fn set_icon(&self, icon: &QIcon) {
-        unsafe { ffi::titlebar_set_icon(self.ptr, &*icon.ptr) }
+        unsafe { ffi::titlebar_set_icon(self.live_ptr(), &*icon.ptr) }
     }
 }
 
 // ---- value types ----
 
-/// value-type wrapper: heap-allocated, owned by Rust (small leak acceptable)
+/// Value-type wrapper: heap-allocated copy, always released in Drop.
 macro_rules! value_wrapper {
     ($name:ident, $ffi:ty, $del:ident) => {
         pub struct $name {
@@ -705,7 +938,101 @@ value_wrapper!(QPoint, ffi::QPoint, point_delete);
 value_wrapper!(QRect, ffi::QRect, rect_delete);
 value_wrapper!(QSize, ffi::QSize, size_delete);
 value_wrapper!(QMargins, ffi::QMargins, margins_delete);
+value_wrapper!(QVariant, ffi::QVariant, variant_delete);
+value_wrapper!(QVariantList, ffi::QVariantList, variant_list_delete);
 value_wrapper!(DDciIcon, ffi::DDciIcon, ddci_icon_delete);
+
+impl QVariant {
+    /// An invalid/empty Qt QVariant.
+    pub fn new() -> Self {
+        Self::from_raw(unsafe { ffi::variant_new() })
+    }
+    pub fn from_bool(value: bool) -> Self {
+        Self::from_raw(unsafe { ffi::variant_from_bool(value) })
+    }
+    pub fn from_i64(value: i64) -> Self {
+        Self::from_raw(unsafe { ffi::variant_from_i64(value) })
+    }
+    pub fn from_f64(value: f64) -> Self {
+        Self::from_raw(unsafe { ffi::variant_from_f64(value) })
+    }
+    pub fn from_string(value: &str) -> Self {
+        Self::from_raw(unsafe { ffi::variant_from_string(value) })
+    }
+    pub fn is_valid(&self) -> bool {
+        unsafe { ffi::variant_is_valid(self.ptr) }
+    }
+    pub fn to_bool(&self) -> bool {
+        unsafe { ffi::variant_to_bool(self.ptr) }
+    }
+    /// Return None if Qt cannot convert this value to a 64-bit integer.
+    pub fn to_i64(&self) -> Option<i64> {
+        let mut ok = false;
+        let value = unsafe { ffi::variant_to_i64(self.ptr, &mut ok) };
+        ok.then_some(value)
+    }
+}
+
+impl std::fmt::Display for QVariant {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&unsafe { ffi::variant_to_string(self.ptr) })
+    }
+}
+
+impl Clone for QVariant {
+    fn clone(&self) -> Self {
+        Self::from_raw(unsafe { ffi::variant_clone(self.ptr) })
+    }
+}
+
+impl Default for QVariant {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl QVariantList {
+    pub fn new() -> Self {
+        Self::from_raw(unsafe { ffi::variant_list_new() })
+    }
+    /// Qt copies the implicitly shared QVariant into this list.
+    pub fn push(&self, value: &QVariant) {
+        unsafe { ffi::variant_list_push(self.ptr, value.ptr) }
+    }
+    pub fn len(&self) -> usize {
+        unsafe { ffi::variant_list_len(self.ptr) }
+    }
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+    /// Return an owned QVariant copy, or None for an out-of-range index.
+    pub fn get(&self, index: usize) -> Option<QVariant> {
+        let ptr = unsafe { ffi::variant_list_get(self.ptr, index) };
+        (!ptr.is_null()).then(|| QVariant::from_raw(ptr))
+    }
+}
+
+impl Clone for QVariantList {
+    fn clone(&self) -> Self {
+        Self::from_raw(unsafe { ffi::variant_list_clone(self.ptr) })
+    }
+}
+
+impl Default for QVariantList {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl FromIterator<QVariant> for QVariantList {
+    fn from_iter<T: IntoIterator<Item = QVariant>>(iter: T) -> Self {
+        let list = Self::new();
+        for value in iter {
+            list.push(&value);
+        }
+        list
+    }
+}
 
 impl QColor {
     pub fn rgb(r: i32, g: i32, b: i32) -> Self {
@@ -780,6 +1107,7 @@ impl QPalette {
 impl QPixmap {
     /// file or qrc path
     pub fn new(path: &str) -> Self {
+        require_application();
         Self::from_raw(unsafe { ffi::pixmap_new(path) })
     }
 }
@@ -848,6 +1176,8 @@ pub mod qt {
     }
     /// Qt::ItemDataRole
     pub mod item_role {
+        pub const DISPLAY_ROLE: i32 = 0;
+        pub const EDIT_ROLE: i32 = 2;
         pub const USER_ROLE: i32 = 0x0100;
     }
     /// Qt::KeyboardModifier
@@ -1025,13 +1355,16 @@ value_wrapper!(QIcon, ffi::QIcon, icon_delete);
 
 impl QIcon {
     pub fn from_theme(name: &str) -> Self {
+        require_application();
         Self::from_raw(unsafe { ffi::icon_from_theme(name) })
     }
     /// like from_theme, but falls back to `fallback` when `name` is not in the icon theme.
     pub fn from_theme_with_fallback(name: &str, fallback: &QIcon) -> Self {
+        require_application();
         Self::from_raw(unsafe { ffi::icon_from_theme_fallback(name, fallback.ptr) })
     }
     pub fn from_file(path: &str) -> Self {
+        require_application();
         Self::from_raw(unsafe { ffi::icon_from_file(path) })
     }
 }
@@ -1042,20 +1375,21 @@ widget_wrapper!(DLabel, ffi::DLabel);
 
 impl DLabel {
     pub fn new(text: &str) -> Self {
+        require_application();
         Self::from_raw(unsafe { ffi::label_new(text) })
     }
     pub fn set_text(&self, text: &str) {
-        unsafe { ffi::label_set_text(self.ptr, text) }
+        unsafe { ffi::label_set_text(self.live_ptr(), text) }
     }
     pub fn set_word_wrap(&self, wrap: bool) {
-        unsafe { ffi::label_set_word_wrap(self.ptr, wrap) }
+        unsafe { ffi::label_set_word_wrap(self.live_ptr(), wrap) }
     }
     /// use qt::alignment::* constants for alignment
     pub fn set_alignment(&self, alignment: i32) {
-        unsafe { ffi::label_set_alignment(self.ptr, alignment) }
+        unsafe { ffi::label_set_alignment(self.live_ptr(), alignment) }
     }
     pub fn set_pixmap(&self, pm: &QPixmap) {
-        unsafe { ffi::label_set_pixmap(self.ptr, pm.ptr) }
+        unsafe { ffi::label_set_pixmap(self.live_ptr(), pm.ptr) }
     }
 }
 
@@ -1066,29 +1400,31 @@ widget_wrapper!(DPushButton, ffi::DPushButton);
 
 impl DSuggestButton {
     pub fn new(text: &str) -> Self {
+        require_application();
         Self::from_raw(unsafe { ffi::suggest_button_new(text) })
     }
     pub fn set_text(&self, text: &str) {
-        unsafe { ffi::button_set_text(self.ptr.cast(), text) }
+        unsafe { ffi::button_set_text(self.live_ptr().cast(), text) }
     }
     pub fn on_clicked(&self, f: impl FnMut() + 'static) -> usize {
         self.connect_signal("clicked(bool)", f)
     }
     /// programmatic click (emits clicked; useful for tests)
     pub fn click(&self) {
-        unsafe { ffi::button_click(self.ptr.cast()) }
+        unsafe { ffi::button_click(self.live_ptr().cast()) }
     }
 }
 
 impl DPushButton {
     pub fn new(text: &str) -> Self {
+        require_application();
         Self::from_raw(unsafe { ffi::push_button_new(text) })
     }
     pub fn set_text(&self, text: &str) {
-        unsafe { ffi::button_set_text(self.ptr, text) }
+        unsafe { ffi::button_set_text(self.live_ptr(), text) }
     }
     pub fn click(&self) {
-        unsafe { ffi::button_click(self.ptr) }
+        unsafe { ffi::button_click(self.live_ptr()) }
     }
     pub fn on_clicked(&self, f: impl FnMut() + 'static) -> usize {
         self.connect_signal("clicked(bool)", f)
@@ -1102,6 +1438,7 @@ widget_wrapper!(DMessageBox, ffi::QMessageBox);
 impl DMessageBox {
     /// create an empty dialog; set title/text/icon/buttons then exec()
     pub fn new() -> Self {
+        require_application();
         Self::from_raw(unsafe { ffi::qmessagebox_new() })
     }
     /// create a pre-configured dialog; use qt::msg_icon::* and qt::msg_btn::* constants
@@ -1116,41 +1453,45 @@ impl DMessageBox {
         Self::from_raw(unsafe { ffi::qmessagebox_new_with(icon, title, text, buttons, p) })
     }
     pub fn set_text(&self, text: &str) {
-        unsafe { ffi::qmessagebox_set_text(self.ptr, text) }
+        unsafe { ffi::qmessagebox_set_text(self.live_ptr(), text) }
     }
     pub fn set_icon(&self, icon: i32) {
-        unsafe { ffi::qmessagebox_set_icon(self.ptr, icon) }
+        unsafe { ffi::qmessagebox_set_icon(self.live_ptr(), icon) }
     }
     pub fn set_informative_text(&self, text: &str) {
-        unsafe { ffi::qmessagebox_set_informative_text(self.ptr, text) }
+        unsafe { ffi::qmessagebox_set_informative_text(self.live_ptr(), text) }
     }
     pub fn set_detailed_text(&self, text: &str) {
-        unsafe { ffi::qmessagebox_set_detailed_text(self.ptr, text) }
+        unsafe { ffi::qmessagebox_set_detailed_text(self.live_ptr(), text) }
     }
     pub fn set_standard_buttons(&self, buttons: i32) {
-        unsafe { ffi::qmessagebox_set_standard_buttons(self.ptr, buttons) }
+        unsafe { ffi::qmessagebox_set_standard_buttons(self.live_ptr(), buttons) }
     }
     /// add a custom button with a text + ButtonRole; returns the button handle
     pub fn add_button(&self, text: &str, role: i32) -> DPushButton {
-        DPushButton::from_raw(unsafe { ffi::qmessagebox_add_button_text(self.ptr, text, role) })
+        DPushButton::from_raw(unsafe {
+            ffi::qmessagebox_add_button_text(self.live_ptr(), text, role)
+        })
     }
     /// add a standard button (qt::msg_btn::*); returns the button handle
     pub fn add_standard_button(&self, button: i32) -> DPushButton {
-        DPushButton::from_raw(unsafe { ffi::qmessagebox_add_button_standard(self.ptr, button) })
+        DPushButton::from_raw(unsafe {
+            ffi::qmessagebox_add_button_standard(self.live_ptr(), button)
+        })
     }
     pub fn set_default_button(&self, button: i32) {
-        unsafe { ffi::qmessagebox_set_default_button(self.ptr, button) }
+        unsafe { ffi::qmessagebox_set_default_button(self.live_ptr(), button) }
     }
     /// exec the dialog (blocking); returns the clicked StandardButton (qt::msg_btn::*)
     pub fn exec(&self) -> i32 {
-        unsafe { ffi::qmessagebox_exec(self.ptr) }
+        unsafe { ffi::qmessagebox_exec(self.live_ptr()) }
     }
     /// which standard button was clicked after exec returns
     pub fn clicked_button(&self) -> i32 {
-        unsafe { ffi::qmessagebox_clicked_button(self.ptr) }
+        unsafe { ffi::qmessagebox_clicked_button(self.live_ptr()) }
     }
     pub fn text(&self) -> String {
-        unsafe { ffi::qmessagebox_text(self.ptr) }
+        unsafe { ffi::qmessagebox_text(self.live_ptr()) }
     }
 
     // ---- static helpers ----
@@ -1203,65 +1544,170 @@ impl DMessageBox {
 
 // ---- layouts ----
 
+object_wrapper!(QLayout, ffi::QLayout);
+
+impl QLayout {
+    fn from_guarded(ptr: *mut ffi::QLayout, guard: Rc<dtk_sys::ObjectGuard>) -> Self {
+        assert!(!ptr.is_null() && guard.is_alive());
+        Self {
+            ptr,
+            qobject: ptr.cast(), // QLayout's primary Qt base is QObject
+            _widget: (),
+            guard,
+            _not_send: PhantomData,
+        }
+    }
+}
+
+object_wrapper!(QBoxLayout, ffi::QBoxLayout);
+
+impl QBoxLayout {
+    /// Borrow QLayout without allocating another QPointer.
+    pub fn as_layout(&self) -> QLayout {
+        QLayout::from_guarded(self.live_ptr().cast(), self.guard.clone())
+    }
+}
+
 macro_rules! layout_wrapper {
     ($name:ident, $ffi:ty, $new:ident) => {
-        pub struct $name {
-            pub(crate) ptr: *mut $ffi,
-            _not_send: PhantomData<*mut ()>,
-        }
+        object_wrapper!($name, $ffi);
         impl $name {
-            /// when parent is Some, the layout installs directly on the parent widget
+            /// Borrow the QLayout base without allocating another QPointer.
+            pub fn as_layout(&self) -> QLayout {
+                QLayout::from_guarded(self.live_ptr().cast(), self.guard.clone())
+            }
+            /// When parent is Some, the layout installs directly on the parent widget.
             pub fn new(parent: Option<&QWidget>) -> Self {
-                let p = opt_ptr(parent);
-                Self {
-                    ptr: unsafe { ffi::$new(p) },
-                    _not_send: PhantomData,
-                }
+                require_application();
+                Self::from_raw(unsafe { ffi::$new(opt_ptr(parent)) })
             }
             pub fn add_widget(&self, w: &QWidget) {
-                unsafe { ffi::layout_add_widget(self.ptr.cast(), w.ptr) }
+                unsafe { ffi::layout_add_widget(self.live_ptr().cast(), w.live_ptr()) }
             }
-            /// box layouts only: stretch factor + qt::alignment::* alignment
             pub fn add_widget_ex(&self, w: &QWidget, stretch: i32, alignment: i32) {
-                unsafe { ffi::layout_add_widget_ex(self.ptr.cast(), w.ptr, stretch, alignment) }
+                unsafe {
+                    ffi::layout_add_widget_ex(
+                        self.live_ptr().cast(),
+                        w.live_ptr(),
+                        stretch,
+                        alignment,
+                    )
+                }
             }
-            /// box layouts only: insert stretchable space (e.g. push buttons right)
             pub fn add_stretch(&self, stretch: i32) {
-                unsafe { ffi::layout_add_stretch(self.ptr.cast(), stretch) }
+                unsafe { ffi::layout_add_stretch(self.live_ptr().cast(), stretch) }
             }
             pub fn add_layout<L: AsLayout>(&self, child: &L) {
-                unsafe { ffi::layout_add_layout(self.ptr.cast(), child.layout_ptr()) }
+                unsafe { ffi::layout_add_layout(self.live_ptr().cast(), child.layout_ptr()) }
             }
             pub fn set_spacing(&self, spacing: i32) {
-                unsafe { ffi::layout_set_spacing(self.ptr.cast(), spacing) }
+                unsafe { ffi::layout_set_spacing(self.live_ptr().cast(), spacing) }
             }
             pub fn set_contents_margins(&self, l: i32, t: i32, r: i32, b: i32) {
-                unsafe { ffi::layout_set_contents_margins(self.ptr.cast(), l, t, r, b) }
-            }
-            /// leak the Rust handle; Qt parent-child still owns the layout
-            pub fn leak(self) {
-                // ManuallyDrop (not forget): handles are Copy, forget would be a no-op warning
-                let _ = std::mem::ManuallyDrop::new(self);
+                unsafe { ffi::layout_set_contents_margins(self.live_ptr().cast(), l, t, r, b) }
             }
         }
     };
 }
 
-pub trait AsLayout {
+/// A Qt layout that can be passed to another layout.
+/// # Safety
+/// `layout_ptr()` must return a live QLayout pointer on the owning GUI thread;
+/// an invalid implementation makes safe `add_layout` dereference invalid memory.
+pub unsafe trait AsLayout {
     fn layout_ptr(&self) -> *mut ffi::QLayout;
+}
+
+unsafe impl AsLayout for QLayout {
+    fn layout_ptr(&self) -> *mut ffi::QLayout {
+        self.live_ptr()
+    }
+}
+unsafe impl AsLayout for QBoxLayout {
+    fn layout_ptr(&self) -> *mut ffi::QLayout {
+        self.live_ptr().cast()
+    }
 }
 
 layout_wrapper!(QVBoxLayout, ffi::QVBoxLayout, vbox_new);
 layout_wrapper!(QHBoxLayout, ffi::QHBoxLayout, hbox_new);
 
-impl AsLayout for QVBoxLayout {
+unsafe impl AsLayout for QVBoxLayout {
     fn layout_ptr(&self) -> *mut ffi::QLayout {
-        self.ptr.cast()
+        self.live_ptr().cast()
     }
 }
-impl AsLayout for QHBoxLayout {
+unsafe impl AsLayout for QHBoxLayout {
     fn layout_ptr(&self) -> *mut ffi::QLayout {
-        self.ptr.cast()
+        self.live_ptr().cast()
+    }
+}
+
+// ---- model/view ----
+
+object_wrapper!(QAbstractItemModel, ffi::QAbstractItemModel);
+
+impl QAbstractItemModel {
+    fn from_guarded(ptr: *mut ffi::QAbstractItemModel, guard: Rc<dtk_sys::ObjectGuard>) -> Self {
+        assert!(!ptr.is_null() && guard.is_alive());
+        Self {
+            ptr,
+            qobject: ptr.cast(), // QAbstractItemModel's primary base is QObject
+            _widget: (),
+            guard,
+            _not_send: PhantomData,
+        }
+    }
+    /// Make this non-widget QObject a child of its view (setModel alone does
+    /// not transfer ownership in Qt). The parent must stay on the GUI thread.
+    pub fn set_parent(&self, parent: &impl Signal0) {
+        unsafe { ffi::model_set_parent(self.live_ptr(), parent.qobject_ptr()) }
+    }
+    pub fn row_count(&self) -> i32 {
+        unsafe { ffi::model_row_count(self.live_ptr()) }
+    }
+    pub fn column_count(&self) -> i32 {
+        unsafe { ffi::model_column_count(self.live_ptr()) }
+    }
+    pub fn data(&self, row: i32, col: i32, role: i32) -> QVariant {
+        QVariant::from_raw(unsafe { ffi::model_data(self.live_ptr(), row, col, role) })
+    }
+    pub fn set_data(&self, row: i32, col: i32, data: &QVariant, role: i32) -> bool {
+        unsafe { ffi::model_set_data(self.live_ptr(), row, col, data.ptr, role) }
+    }
+    pub fn insert_rows(&self, row: i32, count: i32) -> bool {
+        unsafe { ffi::model_insert_rows(self.live_ptr(), row, count) }
+    }
+    pub fn remove_rows(&self, row: i32, count: i32) -> bool {
+        unsafe { ffi::model_remove_rows(self.live_ptr(), row, count) }
+    }
+}
+
+object_wrapper!(QStandardItemModel, ffi::QStandardItemModel);
+
+impl QStandardItemModel {
+    /// The Qt parent owns this model; pass its view when appropriate.
+    pub fn new(parent: &impl Signal0) -> Self {
+        require_application();
+        Self::from_raw(unsafe { ffi::standard_item_model_new(parent.qobject_ptr()) })
+    }
+    pub fn set_column_count(&self, count: i32) {
+        unsafe { ffi::standard_item_model_set_column_count(self.live_ptr(), count) }
+    }
+    pub fn as_model(&self) -> QAbstractItemModel {
+        let ptr = unsafe { ffi::standard_item_model_as_model(self.live_ptr()) };
+        QAbstractItemModel::from_guarded(ptr, self.guard.clone())
+    }
+}
+
+impl widgets::DVariantListModel {
+    /// Borrow the QAbstractItemModel base without allocating a second guard.
+    pub fn as_model(&self) -> QAbstractItemModel {
+        let ptr =
+            unsafe { dtk_sys::gen_ffi::genffi::gen_d_variant_list_model_as_model(self.live_ptr()) }
+                as *mut ffi::QAbstractItemModel;
+        // Both bridges name the same C++ base; C++ performed the actual upcast.
+        QAbstractItemModel::from_guarded(ptr, self.guard.clone())
     }
 }
 
@@ -1271,180 +1717,170 @@ widget_wrapper!(QTableWidget, ffi::QTableWidget);
 
 impl QTableWidget {
     pub fn new(rows: i32, cols: i32) -> Self {
+        require_application();
         Self::from_raw(unsafe { ffi::table_new(rows, cols) })
     }
     pub fn set_column_count(&self, cols: i32) {
-        unsafe { ffi::table_set_column_count(self.ptr, cols) }
+        unsafe { ffi::table_set_column_count(self.live_ptr(), cols) }
     }
     pub fn set_row_count(&self, rows: i32) {
-        unsafe { ffi::table_set_row_count(self.ptr, rows) }
+        unsafe { ffi::table_set_row_count(self.live_ptr(), rows) }
     }
     /// labels are '|'-separated, e.g. "App|Memory"
     pub fn set_horizontal_header_labels(&self, joined: &str) {
-        unsafe { ffi::table_set_horizontal_header_labels(self.ptr, joined) }
+        unsafe { ffi::table_set_horizontal_header_labels(self.live_ptr(), joined) }
     }
     pub fn set_cell_text(&self, row: i32, col: i32, text: &str) {
-        unsafe { ffi::table_set_cell_text(self.ptr, row, col, text) }
+        unsafe { ffi::table_set_cell_text(self.live_ptr(), row, col, text) }
     }
     /// store i64 user data (e.g. a pid) on a cell
     pub fn set_cell_data(&self, row: i32, col: i32, data: i64) {
-        unsafe { ffi::table_set_cell_data(self.ptr, row, col, data) }
+        unsafe { ffi::table_set_cell_data(self.live_ptr(), row, col, data) }
     }
     pub fn cell_data(&self, row: i32, col: i32) -> i64 {
-        unsafe { ffi::table_cell_data(self.ptr, row, col) }
+        unsafe { ffi::table_cell_data(self.live_ptr(), row, col) }
     }
     pub fn cell_text(&self, row: i32, col: i32) -> String {
-        unsafe { ffi::table_cell_text(self.ptr, row, col) }
+        unsafe { ffi::table_cell_text(self.live_ptr(), row, col) }
     }
     pub fn current_row(&self) -> i32 {
-        unsafe { ffi::table_current_row(self.ptr) }
+        unsafe { ffi::table_current_row(self.live_ptr()) }
     }
     pub fn row_count(&self) -> i32 {
-        unsafe { ffi::table_row_count(self.ptr) }
+        unsafe { ffi::table_row_count(self.live_ptr()) }
     }
     /// row selection, read-only, single-select
     pub fn select_rows_readonly(&self) {
-        unsafe { ffi::table_select_rows_readonly(self.ptr) }
+        unsafe { ffi::table_select_rows_readonly(self.live_ptr()) }
     }
     pub fn header_stretch_last(&self, stretch: bool) {
-        unsafe { ffi::table_header_stretch_last(self.ptr, stretch) }
+        unsafe { ffi::table_header_stretch_last(self.live_ptr(), stretch) }
     }
     pub fn set_column_width(&self, col: i32, width: i32) {
-        unsafe { ffi::table_set_column_width(self.ptr, col, width) }
+        unsafe { ffi::table_set_column_width(self.live_ptr(), col, width) }
     }
-    /// get cell item (None if absent)
-    pub fn item(&self, row: i32, col: i32) -> Option<QTableWidgetItem> {
-        let p = unsafe { ffi::table_item(self.ptr, row, col) };
-        if p.is_null() {
-            None
-        } else {
-            Some(QTableWidgetItem {
-                ptr: p,
-                _not_send: PhantomData,
-            })
-        }
+    /// A coordinate view of the current item, or None if this cell is empty.
+    /// The view re-resolves (row, col) on every call, so replacing the cell's
+    /// item changes which item it operates on; it never holds a dangling item*.
+    pub fn item(&self, row: i32, col: i32) -> Option<TableCell> {
+        let p = unsafe { ffi::table_item(self.live_ptr(), row, col) };
+        (!p.is_null()).then(|| TableCell {
+            table: self.clone(),
+            row,
+            col,
+        })
     }
     pub fn select_row(&self, row: i32) {
-        unsafe { ffi::table_select_row(self.ptr, row) }
+        unsafe { ffi::table_select_row(self.live_ptr(), row) }
     }
     pub fn hide_headers(&self, horizontal: bool, vertical: bool) {
-        unsafe { ffi::table_hide_headers(self.ptr, horizontal, vertical) }
+        unsafe { ffi::table_hide_headers(self.live_ptr(), horizontal, vertical) }
     }
     /// use qt::header_resize::* constants for mode
     pub fn set_section_resize_mode(&self, col: i32, mode: i32) {
-        unsafe { ffi::table_set_section_resize_mode(self.ptr, col, mode) }
+        unsafe { ffi::table_set_section_resize_mode(self.live_ptr(), col, mode) }
     }
     pub fn set_vertical_header_default_section_size(&self, size: i32) {
-        unsafe { ffi::table_set_vertical_header_default_section_size(self.ptr, size) }
+        unsafe { ffi::table_set_vertical_header_default_section_size(self.live_ptr(), size) }
     }
     pub fn set_show_grid(&self, show: bool) {
-        unsafe { ffi::table_set_show_grid(self.ptr, show) }
+        unsafe { ffi::table_set_show_grid(self.live_ptr(), show) }
     }
     /// use qt::frame::* constants for shape
     pub fn set_frame_shape(&self, shape: i32) {
-        unsafe { ffi::table_set_frame_shape(self.ptr, shape) }
+        unsafe { ffi::table_set_frame_shape(self.live_ptr(), shape) }
     }
     pub fn set_icon_size(&self, w: i32, h: i32) {
-        unsafe { ffi::table_set_icon_size(self.ptr, w, h) }
+        unsafe { ffi::table_set_icon_size(self.live_ptr(), w, h) }
     }
     pub fn set_delegate_for_column(&self, col: i32, delegate: &PaintDelegate) {
-        unsafe { ffi::table_set_delegate_for_column(self.ptr, col, delegate.ptr) }
+        unsafe { ffi::table_set_delegate_for_column(self.live_ptr(), col, delegate.live_ptr()) }
     }
-    pub fn on_selection_changed(&self, f: impl FnMut() + 'static) {
-        self.connect_signal("itemSelectionChanged()", f);
+    /// Returns the callback id for [`unregister_callback`]; 0 = connect failed.
+    pub fn on_selection_changed(&self, f: impl FnMut() + 'static) -> usize {
+        self.connect_signal("itemSelectionChanged()", f)
     }
-    pub fn on_current_row_changed(&self, f: impl FnMut(i32) + 'static) {
-        self.connect_signal_i32("currentRowChanged(int)", f);
+    /// Returns the callback id for [`unregister_callback`]; 0 = connect failed.
+    pub fn on_current_row_changed(&self, f: impl FnMut(i32) + 'static) -> usize {
+        self.connect_signal_i32("currentRowChanged(int)", f)
     }
 }
 
 // ---- QTimer ----
 
-pub struct QTimer {
-    ptr: *mut ffi::QTimer,
-    _not_send: PhantomData<*mut ()>,
-}
+object_wrapper!(QTimer, ffi::QTimer);
 
 impl QTimer {
-    pub fn new() -> Self {
-        Self {
-            ptr: unsafe { ffi::timer_new(std::ptr::null_mut()) },
-            _not_send: PhantomData,
-        }
+    /// The parent owns the timer; use the application or any widget as parent.
+    pub fn new(parent: &impl Signal0) -> Self {
+        require_application();
+        Self::from_raw(unsafe { ffi::timer_new(parent.qobject_ptr()) })
     }
     pub fn start(&self, msec: i32) {
-        unsafe { ffi::timer_start(self.ptr, msec) }
+        unsafe { ffi::timer_start(self.live_ptr(), msec) }
     }
     pub fn stop(&self) {
-        unsafe { ffi::timer_stop(self.ptr) }
+        unsafe { ffi::timer_stop(self.live_ptr()) }
     }
     /// Returns the callback id for [`unregister_callback`]; 0 = connect failed.
     pub fn on_timeout(&self, f: impl FnMut() + 'static) -> usize {
-        let id = dtk_sys::register_cb0(f);
-        if unsafe { ffi::relay_connect0(self.ptr.cast(), "timeout()", id) } {
-            id
-        } else {
-            dtk_sys::unregister_cb(id);
-            0
-        }
+        self.connect_signal("timeout()", f)
     }
-    /// one-shot timer; the callback entry is removed from the registry after firing
-    pub fn single_shot(msec: i32, f: impl FnMut() + 'static) {
-        use std::cell::Cell;
-        use std::rc::Rc;
-        let slot = Rc::new(Cell::new(0usize));
-        let slot2 = slot.clone();
-        let mut f = Some(f);
-        let id = dtk_sys::register_cb0(move || {
-            if let Some(mut f) = f.take() {
-                f();
-            }
-            dtk_sys::unregister_cb(slot2.get()); // self-clean: one-shot entries must not accumulate
-        });
-        slot.set(id);
+    /// One-shot timer; its closure is released after firing (even on panic),
+    /// or when Qt cancels it because the application is destroyed.
+    pub fn single_shot(msec: i32, f: impl FnOnce() + 'static) {
+        require_application();
+        let id = dtk_sys::register_cb_once(f);
         unsafe { ffi::timer_single_shot(msec, id) }
     }
 }
 
-// ---- QTableWidgetItem ----
+// ---- table-cell coordinate view (not a borrowed QTableWidgetItem*) ----
 
-pub struct QTableWidgetItem {
-    pub(crate) ptr: *mut ffi::QTableWidgetItem,
-    _not_send: PhantomData<*mut ()>,
+#[derive(Clone)]
+pub struct TableCell {
+    table: QTableWidget,
+    row: i32,
+    col: i32,
 }
 
-impl QTableWidgetItem {
-    pub fn set_icon(&self, icon: &QIcon) {
-        unsafe { ffi::item_set_icon(self.ptr, icon.ptr) }
+impl TableCell {
+    fn with_item<T>(&self, f: impl FnOnce(*mut ffi::QTableWidgetItem) -> T) -> Option<T> {
+        let item = unsafe { ffi::table_item(self.table.live_ptr(), self.row, self.col) };
+        (!item.is_null()).then(|| f(item))
     }
-    /// use qt::alignment::* constants for alignment
-    pub fn set_text_alignment(&self, alignment: i32) {
-        unsafe { ffi::item_set_text_alignment(self.ptr, alignment) }
+    /// Returns false if the cell is empty or its item has since been removed.
+    pub fn set_icon(&self, icon: &QIcon) -> bool {
+        self.with_item(|item| unsafe { ffi::item_set_icon(item, icon.ptr) })
+            .is_some()
     }
-    pub fn set_foreground(&self, color: &QColor) {
-        unsafe { ffi::item_set_foreground(self.ptr, color.ptr) }
+    pub fn set_text_alignment(&self, alignment: i32) -> bool {
+        self.with_item(|item| unsafe { ffi::item_set_text_alignment(item, alignment) })
+            .is_some()
     }
-    /// use qt::item_role::USER_ROLE + n for role
-    pub fn set_data_string(&self, role: i32, value: &str) {
-        unsafe { ffi::item_set_data_string(self.ptr, role, value) }
+    pub fn set_foreground(&self, color: &QColor) -> bool {
+        self.with_item(|item| unsafe { ffi::item_set_foreground(item, color.ptr) })
+            .is_some()
     }
-    pub fn data_string(&self, role: i32) -> String {
-        unsafe { ffi::item_data_string(self.ptr, role) }
+    pub fn set_data_string(&self, role: i32, value: &str) -> bool {
+        self.with_item(|item| unsafe { ffi::item_set_data_string(item, role, value) })
+            .is_some()
     }
-    pub fn set_data_bool(&self, role: i32, value: bool) {
-        unsafe { ffi::item_set_data_bool(self.ptr, role, value) }
+    pub fn data_string(&self, role: i32) -> Option<String> {
+        self.with_item(|item| unsafe { ffi::item_data_string(item, role) })
     }
-    pub fn data_bool(&self, role: i32) -> bool {
-        unsafe { ffi::item_data_bool(self.ptr, role) }
+    pub fn set_data_bool(&self, role: i32, value: bool) -> bool {
+        self.with_item(|item| unsafe { ffi::item_set_data_bool(item, role, value) })
+            .is_some()
+    }
+    pub fn data_bool(&self, role: i32) -> Option<bool> {
+        self.with_item(|item| unsafe { ffi::item_data_bool(item, role) })
     }
 }
 
 // ---- PaintDelegate: custom cell painting ----
 
-pub struct PaintDelegate {
-    pub(crate) ptr: *mut ffi::QStyledItemDelegate,
-    _not_send: PhantomData<*mut ()>,
-}
+object_wrapper!(PaintDelegate, ffi::QStyledItemDelegate);
 
 /// painter handed to the paint callback (valid only inside it)
 pub struct Painter {
@@ -1519,55 +1955,46 @@ impl ModelIndex {
 }
 
 impl PaintDelegate {
+    /// The parent owns this delegate; use its view/table as parent.
     /// f: (painter, index, x, y, w, h, state). test state against qt::state::*
-    pub fn new(f: impl FnMut(&Painter, &ModelIndex, i32, i32, i32, i32, i32) + 'static) -> Self {
+    pub fn new(
+        parent: &impl Signal0,
+        f: impl FnMut(&Painter, &ModelIndex, i32, i32, i32, i32, i32) + 'static,
+    ) -> Self {
+        require_application();
+        let parent_ptr = parent.qobject_ptr();
         let mut f = f;
-        let id = dtk_sys::register_cb_paint(move |p, idx, x, y, w, h, state| {
+        let id = dtk_sys::register_cb_paint(move |data| {
             f(
-                &Painter { ptr: p },
-                &ModelIndex { ptr: idx },
-                x,
-                y,
-                w,
-                h,
-                state,
+                &Painter { ptr: data.painter },
+                &ModelIndex { ptr: data.index },
+                data.x,
+                data.y,
+                data.w,
+                data.h,
+                data.state,
             );
         });
-        Self {
-            ptr: unsafe { ffi::rust_delegate_new(id, std::ptr::null_mut()) },
-            _not_send: PhantomData,
-        }
+        Self::from_raw(unsafe { ffi::rust_delegate_new(id, parent_ptr) })
     }
 }
 
 // ---- QSocketNotifier ----
 
-#[derive(Clone, Copy)]
-pub struct QSocketNotifier {
-    ptr: *mut ffi::QSocketNotifier,
-    _not_send: PhantomData<*mut ()>,
-}
+object_wrapper!(QSocketNotifier, ffi::QSocketNotifier);
 
 impl QSocketNotifier {
-    /// watch an fd for readability (Read type), e.g. signalfd
-    pub fn new(fd: i32) -> Self {
-        Self {
-            ptr: unsafe { ffi::socket_notifier_new(fd) },
-            _not_send: PhantomData,
-        }
+    /// Watch an fd for readability (Read type); the parent owns the notifier.
+    pub fn new(fd: i32, parent: &impl Signal0) -> Self {
+        require_application();
+        Self::from_raw(unsafe { ffi::socket_notifier_new(fd, parent.qobject_ptr()) })
     }
-    /// stop firing (e.g. watched fd hit EOF and stays "readable" forever)
+    /// Stop firing (e.g. a watched fd hit EOF and stays readable).
     pub fn set_enabled(&self, on: bool) {
-        unsafe { ffi::socket_notifier_set_enabled(self.ptr, on) }
+        unsafe { ffi::socket_notifier_set_enabled(self.live_ptr(), on) }
     }
     pub fn on_activated(&self, f: impl FnMut() + 'static) -> usize {
-        let id = dtk_sys::register_cb0(f);
-        if unsafe { ffi::relay_connect0(self.ptr.cast(), "activated(QSocketDescriptor)", id) } {
-            id
-        } else {
-            dtk_sys::unregister_cb(id);
-            0
-        }
+        self.connect_signal("activated(QSocketDescriptor)", f)
     }
 }
 
@@ -1575,32 +2002,24 @@ impl QSocketNotifier {
 
 impl widgets::DProgressBar {
     pub fn set_value(&self, value: i32) {
-        unsafe { ffi::progressbar_set_value(self.ptr.cast(), value) }
+        unsafe { ffi::progressbar_set_value(self.live_ptr().cast(), value) }
     }
     /// (0, 0) = busy/indeterminate mode
     pub fn set_range(&self, minimum: i32, maximum: i32) {
-        unsafe { ffi::progressbar_set_range(self.ptr.cast(), minimum, maximum) }
+        unsafe { ffi::progressbar_set_range(self.live_ptr().cast(), minimum, maximum) }
     }
     pub fn value(&self) -> i32 {
-        unsafe { ffi::progressbar_value(self.ptr.cast()) }
+        unsafe { ffi::progressbar_value(self.live_ptr().cast()) }
     }
 }
 
-impl_default!(DMainWindow, QFont, QPalette, DDciIcon, DMessageBox, QTimer);
+impl_default!(DMainWindow, QFont, QPalette, DDciIcon, DMessageBox);
 
-/// leak() for the hand-rolled non-macro wrappers (same semantics as object_wrapper::leak)
-macro_rules! impl_leak {
-    ($($name:ident),* $(,)?) => {
-        $(impl $name {
-            /// leak the Rust handle; Qt parent-child still owns the object
-            pub fn leak(self) {
-                // ManuallyDrop (not forget): handles are Copy, forget would be a no-op warning
-                let _ = std::mem::ManuallyDrop::new(self);
-            }
-        })*
-    };
+unsafe impl Signal0 for DApplication {
+    fn qobject_ptr(&self) -> *mut ffi::QObject {
+        self.ptr.cast()
+    }
 }
-impl_leak!(QTimer, QSocketNotifier, PaintDelegate);
 
 // ---- typed signal helpers + base-class getters for generated widgets ----
 
@@ -1621,7 +2040,7 @@ impl widgets::DSwitchButton {
 impl widgets::DSearchEdit {
     /// QLineEdit base-class getter, via the DLineEdit ancestry
     pub fn text(&self) -> String {
-        unsafe { ffi::line_edit_text(self.ptr.cast()) }
+        unsafe { ffi::line_edit_text(self.live_ptr().cast()) }
     }
 }
 

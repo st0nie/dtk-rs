@@ -6,3 +6,4 @@ license = "MIT"
 
 [dependencies]
 dtk-sys = { path = "../dtk-sys" }
+libc = "0.2"

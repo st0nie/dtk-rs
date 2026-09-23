@@ -11,7 +11,14 @@ static QHash<size_t, DtkRelay *> g_relays;
 
 DtkRelay::DtkRelay(size_t cb_id, QObject *parent) : QObject(parent), m_cb_id(cb_id) {}
 
-DtkRelay::~DtkRelay() { g_relays.remove(m_cb_id); }
+DtkRelay::~DtkRelay() {
+    // Explicit unregister takes the entry first; destruction with the sender
+    // must also release the Rust closure (including reentrant destruction).
+    if (g_relays.value(m_cb_id) == this) {
+        g_relays.remove(m_cb_id);
+        dtk_cb_dispose(m_cb_id);
+    }
+}
 
 static bool connect_impl(QObject *sender, const char *signal, size_t cb_id,
                          const char *slot) {

@@ -60,23 +60,19 @@ fn main() {
     {
         let central = central.clone();
         toast_btn.on_clicked(move || {
-            DMessageManager::instance().send_message_2(
-                &central,
-                &QIcon::from_theme("dialog-ok"),
-                "Saved successfully",
-            );
+            DMessageManager::instance()
+                .expect("DTK message manager unavailable")
+                .send_message_2(
+                    &central,
+                    &QIcon::from_theme("dialog-ok"),
+                    "Saved successfully",
+                );
         });
     }
 
     win.set_central_widget(&central);
     win.resize(420, 240);
     win.show();
-
-    edit.leak();
-    search.leak();
-    switch.leak();
-    toast_btn.leak();
-    row.leak();
 
     std::process::exit(app.exec());
 }

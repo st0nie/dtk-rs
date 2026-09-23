@@ -25,9 +25,9 @@ HDR_DIR = "/usr/include/dtk6/DWidget"
 # classes bound by hand; the generator skips these
 HAND_BOUND = {"DApplication", "DMainWindow", "DTitlebar", "DLabel", "DSuggestButton", "DPushButton",
               "DHiDPIHelper"}  # ponytail: deprecated upstream, skip to silence -Wdeprecated-declarations
-# Qt opaque types already declared in the hand-written bridge (the gen bridge must redeclare its own)
-QT_CLASSES = {"QObject", "QWidget", "QLayout", "QVBoxLayout", "QHBoxLayout", "QTableWidget", "QTimer", "QIcon"}
-# Qt widget base classes (decides widget_wrapper vs object_wrapper)
+# Classify inherited DTK types by their actual Qt ancestor. Falling back to
+# "anything starting with Q/D is a QWidget" exposed as_widget() on QPainter,
+# QPrinter, QObject and even QStyleOption — a pointer cast followed by UB.
 QT_WIDGET_BASES = {
     "QWidget", "QMainWindow", "QDialog", "QFrame", "QLabel", "QPushButton", "QAbstractButton",
     "QComboBox", "QLineEdit", "QTextEdit", "QAbstractScrollArea", "QScrollArea", "QListView",
@@ -35,10 +35,35 @@ QT_WIDGET_BASES = {
     "QProgressBar", "QTabWidget", "QTabBar", "QMenu", "QMenuBar", "QToolBar", "QStatusBar",
     "QSplitter", "QStackedWidget", "QGroupBox", "QCheckBox", "QRadioButton", "QToolButton",
     "QDateTimeEdit", "QDateEdit", "QTimeEdit", "QCalendarWidget", "QDial", "QLCDNumber",
-    "QButtonGroup", "QListWidget", "QTableWidget", "QTreeWidget", "QColumnView",
+    "QListWidget", "QTableWidget", "QTreeWidget", "QColumnView",
+    "QGraphicsView", "QFileDialog", "QDoubleSpinBox", "DGraphicsView", "DWidget",
+    "DPushButton", "DLabel",  # aliases in dwidgetstype.h / hand-bound wrappers
 }
+QT_OBJECT_BASES = {
+    "QObject", "QLayout", "QGraphicsEffect", "QAbstractItemModel", "QAbstractListModel",
+    "QAbstractTableModel", "QCommonStyle",
+    "QAction", "QStyledItemDelegate", "QButtonGroup", "DPlatformHandle",  # DGui QObject base
+}
+QT_MODEL_BASES = {"QAbstractItemModel", "QAbstractListModel", "QAbstractTableModel"}
 
-VALUE_TYPES = {"QColor", "QSize", "QPoint", "QRect", "QFont", "QPixmap", "QIcon", "QPalette", "QMargins"}
+
+def classify_class(name: str, bases_by_class: dict[str, list[str]]) -> str:
+    """Return widget/object/opaque; unknown Qt/DTK bases are opaque, never guessed."""
+    def classify_base(base: str, visited: set[str]) -> str:
+        if base in QT_WIDGET_BASES:
+            return "widget"
+        if base in QT_OBJECT_BASES:
+            return "object"
+        if base in visited or base not in bases_by_class:
+            return "opaque"
+        visited = visited | {base}
+        inherited = (classify_base(parent, visited) for parent in bases_by_class[base])
+        return max(inherited, key={"opaque": 0, "object": 1, "widget": 2}.get, default="opaque")
+
+    return classify_base(name, set())
+
+
+VALUE_TYPES = {"QColor", "QSize", "QPoint", "QRect", "QFont", "QPixmap", "QIcon", "QPalette", "QMargins", "QVariant", "QVariantList"}
 # cross-namespace (dtkgui) value types: name -> (fully-qualified namespace, include header)
 EXT_VALUE_TYPES = {"DDciIcon": ("Dtk::Gui", "DDciIcon")}
 # cross-namespace classes we only need enums from (include + using in the gen shim header)
@@ -50,7 +75,7 @@ QT_ENUMS = {"QLineEdit::EchoMode", "QTabBar::Shape", "QTabBar::ButtonPosition",
 EXT_ENUMS = {"DPalette::ColorType", "DPalette::ColorRole"}
 # Qt pointer types allowed across the bridge (QWidget-style `as _` casts; each needs
 # `type X;` in both bridges + a hand-written wrapper in dtk/src/lib.rs)
-QT_PTRS = {"QWidget", "QAbstractButton"}
+QT_PTRS = {"QWidget", "QAbstractButton", "QLayout", "QBoxLayout", "QAction", "QAbstractItemModel"}
 # types that are QFlags in Qt (fromInt/toInt conversion)
 QT_QFLAGS = {"Qt::Alignment", "Qt::WindowFlags", "Qt::MouseButtons", "Qt::KeyboardModifiers",
              "Qt::Orientations", "Qt::ItemFlags", "Qt::MatchFlags", "Qt::ApplicationStates",
@@ -421,12 +446,10 @@ def main():
             c["header"] = os.path.basename(h)
             parsed.append(c)
 
+    bases_by_class = {c["name"]: c["bases"] for c in parsed}
     classes_out = []
     for c in parsed:
-            is_widget = any(b in QT_WIDGET_BASES or (b in all_classes and b != "DObject") for b in c["bases"])
-            if not is_widget and c["bases"]:
-                # if a base is another DTK class, follow it (most DTK classes are widgets)
-                is_widget = any(b.startswith(("Q", "D")) and b != "DObject" for b in c["bases"])
+            kind = classify_class(c["name"], bases_by_class)
             gen_methods = []
             skipped = c["skipped"]
             for is_static, ret, name, params, raw in c["methods"]:
@@ -436,7 +459,7 @@ def main():
                 else:
                     gen_methods.append(g)
             classes_out.append({
-                "name": c["name"], "is_widget": is_widget, "header": c["header"], "ns": c.get("ns", ""),
+                "name": c["name"], "kind": kind, "bases": c["bases"], "header": c["header"], "ns": c.get("ns", ""),
                 # exactly one all-default ctor: two would make `new X()` ambiguous
                 "ctor_new": c.get("all_default_ctors", 0) == 1 and not c.get("abstract", False), "methods": gen_methods, "skipped": skipped,
             })
@@ -448,14 +471,22 @@ def emit(classes):
     shim_h, shim_cpp, bridge, wrapper, report = [], [], [], [], []
     shim_h.append("// auto-generated by tools/gen.py, do not edit\n#pragma once\n#include \"dtk_shim.h\"\n")
     shim_cpp.append('// auto-generated by tools/gen.py, do not edit\n#include "dtk_gen_shim.h"\n\nnamespace dtkrs {\n')
-    bridge.append("// auto-generated by tools/gen.py, do not edit\n#[cxx::bridge(namespace = \"dtkrs\")]\npub mod genffi {\n    extern \"C++\" {\n        include!(\"dtk_gen_shim.h\");\n")
+    bridge.append("// auto-generated by tools/gen.py, do not edit\n"
+                  "// Every unsafe declaration has the same contract: pointers must refer to live\n"
+                  "// Qt/DTK objects on their owning thread, with the correct dynamic type.\n"
+                  "#[allow(clippy::missing_safety_doc, clippy::too_many_arguments)]\n"
+                  "#[cxx::bridge(namespace = \"dtkrs\")]\n"
+                  "pub mod genffi {\n    extern \"C++\" {\n        include!(\"dtk_gen_shim.h\");\n")
+    # QObject is used only for checked base casts, not for mapping arbitrary
+    # QObject* method parameters until the Rust API has a general QObject view.
+    bridge.append("        type QObject;\n")
     for qp in sorted(QT_PTRS):
         bridge.append(f"        type {qp};\n")
     for vt in sorted(VALUE_TYPES):
         bridge.append(f"        type {vt};\n")
     for vt in sorted(EXT_VALUE_TYPES):
         bridge.append(f"        type {vt};\n")
-    wrapper.append("// auto-generated by tools/gen.py, do not edit\n#![allow(clippy::all, non_snake_case, unused_imports)]\nuse crate::{QAbstractButton, Signal0, SignalBool, SignalI32, SignalI32I32, QWidget};\nuse crate::{QColor, QFont, QIcon, QMargins, QPalette, QPixmap, QPoint, QRect, QSize};\nuse crate::DDciIcon;\nuse dtk_sys::ffi;\nuse dtk_sys::gen_ffi::genffi;\nuse std::marker::PhantomData;\n")
+    wrapper.append("// auto-generated by tools/gen.py, do not edit\n#![allow(clippy::all, non_snake_case, unused_imports)]\nuse crate::{QAbstractButton, QAbstractItemModel, QAction, QBoxLayout, QLayout, Signal0, SignalBool, SignalI32, SignalI32I32, QWidget};\nuse crate::{QColor, QFont, QIcon, QMargins, QPalette, QPixmap, QPoint, QRect, QSize, QVariant, QVariantList};\nuse crate::{DDciIcon, OwnedOpaque};\nuse dtk_sys::ffi;\nuse dtk_sys::gen_ffi::genffi;\nuse std::marker::PhantomData;\n")
     report.append("# DTK6 widget binding coverage report\n")
 
     total_ok, total_skip = 0, 0
@@ -495,6 +526,31 @@ def emit(classes):
             shim_h.append(f"{name} *{fn}();\n")
             shim_cpp.append(f"{name} *{fn}() {{ return new {name}; }}\n")
             bridge.append(f"        unsafe fn {fn}() -> *mut {name};\n")
+            if c["kind"] == "opaque":
+                # Unlike QObject parent-owned objects, opaque allocations need an
+                # explicit deleter. Only the constructor's OwnedOpaque may call it.
+                delete = f"gen_{sname}_delete"
+                shim_h.append(f"void {delete}({name} *self);\n")
+                shim_cpp.append(f"void {delete}({name} *self) {{ delete self; }}\n")
+                bridge.append(f"        unsafe fn {delete}(self_: *mut {name});\n")
+        if c["kind"] in ("object", "widget"):
+            # C++ static_cast adjusts secondary base pointers; a Rust raw cast
+            # is only safe for coincident primary-base layouts. Compute once per
+            # wrapper and keep a QPointer to the adjusted QObject*.
+            fn = f"gen_{sname}_as_qobject"
+            shim_h.append(f"QObject *{fn}({name} *self);\n")
+            shim_cpp.append(f"QObject *{fn}({name} *self) {{ return static_cast<QObject *>(self); }}\n")
+            bridge.append(f"        unsafe fn {fn}(self_: *mut {name}) -> *mut QObject;\n")
+        if c["kind"] == "widget":
+            fn = f"gen_{sname}_as_widget"
+            shim_h.append(f"QWidget *{fn}({name} *self);\n")
+            shim_cpp.append(f"QWidget *{fn}({name} *self) {{ return static_cast<QWidget *>(self); }}\n")
+            bridge.append(f"        unsafe fn {fn}(self_: *mut {name}) -> *mut QWidget;\n")
+        if any(base in QT_MODEL_BASES for base in c["bases"]):
+            fn = f"gen_{sname}_as_model"
+            shim_h.append(f"QAbstractItemModel *{fn}({name} *self);\n")
+            shim_cpp.append(f"QAbstractItemModel *{fn}({name} *self) {{ return static_cast<QAbstractItemModel *>(self); }}\n")
+            bridge.append(f"        unsafe fn {fn}(self_: *mut {name}) -> *mut QAbstractItemModel;\n")
         for (ret_rs, ret_cpp, ret_kind, ret_cls, is_static, meth, args) in c["methods"]:
             base_fn = f"gen_{sname}_{snake(meth)}"
             if snake(meth) in RUST_KEYWORDS:
@@ -524,6 +580,18 @@ def emit(classes):
             if ret_kind == "ptr":
                 call = f"const_cast<{ret_cls} *>({call})"
             body = f"return {call};" if ret_rs != "()" else f"{call};"
+            # Native DListView::count/add*/insert*/remove* dereference a null
+            # model on a newly constructed view (observed SIGSEGV in DTK6).
+            # With a zero-column QStandardItemModel, addItems returns true but
+            # cannot store data at (row, 0). Reject both unsafe/incoherent cases.
+            if name == "DListView" and meth in {
+                "count", "addItem", "addItems", "insertItem", "insertItems",
+                "removeItem", "removeItems",
+            }:
+                fallback = "0" if meth == "count" else "false"
+                invalid = "!self->model()" if meth == "count" else \
+                    "!self->model() || self->model()->columnCount() == 0"
+                body = f"if ({invalid}) return {fallback}; {body}"
             shim_h.append(f"{ret_cpp} {fn}({cpp_sig});\n")
             shim_cpp.append(f"{ret_cpp} {fn}({cpp_sig}) {{ {body} }}\n")
             # bridge
@@ -538,12 +606,24 @@ def emit(classes):
     bridge.append("    }\n}\n")
 
     # ---- Rust wrapper ----
+    kind_by_name = {c["name"]: c["kind"] for c in classes}
     for c in classes:
         name, sname = c["name"], snake(c["name"])
-        mac = "widget_wrapper" if c["is_widget"] else "object_wrapper"
-        wrapper.append(f"{mac}!({name}, genffi::{name});\nimpl {name} {{\n")
-        if c["ctor_new"]:
-            wrapper.append(f"    pub fn new() -> Self {{\n        Self::from_raw(unsafe {{ genffi::gen_{sname}_new() }})\n    }}\n")
+        owns_opaque = c["kind"] == "opaque" and c["ctor_new"]
+        mac = ("owned_opaque_wrapper" if owns_opaque else
+               {"widget": "widget_wrapper", "object": "object_wrapper", "opaque": "opaque_wrapper"}[c["kind"]])
+        casts = (f", genffi::gen_{sname}_as_qobject" if c["kind"] in ("widget", "object") else "")
+        if c["kind"] == "widget":
+            casts += f", genffi::gen_{sname}_as_widget"
+        wrapper.append(f"{mac}!({name}, genffi::{name}{casts});\nimpl {name} {{\n")
+        if owns_opaque:
+            wrapper.append(f"    pub fn new() -> OwnedOpaque<Self> {{\n"
+                           f"        let ptr = unsafe {{ genffi::gen_{sname}_new() }};\n"
+                           f"        OwnedOpaque::from_owned(Self::from_raw(ptr), "
+                           f"|value| unsafe {{ genffi::gen_{sname}_delete(value.ptr) }})\n    }}\n")
+        elif c["ctor_new"]:
+            precheck = "crate::require_application();\n        " if c["kind"] != "opaque" else ""
+            wrapper.append(f"    pub fn new() -> Self {{\n        {precheck}Self::from_raw(unsafe {{ genffi::gen_{sname}_new() }})\n    }}\n")
         used = {}
         # widget_wrapper macro already provides these; skip to avoid duplicate definitions
         MACRO_METHODS = {"show", "resize", "set_enabled", "set_window_title", "as_widget", "from_raw", "as_qobject", "new", "default"}
@@ -563,7 +643,8 @@ def emit(classes):
                 pname, ptype = rs.split(": ", 1)
                 if pkind == "ptr":
                     wr_args.append(f"{pname}: &{pcls}")
-                    call_args.append(f"{pname}.ptr")
+                    source = f"{pname}.ptr" if kind_by_name[pcls] == "opaque" else f"{pname}.live_ptr()"
+                    call_args.append(source)
                 elif pkind == "qtptr":
                     wr_args.append(f"{pname}: &{pcls}")
                     # AUDIT(2026-02): casting between ffi::QWidget and genffi::QWidget is sound.
@@ -571,7 +652,9 @@ def emit(classes):
                     # dereferenced in Rust; both name the same C++ type ::QWidget via
                     # `using ::QWidget;` in namespace dtkrs (dtk_shim.h / dtk_gen_shim.h).
                     # A raw pointer cast moves no bits and assumes no layout.
-                    call_args.append(f"{pname}.ptr as _")
+                    # QWidget is now a guarded view: validate the live Qt object
+                    # before passing its pointer into generated C++ code.
+                    call_args.append(f"{pname}.live_ptr() as _")
                 elif pkind == "val":
                     wr_args.append(f"{pname}: &{pcls}")
                     call_args.append(f"{pname}.ptr as _")  # same audit as qtptr above
@@ -580,22 +663,29 @@ def emit(classes):
                     call_args.append(pname)
             self_piece = [] if is_static else ["&self"]
             sig = ", ".join(self_piece + wr_args)
-            self_call = [] if is_static else ["self.ptr"]
+            self_call = [] if is_static else ["self.ptr" if c["kind"] == "opaque" else "self.live_ptr()"]
             calls = ", ".join(self_call + call_args)
             # returns: wrap pointers in wrappers, pass values through
             if ret_kind == "ptr":
-                ret_decl = f" -> {ret_cls}"
-                expr = f"{ret_cls}::from_raw(unsafe {{ genffi::{fn_name}({calls}) }})"
+                # DTK/Qt pointer getters are often nullable (e.g. button(-1),
+                # currentWidget() before adding a page). Never manufacture a
+                # non-null wrapper for such a return.
+                ret_decl = f" -> Option<{ret_cls}>"
+                expr = (f"{{ let ptr = unsafe {{ genffi::{fn_name}({calls}) }}; "
+                        f"(!ptr.is_null()).then(|| {ret_cls}::from_raw(ptr)) }}")
             elif ret_kind == "qtptr":
-                ret_decl = f" -> {ret_cls}"
-                expr = f"{ret_cls}::from_raw(unsafe {{ genffi::{fn_name}({calls}) }} as _)"  # see qtptr audit comment above
+                ret_decl = f" -> Option<{ret_cls}>"
+                expr = (f"{{ let ptr = unsafe {{ genffi::{fn_name}({calls}) }}; "
+                        f"(!ptr.is_null()).then(|| {ret_cls}::from_raw(ptr as _)) }}")  # see qtptr audit above
             elif ret_kind == "val":
                 ret_decl = f" -> {ret_cls}"
                 expr = f"{ret_cls}::from_raw(unsafe {{ genffi::{fn_name}({calls}) }} as _)"  # see qtptr audit comment above
             else:
                 ret_decl = "" if ret_rs == "()" else f" -> {ret_rs}"
                 expr = f"unsafe {{ genffi::{fn_name}({calls}) }}"
-            wrapper.append(f"    pub fn {mname}({sig}){ret_decl} {{\n        {expr}\n    }}\n")
+            precheck = ("        crate::require_application();\n"
+                        if is_static and c["kind"] in ("widget", "object") else "")
+            wrapper.append(f"    pub fn {mname}({sig}){ret_decl} {{\n{precheck}        {expr}\n    }}\n")
         wrapper.append("}\n\n")
         total_skip_n = len(c["skipped"])
         total_skip += total_skip_n
@@ -603,11 +693,18 @@ def emit(classes):
         for raw, why in c["skipped"]:
             report.append(f"- `{raw}` ← {why}\n")
 
-    defaultables = [c["name"] for c in classes if c["ctor_new"]]
+    defaultables = [c["name"] for c in classes if c["ctor_new"] and c["kind"] != "opaque"]
     if defaultables:
         wrapper.append(f"crate::impl_default!({', '.join(defaultables)});\n")
+    for c in classes:
+        if c["ctor_new"] and c["kind"] == "opaque":
+            name = c["name"]
+            wrapper.append(f"impl Default for OwnedOpaque<{name}> {{\n"
+                           f"    fn default() -> Self {{ {name}::new() }}\n}}\n")
 
-    report.insert(1, f"\nclasses: {len(classes)}, methods generated: {total_ok}, skipped: {total_skip}\n")
+    kinds = {kind: sum(c["kind"] == kind for c in classes) for kind in ("widget", "object", "opaque")}
+    report.insert(1, f"\nclasses: {len(classes)}, methods generated: {total_ok}, skipped: {total_skip}\n"
+                     f"\nQt ancestry: {kinds['widget']} widgets, {kinds['object']} QObjects, {kinds['opaque']} opaque types\n")
     from collections import Counter
     reasons = Counter(why.split(":")[0] for c in classes for _, why in c["skipped"])
     report.insert(2, "\n## skip reasons\n" + "".join(f"- {k}: {v}\n" for k, v in reasons.most_common()))

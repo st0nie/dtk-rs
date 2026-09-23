@@ -68,6 +68,5 @@ fn main() {
             DApplication::quit();
         });
     }
-    pw.leak();
     std::process::exit(app.exec());
 }

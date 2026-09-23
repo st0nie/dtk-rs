@@ -57,9 +57,5 @@ fn main() {
     win.resize(360, 180);
     win.show();
 
-    // handles now only reachable via callbacks; Qt frees the real objects
-    btn.leak();
-    about_btn.leak();
-
     std::process::exit(app.exec());
 }

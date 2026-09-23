@@ -4,7 +4,7 @@
 
 Rust bindings for DTK6 (dtkwidget). Goal: write deepin apps with DTK UIs in pure Rust.
 
-- **Safe wrappers** over a small `cxx` FFI layer — application code never touches `unsafe`.
+- Rust-facing wrappers over a `cxx` FFI layer; the current raw-pointer object handles are **not yet sound against use-after-free** (see Design).
 - **~100 DTK classes** bound by a header-scanning generator (`DComboBox`, `DSpinner`, `DDialog`, `DListView`, …) plus hand-written core (`DApplication`, `DMainWindow`, layouts, `QTableWidget`, timers, painting).
 - **Any signal** can be connected at runtime by name — no per-signal glue code.
 - Linux + Qt6 + DTK6 only. Not cross-platform (DTK isn't either).
@@ -69,48 +69,65 @@ All examples live in [`dtk/examples/`](dtk/examples/) and build with `cargo buil
 | [`mpsc_eventfd.rs`](dtk/examples/mpsc_eventfd.rs) | **Background thread → GUI** with `std::sync::mpsc` + `eventfd` + `QSocketNotifier` (see below) | `cargo run --example mpsc_eventfd` |
 | [`demo.rs`](dtk/examples/demo.rs) | Binding self-checks: real argv, palette round-trip, `PaintDelegate` custom cell painting, `QSocketNotifier` on a pipe | `cargo run --example demo` |
 | [`dialog_selfcheck.rs`](dtk/examples/dialog_selfcheck.rs) | `DDialog` checks | `cargo run --example dialog_selfcheck` |
+| [`lifetime_selfcheck.rs`](dtk/examples/lifetime_selfcheck.rs) | Qt callback cleanup, table metadata, central widget ownership | `QT_QPA_PLATFORM=offscreen cargo run --example lifetime_selfcheck` |
+| [`threading_selfcheck.rs`](dtk/examples/threading_selfcheck.rs) | Typed worker → GUI delivery, ordering, destruction | `QT_QPA_PLATFORM=offscreen cargo run --example threading_selfcheck` |
+| [`opaque_lifetime_selfcheck.rs`](dtk/examples/opaque_lifetime_selfcheck.rs) | Owned non-QObject DTK allocations and generated C++ deleters | `QT_QPA_PLATFORM=offscreen cargo run --example opaque_lifetime_selfcheck` |
+| [`guard_selfcheck.rs`](dtk-sys/examples/guard_selfcheck.rs) | QPointer clears when Qt deletes an object | `QT_QPA_PLATFORM=offscreen cargo run -p dtk-sys --example guard_selfcheck` |
+| [`guard_bench.rs`](dtk/examples/guard_bench.rs) | Raw vs guarded Qt/DTK getter cost | `QT_QPA_PLATFORM=offscreen cargo run --release --example guard_bench` |
+| [`layout_selfcheck.rs`](dtk/examples/layout_selfcheck.rs) | Generated `QLayout*` binding and native parent-child lifetime | `QT_QPA_PLATFORM=offscreen cargo run --example layout_selfcheck` |
+| [`variant_selfcheck.rs`](dtk/examples/variant_selfcheck.rs) | QVariant/QVariantList roundtrip through DTK tabs and list items | `QT_QPA_PLATFORM=offscreen cargo run --example variant_selfcheck` |
+| [`action_selfcheck.rs`](dtk/examples/action_selfcheck.rs) | QAction/QMenu state, triggered(bool), Qt-owned callback cleanup | `QT_QPA_PLATFORM=offscreen cargo run --example action_selfcheck` |
+| [`model_selfcheck.rs`](dtk/examples/model_selfcheck.rs) | Guarded QAbstractItemModel, DListView, QVariant data and parent ownership | `QT_QPA_PLATFORM=offscreen cargo run --example model_selfcheck` |
+| [`no_application_selfcheck.rs`](dtk/examples/no_application_selfcheck.rs) | Reject GUI object creation before DApplication, keep QtCore values usable | `QT_QPA_PLATFORM=offscreen cargo run --example no_application_selfcheck` |
 
 Headless smoke tests (CI-friendly, no display needed):
 
 ```sh
 QT_QPA_PLATFORM=offscreen ./target/debug/examples/demo --smoke
 QT_QPA_PLATFORM=offscreen ./target/debug/examples/mpsc_eventfd --smoke
+QT_QPA_PLATFORM=offscreen ./target/debug/examples/lifetime_selfcheck
+QT_QPA_PLATFORM=offscreen ./target/debug/examples/threading_selfcheck
+QT_QPA_PLATFORM=offscreen ./target/debug/examples/opaque_lifetime_selfcheck
+QT_QPA_PLATFORM=offscreen ./target/debug/examples/layout_selfcheck
+QT_QPA_PLATFORM=offscreen ./target/debug/examples/variant_selfcheck
+QT_QPA_PLATFORM=offscreen ./target/debug/examples/action_selfcheck
+QT_QPA_PLATFORM=offscreen ./target/debug/examples/model_selfcheck
+QT_QPA_PLATFORM=offscreen ./target/debug/examples/no_application_selfcheck
+QT_QPA_PLATFORM=offscreen cargo run -p dtk-sys --example guard_selfcheck
 ```
 
-## Threading: worker → GUI with mpsc + eventfd
+## Threading: typed worker → GUI messages
 
-Qt widgets may only be touched from the GUI thread, and dtk-rs wrappers are `!Send` — the compiler enforces it. To get background work (network, file scans, systemd/PSI polling…) into the UI, use the same trick as Qt's queued `invokeMethod`, with plain Rust pieces:
+Qt widgets are `!Send` and must remain on the GUI thread. `GuiSender<T>` delivers only `Send` values to a handler bound to a Qt owner; application code needs no file descriptors, unsafe blocks or timer polling:
 
-```text
- worker thread                    GUI thread (event loop)
- ┌──────────────┐  mpsc::Sender<Msg>    ┌─────────────────────────┐
- │ do work      │ ────────────────────▶ │ mpsc::Receiver<Msg>     │
- │ tx.send(msg) │                       │ drained with try_recv() │
- │ poke eventfd │ ─── eventfd byte ───▶ │ QSocketNotifier::       │
- └──────────────┘                       │   on_activated(...)     │
-                                        └─────────────────────────┘
+```rust
+let to_gui = GuiSender::new(&window, move |text: String| label.set_text(&text))?;
+std::thread::spawn(move || {
+    let result = do_work();
+    let _ = to_gui.send(result); // returns BrokenPipe if the window has been destroyed
+});
 ```
 
-- The channel carries **plain `Send` data** (`enum Msg { Progress(i32), Done(String) }`) — never widget pointers.
-- The `eventfd` is only a **wakeup**: one 8-byte write per send; `QSocketNotifier` watches the read end and its callback runs on the GUI thread, where draining the channel and touching widgets is legal.
-- **Always drain the eventfd counter in the callback** — the notifier is level-triggered and refires forever otherwise.
-- Commands back to the worker (cancel, config) go through `Arc<AtomicBool>` or a second channel.
-- No polling `QTimer` needed: the notifier fires exactly when data arrives.
-
-Full working code (with a cancel button and a headless `--smoke` self-check): [`dtk/examples/mpsc_eventfd.rs`](dtk/examples/mpsc_eventfd.rs). The same `QSocketNotifier` pattern works for `signalfd` (Unix signals → event loop) and pipes.
+The owner owns the Qt notifier and Rust callback; dropping the owner disconnects the receiver. `send()` only guarantees enqueue, not delivery if the owner is destroyed first. Internally Linux `eventfd` wakes Qt's event loop, writes are coalesced and messages are processed in bounded batches to keep input responsive. Compare [`threading_selfcheck.rs`](dtk/examples/threading_selfcheck.rs) for an offscreen test and [`mpsc_eventfd.rs`](dtk/examples/mpsc_eventfd.rs) for the low-level pattern. `QSocketNotifier` remains available for eventfd/signalfd/pipes and other externally owned fds.
 
 ## Design
 
 Deep dive (layers, full binding walkthrough, signal mechanism, lifetime rules): [ARCHITECTURE.md](ARCHITECTURE.md).
 
-- **Lifetime — two wrapper kinds.** Widget wrappers are non-owning raw pointers (`!Send`, single GUI thread): Qt's parent-child tree owns the objects, children die with their parent, top-level windows die with `QApplication`. They intentionally have no `Drop`. Value-type wrappers (`QColor`, `QFont`, `QPalette`, `QPixmap`, …) own a heap copy and free it via shim `*_delete` in `Drop`.
+- **Application**: construct one `DApplication` **before** QWidget/QObject, timers, clipboard, pixmaps and themed icons; these safe entry points now panic with a clear message instead of entering native Qt without a GUI application. QtCore-only values (`QVariant`, `QVariantList`) can be made before it. Trying to create a second application fails before Qt's singleton constructor and cleans up the pending Rust callback. Arguments pass as raw Linux argv bytes rather than lossy delimiter-joined strings.
+- **Lifetime — three wrapper cases.** QObject/widget wrappers are non-owning `Clone` views guarded by Qt `QPointer` (`!Send`, GUI thread). Generated methods and hand-written widget operations reject a destroyed owner before entering FFI; they do **not** delete Qt objects in `Drop`. Qt deletes children with their parent, **but not unparented top-level windows**: call `delete_later()` explicitly when needed. Non-QObject constructors such as `DPrinter::new()` return `OwnedOpaque<DPrinter>` with a generated C++ deleter; getters such as `DFileIconProvider::global_provider()` remain unguarded borrowed views. Value types (`QColor`, `QPixmap`, …) own copies freed in `Drop`. Unparented QObject ownership, opaque borrows and event reentrancy still need auditing; this is **not yet a fully memory-safe binding**.
 - **Callbacks are `'static`** — share widgets/state into them with `Rc`/`RefCell`/`Cell` (never `Arc<Mutex>`: everything runs on one thread anyway).
-- **Signals**: `DtkRelay` (Q_OBJECT + SLOT) string-connects any signal -> Rust callback id -> closure in a thread_local registry. Unregister with `dtk::unregister_callback(id)` when done; `QTimer::single_shot` self-cleans.
+- **Signals**: `DtkRelay` (Q_OBJECT + SLOT) string-connects any signal -> Rust callback id -> closure in a thread_local registry. Qt-object destruction releases its Rust callbacks; `dtk::unregister_callback(id)` disconnects early. `QTimer::single_shot` runs a `FnOnce` and cleans up even on panic or Qt cancellation.
 - **Event overrides**: `DtkAppEx` (QEvent::Quit guard) / `DtkMainWindowEx` (showEvent/closeEvent) shim subclasses -> Rust callbacks. Entry points: `DApplication::new_with_quit_guard`, `DMainWindow::new_with_events`.
 - **Custom painting**: `PaintDelegate` (QStyledItemDelegate subclass) forwards paint to Rust, with `Painter` primitives + `ModelIndex::data_*`.
-- **Type mapping**: QString<->&str/String, numbers direct, enums/QFlags->i32 (`dtk::qt` constants module), QColor/QFont/QPalette/QPixmap/QSize/QPoint/QRect value types -> heap-allocated wrappers, QWidget* and DTK class pointers <-> wrappers.
-- **QSocketNotifier**: `QSocketNotifier::new(fd)` + `on_activated`; pairs with eventfd/signalfd/pipe — see the threading section above.
-- **Generator**: regex-parses DTK headers (they are very regular). Only methods whose param/return types all map cleanly are generated; the rest land in GEN_REPORT.md with reasons. Base-class Qt methods (e.g. `QProgressBar::setValue`) are added by hand to the shim when needed.
+- **Type mapping**: QString<->&str/String, numbers direct, enums/QFlags->i32 (`dtk::qt` constants module), QColor/QFont/QPalette/QPixmap/QSize/QPoint/QRect/QVariant/QVariantList values -> owning wrappers, QWidget* and DTK class pointers <-> wrappers.
+- **Qt ownership**: `QTimer::new(&owner)`, `QSocketNotifier::new(fd, &owner)` and `PaintDelegate::new(&owner, f)` require a QObject parent. This prevents them from silently leaking when Rust's non-owning handle goes out of scope. See [`lifetime_selfcheck.rs`](dtk/examples/lifetime_selfcheck.rs) for callback-lifetime and table-data checks.
+- **QSocketNotifier**: `new(fd, &owner)` + `on_activated`; for custom eventfd/signalfd/pipe sources, not required for ordinary worker → GUI messages.
+- **Generator**: regex-parses DTK headers and classifies verified Qt ancestry as QWidget, QObject or opaque (non-QObject). C++ `static_cast` computes actual base pointers once per wrapper (cached for QWidget operations); generated QObject/Widget wrappers share a QPointer guard. Pointer getters return `Option<T>` because Qt may return `nullptr` (e.g. an empty `DStackWidget::current_widget()`). Only mapped signatures are generated; skips land in GEN_REPORT.md. Base-class Qt methods (e.g. `QProgressBar::setValue`) are added to the shim when needed.
+- **Table items**: `QTableWidget::item(row,col)` returns an optional `TableCell` **coordinate view**, not an owning or borrowed `QTableWidgetItem*`. Each method resolves the current item again and returns `None`/`false` if the cell became empty. If the item is replaced, the view operates on the replacement at the same coordinates.
+- **Layouts**: `QVBoxLayout::as_layout()`/`QHBoxLayout::as_layout()` share their QPointer guard with a `QLayout` view. DTK signatures such as `DFlowLayout::insert_layout` and `DBackgroundGroup::set_layout` accept this view and leave Qt's native parent/child ownership intact. `DBaseLine::left_layout/right_layout` return optional guarded `QBoxLayout` views.
+- **Actions**: `QAction::new(text, &owner)` requires a Qt owner; `DMenu::add_action_object(&action)` adds an existing action without changing its QObject parent. `on_triggered` receives the checked `bool`, and Qt destruction releases registered callbacks.
+- **Models**: `DVariantListModel::as_model()` and `QStandardItemModel::as_model()` share their guards with a `QAbstractItemModel` view for `DListView::set_model(&model)`. Qt views do **not** adopt models automatically: call `model.set_parent(&view)` if the view should own it, or construct `QStandardItemModel::new(&view)`. Qt's default standard model has zero columns; call `set_column_count(1)` before adding list items. `row_count`, `data`, `set_data`, and row insertion/removal use short-lived `QModelIndex` values inside C++ and Rust-owned `QVariant` values. `DListView::new()` starts with no model; install one before item operations. The Rust shim returns `0`/`false` for `count`/item mutators without a model instead of entering native DTK code that dereferences null.
 
 ## Regenerating
 

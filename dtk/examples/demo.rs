@@ -38,6 +38,11 @@ fn main() {
             "real argv not passed to QApplication"
         );
         assert!(!DApplication::has_arg("--hidden"));
+        // Qt must receive an argv entry verbatim, even with the old join delimiter.
+        let control_arg = "--unit\u{1f}separator";
+        if std::env::args().any(|arg| arg == control_arg) {
+            assert!(DApplication::has_arg(control_arg));
+        }
         let pal = win.palette();
         let hl = pal.color(qt::palette_group::ACTIVE, qt::palette_role::HIGHLIGHT);
         pal.set_color(
@@ -58,8 +63,6 @@ fn main() {
         let b2 = DPushButton::new("right");
         hbox.add_widget_ex(&b2.as_widget(), 0, qt::alignment::TOP);
         vbox.add_layout(&hbox);
-        b2.leak();
-        hbox.leak();
     }
 
     // --smoke only: verify PaintDelegate + QSocketNotifier chains
@@ -73,7 +76,7 @@ fn main() {
         table.set_cell_text(0, 1, "memory cell");
         {
             let painted = painted.clone();
-            let delegate = PaintDelegate::new(move |p, idx, x, y, w, h, _state| {
+            let delegate = PaintDelegate::new(&table, move |p, idx, x, y, w, h, _state| {
                 assert_eq!(idx.data_string(0), "icon cell"); // DisplayRole
                 p.set_clip_rect(x, y, w, h);
                 p.fill_rect(x, y, w, h, &QColor::rgb(200, 220, 255));
@@ -86,16 +89,14 @@ fn main() {
                 painted.set(true);
             });
             table.set_delegate_for_column(0, &delegate);
-            delegate.leak(); // lifetime handed to the table (short-lived offscreen test)
         }
         vbox.add_widget(&table.as_widget());
-        table.leak();
 
         // self-pipe to test QSocketNotifier
         let mut fds = [0i32; 2];
         assert_eq!(unsafe { libc_pipe(fds.as_mut_ptr()) }, 0);
         pipe_w = fds[1];
-        let notifier = QSocketNotifier::new(fds[0]);
+        let notifier = QSocketNotifier::new(fds[0], &win);
         {
             let notified = notified.clone();
             let fd_r = fds[0];
@@ -106,7 +107,6 @@ fn main() {
                 println!("notified");
             });
         }
-        notifier.leak();
     }
 
     win.set_central_widget(&central);

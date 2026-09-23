@@ -2,9 +2,14 @@
 
 use std::cell::RefCell;
 use std::collections::HashMap;
+use std::marker::PhantomData;
 
 pub mod gen_ffi;
 
+// All raw FFI functions share one safety contract: pointers must be live Qt/DTK
+// objects with the stated dynamic type, accessed on their owning GUI thread.
+// The painter callback is an ABI boundary with fixed fields, not a Rust API.
+#[allow(clippy::missing_safety_doc, clippy::too_many_arguments)]
 #[cxx::bridge(namespace = "dtkrs")]
 pub mod ffi {
     extern "C++" {
@@ -12,8 +17,18 @@ pub mod ffi {
 
         type QObject;
         type QWidget;
+        type QObjectGuard;
+        /// Construct a Qt guarded pointer from a *live*, GUI-thread QObject.
+        unsafe fn guard_object(object: *mut QObject) -> UniquePtr<QObjectGuard>;
+        /// Same for QWidget; C++ performs the correct base-class pointer adjustment.
+        unsafe fn guard_widget(widget: *mut QWidget) -> UniquePtr<QObjectGuard>;
+        /// QPointer clears on Qt destruction, even when Rust still holds its guard.
+        unsafe fn guard_alive(guard: &QObjectGuard) -> bool;
         type QAbstractButton;
         type QLayout;
+        type QBoxLayout;
+        type QAbstractItemModel;
+        type QStandardItemModel;
         type QVBoxLayout;
         type QHBoxLayout;
         type QTableWidget;
@@ -25,6 +40,8 @@ pub mod ffi {
         type QPalette;
         type QPixmap;
         type QMargins;
+        type QVariant;
+        type QVariantList;
         type DDciIcon;
         type QPoint;
         type QRect;
@@ -42,15 +59,22 @@ pub mod ffi {
         type DPushButton;
         type QMessageBox;
         type QMenu;
+        type QAction;
 
         // DApplication
-        // args: '|'-separated real argv (incl. argv[0]); application_name set separately
-        unsafe fn application_new(name: &str, args: &str) -> *mut DApplication;
+        // Raw argv bytes + lengths (incl. argv[0]); Qt stores writable char* entries.
+        unsafe fn application_new(
+            name: &str,
+            argv: Vec<u8>,
+            lengths: Vec<usize>,
+        ) -> *mut DApplication;
         unsafe fn application_new_ex(
             name: &str,
-            args: &str,
+            argv: Vec<u8>,
+            lengths: Vec<usize>,
             quit_guard_id: usize,
         ) -> *mut DApplication;
+        unsafe fn application_is_gui() -> bool;
         unsafe fn application_exec(app: *mut DApplication) -> i32;
         unsafe fn application_quit();
         unsafe fn application_set_quit_on_last_window_closed(quit: bool);
@@ -250,6 +274,31 @@ pub mod ffi {
             delegate: *mut QStyledItemDelegate,
         );
 
+        // QAbstractItemModel (QModelIndex values never outlive a C++ call)
+        unsafe fn standard_item_model_new(parent: *mut QObject) -> *mut QStandardItemModel;
+        unsafe fn standard_item_model_set_column_count(model: *mut QStandardItemModel, count: i32);
+        unsafe fn standard_item_model_as_model(
+            model: *mut QStandardItemModel,
+        ) -> *mut QAbstractItemModel;
+        unsafe fn model_set_parent(model: *mut QAbstractItemModel, parent: *mut QObject);
+        unsafe fn model_row_count(model: *mut QAbstractItemModel) -> i32;
+        unsafe fn model_column_count(model: *mut QAbstractItemModel) -> i32;
+        unsafe fn model_data(
+            model: *mut QAbstractItemModel,
+            row: i32,
+            col: i32,
+            role: i32,
+        ) -> *mut QVariant;
+        unsafe fn model_set_data(
+            model: *mut QAbstractItemModel,
+            row: i32,
+            col: i32,
+            data: *mut QVariant,
+            role: i32,
+        ) -> bool;
+        unsafe fn model_insert_rows(model: *mut QAbstractItemModel, row: i32, count: i32) -> bool;
+        unsafe fn model_remove_rows(model: *mut QAbstractItemModel, row: i32, count: i32) -> bool;
+
         // QTableWidgetItem
         unsafe fn item_set_icon(it: *mut QTableWidgetItem, icon: *mut QIcon);
         unsafe fn item_set_text_alignment(it: *mut QTableWidgetItem, alignment: i32);
@@ -260,6 +309,23 @@ pub mod ffi {
         unsafe fn item_data_bool(it: *mut QTableWidgetItem, role: i32) -> bool;
 
         // value types
+        unsafe fn variant_new() -> *mut QVariant;
+        unsafe fn variant_from_bool(value: bool) -> *mut QVariant;
+        unsafe fn variant_from_i64(value: i64) -> *mut QVariant;
+        unsafe fn variant_from_f64(value: f64) -> *mut QVariant;
+        unsafe fn variant_from_string(value: &str) -> *mut QVariant;
+        unsafe fn variant_clone(value: *mut QVariant) -> *mut QVariant;
+        unsafe fn variant_is_valid(value: *mut QVariant) -> bool;
+        unsafe fn variant_to_bool(value: *mut QVariant) -> bool;
+        unsafe fn variant_to_i64(value: *mut QVariant, ok: *mut bool) -> i64;
+        unsafe fn variant_to_string(value: *mut QVariant) -> String;
+        unsafe fn variant_delete(value: *mut QVariant);
+        unsafe fn variant_list_new() -> *mut QVariantList;
+        unsafe fn variant_list_clone(list: *mut QVariantList) -> *mut QVariantList;
+        unsafe fn variant_list_push(list: *mut QVariantList, value: *mut QVariant);
+        unsafe fn variant_list_len(list: *mut QVariantList) -> usize;
+        unsafe fn variant_list_get(list: *mut QVariantList, index: usize) -> *mut QVariant;
+        unsafe fn variant_list_delete(list: *mut QVariantList);
         unsafe fn color_new_rgb(r: i32, g: i32, b: i32, a: i32) -> *mut QColor;
         unsafe fn color_rgba(c: *mut QColor) -> i32;
         unsafe fn color_delete(c: *mut QColor);
@@ -302,7 +368,7 @@ pub mod ffi {
         unsafe fn icon_delete(icon: *mut QIcon);
 
         // QSocketNotifier
-        unsafe fn socket_notifier_new(fd: i32) -> *mut QSocketNotifier;
+        unsafe fn socket_notifier_new(fd: i32, parent: *mut QObject) -> *mut QSocketNotifier;
         unsafe fn socket_notifier_set_enabled(n: *mut QSocketNotifier, on: bool);
 
         // generic paint delegate
@@ -372,11 +438,20 @@ pub mod ffi {
         unsafe fn timer_stop(t: *mut QTimer);
         unsafe fn timer_single_shot(msec: i32, cb_id: usize);
 
-        // QMenu (DMenu typedef in DTK6); actions fire cb_id on triggered
+        // QAction / QMenu (DMenu typedef in DTK6)
+        unsafe fn action_new(text: &str, parent: *mut QObject) -> *mut QAction;
+        unsafe fn action_set_enabled(action: *mut QAction, enabled: bool);
+        unsafe fn action_is_enabled(action: *mut QAction) -> bool;
+        unsafe fn action_set_visible(action: *mut QAction, visible: bool);
+        unsafe fn action_is_visible(action: *mut QAction) -> bool;
+        unsafe fn action_set_text(action: *mut QAction, text: &str);
+        unsafe fn action_text(action: *mut QAction) -> String;
+        unsafe fn action_trigger(action: *mut QAction);
         unsafe fn menu_new(parent: *mut QWidget) -> *mut QMenu;
+        unsafe fn menu_add_existing_action(menu: *mut QMenu, action: *mut QAction);
         unsafe fn menu_add_action_cb(m: *mut QMenu, text: &str, cb_id: usize);
         unsafe fn menu_add_separator(m: *mut QMenu);
-        /// popup at (x, y) in ref widget coords; menu self-deletes on close (WA_DeleteOnClose)
+        /// popup at (x, y) in ref widget coords; menu hides on close
         unsafe fn menu_popup(m: *mut QMenu, ref_: *mut QWidget, x: i32, y: i32);
 
         // signals; connect fns return false on failure (caller must roll back registration)
@@ -396,13 +471,20 @@ pub mod ffi {
     }
 
     extern "Rust" {
+        fn dtk_cb_dispose(id: usize);
         fn dtk_cb0(id: usize);
         fn dtk_cb_i32(id: usize, v: i32);
         fn dtk_cb_bool(id: usize, v: bool);
         fn dtk_cb_i32_i32(id: usize, a: i32, b: i32);
         fn dtk_cb_guard(id: usize) -> bool;
         // DtkPaintWidget event callbacks
-        unsafe fn dtk_cb_pw_paint(id: usize, painter: *mut QPainter, w: i32, h: i32);
+        unsafe fn dtk_cb_pw_paint(
+            id: usize,
+            widget: *mut QWidget,
+            painter: *mut QPainter,
+            w: i32,
+            h: i32,
+        );
         fn dtk_cb_pw_key(
             id: usize,
             key: i32,
@@ -429,11 +511,57 @@ pub mod ffi {
     }
 }
 
+/// Owns a Qt QPointer, not the QObject it watches. Must remain on its Qt thread.
+/// `is_alive()` is safe even after Qt destroys the watched object.
+pub struct ObjectGuard {
+    inner: cxx::UniquePtr<ffi::QObjectGuard>,
+    _not_send: PhantomData<*mut ()>,
+}
+
+impl ObjectGuard {
+    /// # Safety
+    /// `object` must be a live QObject on the current GUI thread. Its
+    /// `QPointer` is invalidated by Qt before emitting `destroyed(QObject*)`.
+    pub unsafe fn from_object(object: *mut ffi::QObject) -> Self {
+        assert!(!object.is_null());
+        let inner = unsafe { ffi::guard_object(object) };
+        assert!(!inner.is_null());
+        Self {
+            inner,
+            _not_send: PhantomData,
+        }
+    }
+
+    /// # Safety
+    /// `widget` must be a live QWidget on the current GUI thread. Qt will
+    /// invalidate the guard when it destroys the object (including via a parent).
+    pub unsafe fn from_widget(widget: *mut ffi::QWidget) -> Self {
+        assert!(!widget.is_null());
+        let inner = unsafe { ffi::guard_widget(widget) };
+        assert!(!inner.is_null());
+        Self {
+            inner,
+            _not_send: PhantomData,
+        }
+    }
+
+    pub fn is_alive(&self) -> bool {
+        self.inner
+            .as_ref()
+            .is_some_and(|guard| unsafe { ffi::guard_alive(guard) })
+    }
+}
+
 // ---- callback registry: Qt signals -> Rust closures ----
-// ponytail: callbacks only fire on the Qt main thread; thread_local is enough, no locks
+// callbacks only fire on the Qt main thread; thread_local is enough, no locks
 /// events delivered to a PaintWidget callback (QPainter valid only during Paint)
 pub enum PwEvent {
-    Paint(*mut ffi::QPainter, i32, i32),
+    Paint {
+        widget: *mut ffi::QWidget,
+        painter: *mut ffi::QPainter,
+        w: i32,
+        h: i32,
+    },
     Key {
         key: i32,
         mods: i32,
@@ -465,21 +593,33 @@ pub enum PwEvent {
     Focus(bool),
 }
 
+/// Borrowed C++ paint data, valid only during the callback invocation.
+pub struct PaintData {
+    pub painter: *mut ffi::QPainter,
+    pub index: *mut ffi::QModelIndex,
+    pub x: i32,
+    pub y: i32,
+    pub w: i32,
+    pub h: i32,
+    pub state: i32,
+}
+
 enum Cb {
     C0(Box<dyn FnMut()>),
+    Once0(Box<dyn FnOnce()>),
     I32(Box<dyn FnMut(i32)>),
     I32I32(Box<dyn FnMut(i32, i32)>),
     Bool(Box<dyn FnMut(bool)>),
     Guard(Box<dyn FnMut() -> bool>),
-    Paint(Box<dyn FnMut(*mut ffi::QPainter, *mut ffi::QModelIndex, i32, i32, i32, i32, i32)>),
+    Paint(Box<dyn FnMut(PaintData)>),
     Pw(Box<dyn FnMut(PwEvent)>),
 }
 
 thread_local! {
     static CALLBACKS: RefCell<HashMap<usize, Cb>> = RefCell::new(HashMap::new());
-    // ids unregistered from inside their own dispatch; dispatch must not resurrect them
-    static TOMBSTONES: RefCell<std::collections::HashSet<usize>> =
-        RefCell::new(std::collections::HashSet::new());
+    // Checked-out callbacks are absent from CALLBACKS. Track only live dispatches,
+    // so unregistering an unknown/already-fired id cannot grow an unbounded tombstone set.
+    static IN_FLIGHT: RefCell<HashMap<usize, bool>> = RefCell::new(HashMap::new());
 }
 
 fn next_id() -> usize {
@@ -491,6 +631,13 @@ fn next_id() -> usize {
 pub fn register_cb0(f: impl FnMut() + 'static) -> usize {
     let id = next_id();
     CALLBACKS.with(|c| c.borrow_mut().insert(id, Cb::C0(Box::new(f))));
+    id
+}
+
+/// A callback that is removed even if it panics when invoked from Qt.
+pub fn register_cb_once(f: impl FnOnce() + 'static) -> usize {
+    let id = next_id();
+    CALLBACKS.with(|c| c.borrow_mut().insert(id, Cb::Once0(Box::new(f))));
     id
 }
 
@@ -524,55 +671,101 @@ pub fn register_cb_guard(f: impl FnMut() -> bool + 'static) -> usize {
     id
 }
 
-pub fn register_cb_paint(
-    f: impl FnMut(*mut ffi::QPainter, *mut ffi::QModelIndex, i32, i32, i32, i32, i32) + 'static,
-) -> usize {
+pub fn register_cb_paint(f: impl FnMut(PaintData) + 'static) -> usize {
     let id = next_id();
     CALLBACKS.with(|c| c.borrow_mut().insert(id, Cb::Paint(Box::new(f))));
     id
 }
 
-/// Remove a callback from the registry and disconnect its Qt-side relay.
-/// Returns false if the id is unknown. Safe to call from inside the callback itself.
-pub fn unregister_cb(id: usize) -> bool {
-    let removed = CALLBACKS.with(|c| c.borrow_mut().remove(&id)).is_some();
-    if !removed {
-        // may be mid-dispatch (callback unregisters itself): block resurrection
-        TOMBSTONES.with(|t| t.borrow_mut().insert(id));
+fn drop_callback(id: usize, cb: Cb) {
+    // A user capture may panic in Drop as well as in the callback itself.
+    if std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| drop(cb))).is_err() {
+        eprintln!("dtk-rs: callback {id} panicked during Drop, swallowed at FFI boundary");
     }
+}
+
+fn remove_callback(id: usize) -> bool {
+    if let Some(cb) = CALLBACKS.with(|c| c.borrow_mut().remove(&id)) {
+        drop_callback(id, cb);
+        true
+    } else {
+        IN_FLIGHT.with(|active| {
+            if let Some(cancelled) = active.borrow_mut().get_mut(&id) {
+                *cancelled = true;
+                true
+            } else {
+                false
+            }
+        })
+    }
+}
+
+/// Remove a callback, including one currently executing. Does not call back into Qt:
+/// Qt invokes this while destroying the owning QObject or relay.
+fn dtk_cb_dispose(id: usize) {
+    remove_callback(id);
+}
+
+/// Remove a callback and disconnect its Qt-side relay. Returns false only for an
+/// unknown/already-disposed id. Safe to call from inside the callback itself.
+pub fn unregister_cb(id: usize) -> bool {
+    let removed = remove_callback(id);
     // no-op for ids without a relay (e.g. timer callbacks)
     unsafe { ffi::relay_disconnect(id) };
     removed
 }
 
-/// Reinsert after dispatch unless the callback unregistered itself mid-call.
-fn finish_dispatch(id: usize, cb: Cb) {
-    let tombstoned = TOMBSTONES.with(|t| t.borrow_mut().remove(&id));
-    if !tombstoned {
-        CALLBACKS.with(|c| c.borrow_mut().insert(id, cb));
+fn begin_dispatch(id: usize) -> Option<Cb> {
+    let cb = CALLBACKS.with(|c| c.borrow_mut().remove(&id));
+    if cb.is_some() {
+        IN_FLIGHT.with(|active| active.borrow_mut().insert(id, false));
+    }
+    cb
+}
+
+/// Reinsert after dispatch unless Qt destroyed its owner or the user unregistered it.
+fn finish_dispatch(id: usize, cb: Option<Cb>) {
+    let cancelled = IN_FLIGHT.with(|active| active.borrow_mut().remove(&id));
+    if let Some(cb) = cb {
+        if cancelled == Some(false) {
+            CALLBACKS.with(|c| c.borrow_mut().insert(id, cb));
+        } else {
+            drop_callback(id, cb);
+        }
     }
 }
 
 // remove-then-call so callbacks can safely (un)register callbacks; put back after.
 // catch_unwind: a panicking Rust callback must never unwind across the FFI boundary (UB).
 fn dtk_cb0(id: usize) {
-    let mut cb = CALLBACKS.with(|c| c.borrow_mut().remove(&id));
-    if let Some(Cb::C0(f)) = &mut cb {
-        if std::panic::catch_unwind(std::panic::AssertUnwindSafe(&mut *f)).is_err() {
-            eprintln!("dtk-rs: callback {id} panicked, swallowed at FFI boundary");
+    let mut cb = begin_dispatch(id);
+    match &mut cb {
+        Some(Cb::C0(f)) => {
+            if std::panic::catch_unwind(std::panic::AssertUnwindSafe(&mut *f)).is_err() {
+                eprintln!("dtk-rs: callback {id} panicked, swallowed at FFI boundary");
+            }
         }
-        finish_dispatch(id, cb.take().unwrap());
+        Some(Cb::Once0(_)) => {
+            let Some(Cb::Once0(f)) = cb.take() else {
+                unreachable!()
+            };
+            if std::panic::catch_unwind(std::panic::AssertUnwindSafe(f)).is_err() {
+                eprintln!("dtk-rs: callback {id} panicked, swallowed at FFI boundary");
+            }
+        }
+        _ => {}
     }
+    finish_dispatch(id, cb);
 }
 
 fn dtk_cb_i32(id: usize, v: i32) {
-    let mut cb = CALLBACKS.with(|c| c.borrow_mut().remove(&id));
-    if let Some(Cb::I32(f)) = &mut cb {
-        if std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| f(v))).is_err() {
-            eprintln!("dtk-rs: callback {id} panicked, swallowed at FFI boundary");
-        }
-        finish_dispatch(id, cb.take().unwrap());
+    let mut cb = begin_dispatch(id);
+    if let Some(Cb::I32(f)) = &mut cb
+        && std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| f(v))).is_err()
+    {
+        eprintln!("dtk-rs: callback {id} panicked, swallowed at FFI boundary");
     }
+    finish_dispatch(id, cb);
 }
 
 thread_local! {
@@ -587,29 +780,52 @@ thread_local! {
 
 fn dispatch_pw(id: usize, ev: PwEvent) {
     if PW_QUEUED.with(|q| q.borrow().contains_key(&id)) {
-        PW_QUEUED.with(|q| q.borrow_mut().get_mut(&id).unwrap().push_back(ev));
+        match ev {
+            // A QPainter is stack-scoped to this nested C++ paintEvent. Never
+            // queue its pointer past the return of that event: schedule a new
+            // paint for a later event-loop turn instead.
+            PwEvent::Paint { widget, .. } => unsafe { ffi::widget_update(widget) },
+            ev => PW_QUEUED.with(|q| {
+                if let Some(queue) = q.borrow_mut().get_mut(&id) {
+                    queue.push_back(ev);
+                }
+            }),
+        }
         return;
     }
     PW_QUEUED.with(|q| q.borrow_mut().insert(id, Default::default()));
-    let mut cb = CALLBACKS.with(|c| c.borrow_mut().remove(&id));
+    let mut cb = begin_dispatch(id);
     let mut next = Some(ev);
-    while let Some(ev) = next.take().or_else(|| {
-        PW_QUEUED.with(|q| q.borrow_mut().get_mut(&id).and_then(|q| q.pop_front()))
-    }) {
-        if let Some(Cb::Pw(f)) = &mut cb {
-            if std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| f(ev))).is_err() {
-                eprintln!("dtk-rs: paint-widget callback {id} panicked, swallowed at FFI boundary");
-            }
+    while let Some(ev) = next
+        .take()
+        .or_else(|| PW_QUEUED.with(|q| q.borrow_mut().get_mut(&id).and_then(|q| q.pop_front())))
+    {
+        if let Some(Cb::Pw(f)) = &mut cb
+            && std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| f(ev))).is_err()
+        {
+            eprintln!("dtk-rs: paint-widget callback {id} panicked, swallowed at FFI boundary");
         }
     }
     PW_QUEUED.with(|q| q.borrow_mut().remove(&id));
-    if let Some(cb) = cb {
-        finish_dispatch(id, cb);
-    }
+    finish_dispatch(id, cb);
 }
 
-unsafe fn dtk_cb_pw_paint(id: usize, painter: *mut ffi::QPainter, w: i32, h: i32) {
-    dispatch_pw(id, PwEvent::Paint(painter, w, h));
+unsafe fn dtk_cb_pw_paint(
+    id: usize,
+    widget: *mut ffi::QWidget,
+    painter: *mut ffi::QPainter,
+    w: i32,
+    h: i32,
+) {
+    dispatch_pw(
+        id,
+        PwEvent::Paint {
+            widget,
+            painter,
+            w,
+            h,
+        },
+    );
 }
 
 fn dtk_cb_pw_key(id: usize, key: i32, mods: i32, text: String, press: bool, autorepeat: bool) {
@@ -655,42 +871,44 @@ fn dtk_cb_pw_focus(id: usize, focus_in: bool) {
 }
 
 fn dtk_cb_bool(id: usize, v: bool) {
-    let mut cb = CALLBACKS.with(|c| c.borrow_mut().remove(&id));
-    if let Some(Cb::Bool(f)) = &mut cb {
-        if std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| f(v))).is_err() {
-            eprintln!("dtk-rs: callback {id} panicked, swallowed at FFI boundary");
-        }
-        finish_dispatch(id, cb.take().unwrap());
+    let mut cb = begin_dispatch(id);
+    if let Some(Cb::Bool(f)) = &mut cb
+        && std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| f(v))).is_err()
+    {
+        eprintln!("dtk-rs: callback {id} panicked, swallowed at FFI boundary");
     }
+    finish_dispatch(id, cb);
 }
 
 fn dtk_cb_i32_i32(id: usize, a: i32, b: i32) {
-    let mut cb = CALLBACKS.with(|c| c.borrow_mut().remove(&id));
-    if let Some(Cb::I32I32(f)) = &mut cb {
-        if std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| f(a, b))).is_err() {
-            eprintln!("dtk-rs: callback {id} panicked, swallowed at FFI boundary");
-        }
-        finish_dispatch(id, cb.take().unwrap());
+    let mut cb = begin_dispatch(id);
+    if let Some(Cb::I32I32(f)) = &mut cb
+        && std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| f(a, b))).is_err()
+    {
+        eprintln!("dtk-rs: callback {id} panicked, swallowed at FFI boundary");
     }
+    finish_dispatch(id, cb);
 }
 
 fn dtk_cb_guard(id: usize) -> bool {
-    let mut cb = CALLBACKS.with(|c| c.borrow_mut().remove(&id));
-    let Some(Cb::Guard(f)) = &mut cb else {
-        eprintln!("dtk-rs: guard callback {id} missing, defaulting to allow");
-        return true;
-    };
-    let result = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(&mut *f)) {
-        Ok(r) => r,
-        Err(_) => {
-            eprintln!("dtk-rs: guard callback {id} panicked, defaulting to allow");
-            true
+    let mut cb = begin_dispatch(id);
+    let result = if let Some(Cb::Guard(f)) = &mut cb {
+        match std::panic::catch_unwind(std::panic::AssertUnwindSafe(&mut *f)) {
+            Ok(r) => r,
+            Err(_) => {
+                eprintln!("dtk-rs: guard callback {id} panicked, defaulting to allow");
+                true
+            }
         }
+    } else {
+        eprintln!("dtk-rs: guard callback {id} missing, defaulting to allow");
+        true
     };
-    finish_dispatch(id, cb.take().unwrap());
+    finish_dispatch(id, cb);
     result
 }
 
+#[allow(clippy::too_many_arguments)] // fixed C++ callback ABI
 unsafe fn dtk_cb_paint(
     id: usize,
     painter: *mut ffi::QPainter,
@@ -701,23 +919,92 @@ unsafe fn dtk_cb_paint(
     h: i32,
     state: i32,
 ) {
-    let mut cb = CALLBACKS.with(|c| c.borrow_mut().remove(&id));
-    if let Some(Cb::Paint(f)) = &mut cb {
-        if std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            f(painter, index, x, y, w, h, state)
+    let mut cb = begin_dispatch(id);
+    if let Some(Cb::Paint(f)) = &mut cb
+        && std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            f(PaintData {
+                painter,
+                index,
+                x,
+                y,
+                w,
+                h,
+                state,
+            })
         }))
         .is_err()
-        {
-            eprintln!("dtk-rs: paint callback {id} panicked, swallowed at FFI boundary");
-        }
-        finish_dispatch(id, cb.take().unwrap());
+    {
+        eprintln!("dtk-rs: paint callback {id} panicked, swallowed at FFI boundary");
     }
+    finish_dispatch(id, cb);
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use std::rc::Rc;
+
+    struct DropCount(Rc<std::cell::Cell<usize>>);
+
+    impl Drop for DropCount {
+        fn drop(&mut self) {
+            self.0.set(self.0.get() + 1);
+        }
+    }
+
+    #[test]
+    fn qt_destruction_during_dispatch_does_not_resurrect_callback() {
+        let drops = Rc::new(std::cell::Cell::new(0));
+        let id_slot = Rc::new(std::cell::Cell::new(0));
+        let probe = DropCount(drops.clone());
+        let slot = id_slot.clone();
+        let id = register_cb0(move || {
+            let _ = &probe;
+            dtk_cb_dispose(slot.get());
+        });
+        id_slot.set(id);
+        dtk_cb0(id);
+        dtk_cb0(id);
+        assert_eq!(drops.get(), 1);
+        assert!(!unregister_cb(id));
+        assert!(!IN_FLIGHT.with(|active| active.borrow().contains_key(&id)));
+    }
+
+    #[test]
+    fn unregister_unknown_id_does_not_accumulate_tombstones() {
+        let before = IN_FLIGHT.with(|active| active.borrow().len());
+        for _ in 0..100 {
+            assert!(!unregister_cb(0));
+            assert!(!unregister_cb(usize::MAX));
+        }
+        assert_eq!(IN_FLIGHT.with(|active| active.borrow().len()), before);
+    }
+
+    #[test]
+    fn one_shot_panics_are_caught_and_closure_is_dropped() {
+        let drops = Rc::new(std::cell::Cell::new(0));
+        let probe = DropCount(drops.clone());
+        let id = register_cb_once(move || {
+            let _ = &probe;
+            panic!("intentional callback panic");
+        });
+        dtk_cb0(id);
+        dtk_cb0(id);
+        assert_eq!(drops.get(), 1);
+        assert!(!unregister_cb(id));
+        assert!(!IN_FLIGHT.with(|active| active.borrow().contains_key(&id)));
+    }
+
+    #[test]
+    fn wrong_signature_does_not_lose_callback() {
+        let calls = Rc::new(std::cell::Cell::new(0));
+        let calls2 = calls.clone();
+        let id = register_cb0(move || calls2.set(calls2.get() + 1));
+        dtk_cb_i32(id, 17);
+        dtk_cb0(id);
+        assert_eq!(calls.get(), 1);
+        assert!(unregister_cb(id));
+    }
 
     #[test]
     fn reentrant_pw_events_are_queued_not_dropped() {

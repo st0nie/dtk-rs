@@ -4,6 +4,7 @@
 
 #include <QCoreApplication>
 #include <QGuiApplication>
+#include <QApplication>
 #include <QHBoxLayout>
 #include <QInputMethod>
 #include <QClipboard>
@@ -43,11 +44,27 @@ public:
 
 namespace dtkrs {
 
+std::unique_ptr<QObjectGuard> guard_object(QObject *object) {
+    return std::make_unique<QObjectGuard>(object);
+}
+std::unique_ptr<QObjectGuard> guard_widget(QWidget *widget) {
+    return guard_object(widget); // C++ adjusts QWidget* to its QObject base
+}
+bool guard_alive(const QObjectGuard &guard) { return !guard.watched.isNull(); }
+
+// Release a Rust closure as soon as the QObject that can invoke it is destroyed.
+// No receiver/context is needed: Qt removes the connection with its sender.
+static void dispose_on_destroy(QObject *owner, size_t cb_id) {
+    QObject::connect(owner, &QObject::destroyed, [cb_id] { dtk_cb_dispose(cb_id); });
+}
+
 // DApplication subclass: event() intercepts QEvent::Quit and asks the Rust guard
 class DtkAppEx : public DApplication {
 public:
     DtkAppEx(int &argc, char **argv, size_t guard_id)
-        : DApplication(argc, argv), m_guard_id(guard_id) {}
+        : DApplication(argc, argv), m_guard_id(guard_id) {
+        dispose_on_destroy(this, guard_id);
+    }
 
     bool event(QEvent *e) override {
         if (e->type() == QEvent::Quit && m_guard_id && !dtk_cb_guard(m_guard_id))
@@ -62,7 +79,10 @@ private:
 // DMainWindow subclass: forwards showEvent/closeEvent to Rust
 class DtkMainWindowEx : public DMainWindow {
 public:
-    DtkMainWindowEx(size_t show_id, size_t close_id) : m_show_id(show_id), m_close_id(close_id) {}
+    DtkMainWindowEx(size_t show_id, size_t close_id) : m_show_id(show_id), m_close_id(close_id) {
+        dispose_on_destroy(this, show_id);
+        dispose_on_destroy(this, close_id);
+    }
 
 protected:
     void showEvent(QShowEvent *e) override {
@@ -88,7 +108,9 @@ private:
 // AppNameDelegate pattern: drawControl(CE_ItemViewItem) with icon/text cleared.
 class RustDelegate : public QStyledItemDelegate {
 public:
-    RustDelegate(size_t cb_id, QObject *parent) : QStyledItemDelegate(parent), m_cb_id(cb_id) {}
+    RustDelegate(size_t cb_id, QObject *parent) : QStyledItemDelegate(parent), m_cb_id(cb_id) {
+        dispose_on_destroy(this, cb_id);
+    }
 
     void paint(QPainter *p, const QStyleOptionViewItem &opt, const QModelIndex &idx) const override {
         // Paint the default item background/selection via the widget style so
@@ -173,6 +195,7 @@ public:
 class DtkPaintWidget : public QWidget {
 public:
     DtkPaintWidget(size_t cb_id, QWidget *parent) : QWidget(parent), m_cb_id(cb_id) {
+        dispose_on_destroy(this, cb_id);
         setFocusPolicy(Qt::StrongFocus);
         setAttribute(Qt::WA_InputMethodEnabled);
         setMouseTracking(true);
@@ -196,7 +219,7 @@ public:
 protected:
     void paintEvent(QPaintEvent *) override {
         QPainter p(this);
-        dtk_cb_pw_paint(m_cb_id, &p, width(), height());
+        dtk_cb_pw_paint(m_cb_id, this, &p, width(), height());
     }
     void keyPressEvent(QKeyEvent *e) override {
         dtk_cb_pw_key(m_cb_id, e->key(), static_cast<int32_t>(e->modifiers()),
@@ -257,15 +280,23 @@ private:
 // ---- DApplication ----
 // QApplication requires argc AND argv to outlive the app (Qt6 stores int& argc):
 // static storage, filled on first call (QApplication is a singleton anyway)
-static std::pair<int &, char **> make_argv(rust::Str name, rust::Str args) {
+static std::pair<int &, char **> make_argv(rust::Str name, rust::Vec<uint8_t> bytes,
+                                           rust::Vec<size_t> lengths) {
     static std::vector<std::string> store;
     static std::vector<char *> argv;
     static int argc;
     if (!store.empty()) // QApplication singleton: second call reuses the first argv
         return {argc, argv.data()};
-    // args joined with U+001F (unit separator): cannot appear in real argv, unlike '|'
-    for (const auto &a : from_rust_str(args).split(QLatin1Char('\x1f'), Qt::SkipEmptyParts))
-        store.push_back(a.toStdString());
+    size_t offset = 0;
+    for (const size_t length : lengths) {
+        if (length > bytes.size() - offset) // malformed FFI input; never read outside the buffer
+            break;
+        if (length)
+            store.emplace_back(reinterpret_cast<const char *>(bytes.data() + offset), length);
+        else
+            store.emplace_back(); // an empty argv entry is valid and must be kept
+        offset += length;
+    }
     if (store.empty())
         store.emplace_back(name.data(), name.size());
     for (auto &s : store)
@@ -275,18 +306,27 @@ static std::pair<int &, char **> make_argv(rust::Str name, rust::Str args) {
     return {argc, argv.data()};
 }
 
-DApplication *application_new(rust::Str name, rust::Str args) {
-    auto [argc, argv] = make_argv(name, args);
+DApplication *application_new(rust::Str name, rust::Vec<uint8_t> bytes,
+                              rust::Vec<size_t> lengths) {
+    if (QCoreApplication::instance())
+        return nullptr; // Qt permits only one QApplication per process at a time
+    auto [argc, argv] = make_argv(name, std::move(bytes), std::move(lengths));
     auto *app = new DApplication(argc, argv);
     app->setApplicationName(from_rust_str(name));
     return app;
 }
 
+bool application_is_gui() {
+    return qobject_cast<QApplication *>(QCoreApplication::instance()) != nullptr;
+}
 int32_t application_exec(DApplication *app) { return app->exec(); }
 void application_quit() { QCoreApplication::quit(); }
 
-DApplication *application_new_ex(rust::Str name, rust::Str args, size_t quit_guard_id) {
-    auto [argc, argv] = make_argv(name, args);
+DApplication *application_new_ex(rust::Str name, rust::Vec<uint8_t> bytes,
+                                 rust::Vec<size_t> lengths, size_t quit_guard_id) {
+    if (QCoreApplication::instance())
+        return nullptr;
+    auto [argc, argv] = make_argv(name, std::move(bytes), std::move(lengths));
     auto *app = new DtkAppEx(argc, argv, quit_guard_id);
     app->setApplicationName(from_rust_str(name));
     return app;
@@ -303,15 +343,26 @@ bool application_has_arg(rust::Str arg) {
     return QCoreApplication::arguments().contains(from_rust_str(arg));
 }
 
-// ---- QMenu ----
+// ---- QAction / QMenu ----
+QAction *action_new(rust::Str text, QObject *parent) {
+    return new QAction(from_rust_str(text), parent);
+}
+void action_set_enabled(QAction *action, bool enabled) { action->setEnabled(enabled); }
+bool action_is_enabled(QAction *action) { return action->isEnabled(); }
+void action_set_visible(QAction *action, bool visible) { action->setVisible(visible); }
+bool action_is_visible(QAction *action) { return action->isVisible(); }
+void action_set_text(QAction *action, rust::Str text) { action->setText(from_rust_str(text)); }
+rust::String action_text(QAction *action) { return to_rust_string(action->text()); }
+void action_trigger(QAction *action) { action->trigger(); }
 QMenu *menu_new(QWidget *parent) { return new QMenu(parent); }
+void menu_add_existing_action(QMenu *menu, QAction *action) { menu->addAction(action); }
 void menu_add_action_cb(QMenu *m, rust::Str text, size_t cb_id) {
     QAction *a = m->addAction(from_rust_str(text));
+    dispose_on_destroy(a, cb_id);
     QObject::connect(a, &QAction::triggered, m, [cb_id] { dtk_cb0(cb_id); });
 }
 void menu_add_separator(QMenu *m) { m->addSeparator(); }
 void menu_popup(QMenu *m, QWidget *ref, int32_t x, int32_t y) {
-    m->setAttribute(Qt::WA_DeleteOnClose);
     m->popup(ref->mapToGlobal(QPoint(x, y)));
 }
 
@@ -591,7 +642,10 @@ void table_set_horizontal_header_labels(QTableWidget *t, rust::Str joined) {
     t->setHorizontalHeaderLabels(from_rust_str(joined).split(QLatin1Char('|')));
 }
 void table_set_cell_text(QTableWidget *t, int32_t row, int32_t col, rust::Str text) {
-    t->setItem(row, col, new QTableWidgetItem(from_rust_str(text)));
+    if (auto *item = t->item(row, col))
+        item->setText(from_rust_str(text)); // preserve UserRole, icon, foreground, etc.
+    else
+        t->setItem(row, col, new QTableWidgetItem(from_rust_str(text)));
 }
 void table_set_cell_data(QTableWidget *t, int32_t row, int32_t col, int64_t data) {
     if (auto *item = t->item(row, col))
@@ -645,6 +699,34 @@ void table_set_delegate_for_column(QTableWidget *t, int32_t col, QStyledItemDele
     t->setItemDelegateForColumn(col, delegate);
 }
 
+// ---- QAbstractItemModel ----
+QStandardItemModel *standard_item_model_new(QObject *parent) {
+    return new QStandardItemModel(parent);
+}
+void standard_item_model_set_column_count(QStandardItemModel *model, int32_t count) {
+    model->setColumnCount(count);
+}
+QAbstractItemModel *standard_item_model_as_model(QStandardItemModel *model) {
+    return static_cast<QAbstractItemModel *>(model);
+}
+void model_set_parent(QAbstractItemModel *model, QObject *parent) { model->setParent(parent); }
+int32_t model_row_count(QAbstractItemModel *model) { return model->rowCount(); }
+int32_t model_column_count(QAbstractItemModel *model) { return model->columnCount(); }
+QVariant *model_data(QAbstractItemModel *model, int32_t row, int32_t col, int32_t role) {
+    const QModelIndex index = model->index(row, col);
+    return new QVariant(index.isValid() ? model->data(index, role) : QVariant());
+}
+bool model_set_data(QAbstractItemModel *model, int32_t row, int32_t col, QVariant *data, int32_t role) {
+    const QModelIndex index = model->index(row, col);
+    return index.isValid() && model->setData(index, *data, role);
+}
+bool model_insert_rows(QAbstractItemModel *model, int32_t row, int32_t count) {
+    return model->insertRows(row, count);
+}
+bool model_remove_rows(QAbstractItemModel *model, int32_t row, int32_t count) {
+    return model->removeRows(row, count);
+}
+
 // ---- QTableWidgetItem ----
 void item_set_icon(QTableWidgetItem *it, QIcon *icon) { it->setIcon(*icon); }
 void item_set_text_alignment(QTableWidgetItem *it, int32_t alignment) {
@@ -661,6 +743,29 @@ void item_set_data_bool(QTableWidgetItem *it, int32_t role, bool value) { it->se
 bool item_data_bool(QTableWidgetItem *it, int32_t role) { return it->data(role).toBool(); }
 
 // ---- value types ----
+QVariant *variant_new() { return new QVariant; }
+QVariant *variant_from_bool(bool value) { return new QVariant(value); }
+QVariant *variant_from_i64(int64_t value) {
+    return new QVariant(QVariant::fromValue<qint64>(value));
+}
+QVariant *variant_from_f64(double value) { return new QVariant(value); }
+QVariant *variant_from_string(rust::Str value) { return new QVariant(from_rust_str(value)); }
+QVariant *variant_clone(QVariant *value) { return new QVariant(*value); }
+bool variant_is_valid(QVariant *value) { return value->isValid(); }
+bool variant_to_bool(QVariant *value) { return value->toBool(); }
+int64_t variant_to_i64(QVariant *value, bool *ok) { return value->toLongLong(ok); }
+rust::String variant_to_string(QVariant *value) { return to_rust_string(value->toString()); }
+void variant_delete(QVariant *value) { delete value; }
+QVariantList *variant_list_new() { return new QVariantList; }
+QVariantList *variant_list_clone(QVariantList *list) { return new QVariantList(*list); }
+void variant_list_push(QVariantList *list, QVariant *value) { list->append(*value); }
+size_t variant_list_len(QVariantList *list) { return static_cast<size_t>(list->size()); }
+QVariant *variant_list_get(QVariantList *list, size_t index) {
+    if (index >= static_cast<size_t>(list->size()))
+        return nullptr;
+    return new QVariant(list->at(static_cast<qsizetype>(index)));
+}
+void variant_list_delete(QVariantList *list) { delete list; }
 QColor *color_new_rgb(int32_t r, int32_t g, int32_t b, int32_t a) { return new QColor(r, g, b, a); }
 int32_t color_rgba(QColor *c) { return static_cast<int32_t>(c->rgba()); }
 void color_delete(QColor *c) { delete c; }
@@ -725,8 +830,8 @@ int32_t rect_y(QRect *r) { return r->y(); }
 void icon_delete(QIcon *icon) { delete icon; }
 
 // ---- QSocketNotifier ----
-QSocketNotifier *socket_notifier_new(int32_t fd) {
-    return new QSocketNotifier(fd, QSocketNotifier::Read);
+QSocketNotifier *socket_notifier_new(int32_t fd, QObject *parent) {
+    return new QSocketNotifier(fd, QSocketNotifier::Read, parent);
 }
 void socket_notifier_set_enabled(QSocketNotifier *n, bool on) { n->setEnabled(on); }
 
@@ -784,7 +889,21 @@ QTimer *timer_new(QObject *parent) { return new QTimer(parent); }
 void timer_start(QTimer *t, int32_t msec) { t->start(msec); }
 void timer_stop(QTimer *t) { t->stop(); }
 void timer_single_shot(int32_t msec, size_t cb_id) {
-    QTimer::singleShot(msec, QCoreApplication::instance(), [cb_id] { dtk_cb0(cb_id); });
+    auto *app = QCoreApplication::instance();
+    if (!app) {
+        dtk_cb_dispose(cb_id); // no event loop to deliver the timer
+        return;
+    }
+    // Own the timer explicitly: Qt cancels it when the application is destroyed,
+    // and its destroyed signal also releases an unfired Rust callback.
+    auto *timer = new QTimer(app);
+    timer->setSingleShot(true);
+    dispose_on_destroy(timer, cb_id);
+    QObject::connect(timer, &QTimer::timeout, timer, [timer, cb_id] {
+        dtk_cb0(cb_id);
+        timer->deleteLater();
+    });
+    timer->start(msec);
 }
 
 // ---- DtkPaintWidget factory + clipboard + shortcuts ----
@@ -810,6 +929,7 @@ rust::String clipboard_text(int32_t mode) {
 
 void shortcut_new(QWidget *parent, rust::Str key, size_t cb_id) {
     auto *sc = new QShortcut(QKeySequence(from_rust_str(key)), parent);
+    dispose_on_destroy(sc, cb_id);
     QObject::connect(sc, &QShortcut::activated, sc, [cb_id] { dtk_cb0(cb_id); });
 }
 

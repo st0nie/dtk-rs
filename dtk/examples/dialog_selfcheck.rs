@@ -46,7 +46,7 @@ fn _dmessagebox_usage(show: bool) {
 }
 
 fn _messagemanager_usage() {
-    let _mm = DMessageManager::instance();
+    let _mm = DMessageManager::instance().expect("DTK message manager unavailable");
     let _margins = QMargins::new(10, 10, 10, 10);
     let _dci = DDciIcon::new();
     let _dci2 = DDciIcon::from_file("/usr/share/dsg/icons/example.dci");

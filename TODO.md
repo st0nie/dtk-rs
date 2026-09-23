@@ -2,17 +2,81 @@
 
 Known gaps in dtk-rs, roughly in priority order.
 
-## Blocking deepin-liferaft RIIR
+## Safety/ownership (blocking a fully safe public API)
 
-(none — all APIs liferaft needs are bound)
+- [x] Fail before entering Qt GUI constructors without `DApplication`, including
+      generated QWidget/QObject, timers, menus, clipboard and QPixmap; QtCore
+      `QVariant` still works first (`no_application_selfcheck`).
+- [x] Replace generated QWidget/QObject and hand core widget/timer/notifier/
+      delegate/layout `Copy` raw handles with `Clone` views sharing a Qt QPointer.
+      Generated methods, widget operations and signal traits check liveness
+      before entering FFI; C++ static_cast adjusts generated base pointers.
+      `lifetime_selfcheck` rejects use after parent destruction.
+- [ ] Finish the remaining lifetime/FFI audit: `DApplication` is not RAII,
+      non-QObject borrowed returns still have no liveness guard, and native Qt
+      calls may reentrantly delete objects *after* a guard check. A public
+      method must not become sound solely because QPointer was checked earlier.
+- [x] Split 18 generated non-QObject constructors (including `DPrinter`,
+      `DStyleOptionButton`, `DFileIconProvider`) into `OwnedOpaque<T>` with a
+      generated C++ deleter in `Drop`. Getter results such as `globalProvider()`
+      remain borrowed and are never deleted by Rust; the owning wrappers are not
+      `Copy` and cannot be moved out of their `Deref` view.
+- [ ] Define and enforce ownership transfer for top-level widgets, layouts,
+      delegates and generated pointer returns; unparented top-level QObject/
+      QWidget allocations are **not** freed by QApplication automatically.
+      `QTableWidgetItem*` was removed from the safe API: `TableCell` re-resolves
+      (row,col) on every call, but a full item identity/lifetime design is still
+      needed for pointer-oriented Qt model APIs.
+- [ ] Restrict event-scoped `Painter`/`ModelIndex` views to the callback lifetime;
+      audit borrowed handles and reentrant deletion before claiming Rust safety.
+- [ ] Make QApplication creation/destruction a genuine singleton RAII contract,
+      including cleanup of unparented objects and event-loop shutdown semantics.
 
-## Coverage gaps (see GEN_REPORT.md for per-method detail)
+## Qt/DTK feature coverage (see GEN_REPORT.md for per-method detail)
 
-- [ ] Qt container types: `QList<T>`/`QVector<T>`/`QMap`/`QVariant` in signatures
-      (e.g. `DDrawerGroup::addWidget`, `DSimpleListView` item lists). Map to `Vec<T>` + shim conversion.
-      (`QStringList` done: maps to `Vec<String>`.)
-- [ ] Qt classes beyond `QWidget`/`QAbstractButton` as param/return: `QBoxLayout*`, `QAction*`, `QPrinter*`,
-      `QAbstractItemModel*`... Fix: declare each in both bridges and cast like `QWidget` (QT_PTRS in gen.py).
+- [ ] Integrate CXX-Qt where it adds verified value: imported QObject methods,
+      typed signals/properties and Rust-defined QObject subclasses, while keeping
+      DTK-specific API in this crate. A local DTK `DSwitchButton` probe verified
+      `checkedChanged(bool)`, RAII disconnect, and callback cleanup on Qt deletion
+      with CXX-Qt 0.10.0 + Qt 6.8. On Rust 1.97 the bridge macro fails in edition
+      2024 but compiles in edition 2021. **Do not** convert a current guarded
+      `Clone` handle into `Pin<&mut DSwitchButton>` from safe `&self`: that
+      fabricates an exclusive borrow and can alias reentrant callbacks even
+      though QPointer now detects destruction. Migrate only after a verified
+      ownership/borrowing redesign;
+      CXX-Qt's Threading helper still does not cover imported QObject types.
+- [ ] Build a coherent QObject/QtWidgets API (action, menu, model/view, layout,
+      event filters, rendering, properties) rather than only isolated shim calls;
+      support the use cases required by arbitrary DTK applications.
+- [ ] Add QtCore/Gui modules and typed signals/slots plus cross-bridge object
+      hierarchy, not only the currently hand-picked QWidget subset.
+
+- [x] `QVariant` value-type signatures use owned heap copies; DTK tab data
+      roundtrips strings (including NUL) and 64-bit integers (`variant_selfcheck`).
+- [x] `QVariantList` is an owned, implicitly shared Qt container bound through
+      generated `DListView::addItems`/`insertItems` (`variant_selfcheck`).
+- [x] Generated null-model guards prevent native DTK `DListView::addItems()`
+      from SIGSEGVing inside `count()` before a model is installed; safe Rust
+      returns false/0 (`variant_selfcheck` and GDB-verified original crash).
+- [x] Reject DListView item mutation when a model has zero columns. Native
+      addItems returned true/incremented rows while `(row,0)` remained invalid;
+      generated shims now return false (`model_selfcheck`).
+- [ ] Other Qt containers `QList<T>`/`QVector<T>`/`QMap` remain unsupported
+      (e.g. `DDrawerGroup::addWidget`, `DSimpleListView` item lists). Map only
+      when element ownership and QVariant semantics remain intact.
+      (`QStringList` maps to `Vec<String>`; `QVariantList` is an owned Qt value.)
+- [x] `QLayout*` params use guarded `QLayout` base views; Qt adopts inserted
+      child layouts and destroys them with `DFlowLayout` (`layout_selfcheck`).
+- [x] `QAction*` maps across both bridges; `QAction::new` requires an owner,
+      `DMenu::add_action_object` retains the native QObject parent, and
+      `action_selfcheck` verifies signals and callback cleanup on deletion.
+- [x] `QAbstractItemModel*` now maps through C++ upcasts from DTK models;
+      `model_selfcheck` verifies DListView data and Qt parent ownership.
+- [x] `QBoxLayout*` getters return guarded, nullable views; deleting `DBaseLine`
+      invalidates its layout and content handles (`layout_selfcheck`).
+- [ ] Qt classes beyond `QWidget`/`QAbstractButton`/`QLayout`/`QBoxLayout`/
+      `QAction`/`QAbstractItemModel`: `QPrinter*`, ... Declare each in both
+      bridges and preserve QObject/ownership semantics (QT_PTRS).
 - [x] Multi-line method signatures: fixed — gen.py joins continuation lines,
       strips `inline`/`Q_SLOT` prefixes, and skips ctor init lists / inline bodies.
       Parse failures down from 86 to ~4 (remainder are genuinely unbindable).
@@ -20,8 +84,9 @@ Known gaps in dtk-rs, roughly in priority order.
       parser registers their enums but can't bind the classes themselves.
 - [ ] `Q_ENUM`-exposed enum *values*: we map enums to bare i32 today and hand-maintain
       `dtk::qt` constants. gen.py could scrape enum bodies and emit Rust consts automatically.
-- [ ] Painting/model APIs intentionally skipped: `QPainter*`/`QStyle*` params, `QVariant`,
-      `QModelIndex`, `QAbstractItemModel*` — need a real QVariant/model mapping, low Rust-side value.
+- [ ] Painting/model APIs skipped: `QPainter*`/`QStyle*` params, `QVariant`,
+      `QModelIndex`, `QAbstractItemModel*` — need a real QVariant/model mapping
+      and ownership-aware model/view integration for full application coverage.
 - [ ] Value types not yet wrapped: `QImage`, `QPainterPath`, `QBrush`, `QEasingCurve`,
       `QKeySequence`, `QUrl` — each is one shim pair + VALUE_TYPES entry.
 
@@ -32,12 +97,19 @@ Known gaps in dtk-rs, roughly in priority order.
 
 ## Hygiene
 
+- [x] Classify generated DTK classes by transitive QWidget/QObject/opaque
+      ancestry; never cast an arbitrary Q*/D* subclass to QWidget. Nullable
+      pointer getters now use Option<T> instead of panicking on nullptr.
+- [x] Hide Linux worker → GUI wakeup machinery behind `GuiSender<T: Send>`;
+      coalesce wakeups, bound GUI dispatch and release the receiver with its Qt owner.
 - [x] Value-type wrappers (QColor/QFont/QPalette/QPixmap/QSize/QPoint/QRect, QIcon):
       fixed — `Drop` calls a shim `*_delete` fn; no more intentional leak.
 - [x] Callback registry: fixed — `unregister_cb`/`dtk::unregister_callback(id)` exists,
       `connect_signal*` returns the id, and `QTimer::single_shot` self-cleans.
-      unregister now also disconnects + deleteLater's the Qt-side DtkRelay;
-      dispatchers catch_unwind (no panic across FFI) and respect self-unregister.
+      Object destruction now releases callbacks from relays, actions, shortcuts,
+      paint widgets/delegates and event overrides; in-flight cancellation prevents
+      resurrection and unknown ids cannot grow tombstones. One-shots are `FnOnce`
+      and clean up on panic/cancellation. This does **not** make raw handles safe.
 - [x] `qtptr` cross-bridge cast (`as _`): audited — sound. cxx opaque C++ types are
       zero-sized Rust structs never dereferenced in Rust; both bridge modules name
       the same C++ type (`using ::QWidget;` in namespace dtkrs). The cast moves no

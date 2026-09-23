@@ -1,10 +1,12 @@
 # DTK6 widget binding coverage report
 
-classes: 146, methods generated: 943, skipped: 245
+classes: 146, methods generated: 960, skipped: 228
+
+Qt ancestry: 85 widgets, 26 QObjects, 35 opaque types
 
 ## skip reasons
-- unsupported param type: 164
-- unsupported return type: 77
+- unsupported param type: 153
+- unsupported return type: 71
 - signature parse failed: 4
 
 ## DAboutDialog — 19 methods generated, 0 skipped
@@ -38,14 +40,11 @@ classes: 146, methods generated: 943, skipped: 245
 
 ## DArrowRectangle — 39 methods generated, 0 skipped
 
-## DBackgroundGroup — 5 methods generated, 3 skipped
-- `void setLayout(QLayout *layout);` ← unsupported param type: QLayout *
+## DBackgroundGroup — 6 methods generated, 2 skipped
 - `void setBackgroundRole(QPalette::ColorRole role);` ← unsupported param type: QPalette::ColorRole
 - `QPalette::ColorRole backgroundRole() const;` ← unsupported return type: QPalette::ColorRole
 
-## DBaseLine — 6 methods generated, 2 skipped
-- `QBoxLayout *leftLayout();` ← unsupported return type: QBoxLayout *
-- `QBoxLayout *rightLayout();` ← unsupported return type: QBoxLayout *
+## DBaseLine — 8 methods generated, 0 skipped
 
 ## DBlurEffectWidget — 19 methods generated, 3 skipped
 - `void setMaskPath(const QPainterPath &path);` ← unsupported param type: const QPainterPath &
@@ -61,9 +60,8 @@ classes: 146, methods generated: 943, skipped: 245
 ## DBounceAnimation — 1 methods generated, 1 skipped
 - `void setAnimationTarget(QAbstractScrollArea *w);` ← unsupported param type: QAbstractScrollArea *
 
-## DBoxWidget — 2 methods generated, 3 skipped
+## DBoxWidget — 3 methods generated, 2 skipped
 - `QBoxLayout::Direction direction() const;` ← unsupported return type: QBoxLayout::Direction
-- `QBoxLayout *layout() const;` ← unsupported return type: QBoxLayout *
 - `void setDirection(QBoxLayout::Direction direction);` ← unsupported param type: QBoxLayout::Direction
 
 ## DHBoxWidget — 0 methods generated, 0 skipped
@@ -146,9 +144,8 @@ classes: 146, methods generated: 943, skipped: 245
 
 ## DFloatingWidget — 7 methods generated, 0 skipped
 
-## DFlowLayout — 17 methods generated, 9 skipped
+## DFlowLayout — 18 methods generated, 8 skipped
 - `void insertItem(int index, QLayoutItem *item);` ← unsupported param type: QLayoutItem *
-- `void insertLayout(int index, QLayout *layout);` ← unsupported param type: QLayout *
 - `void insertSpacerItem(int index, QSpacerItem *spacerItem);` ← unsupported param type: QSpacerItem *
 - `void addSpacerItem(QSpacerItem *spacerItem);` ← unsupported param type: QSpacerItem *
 - `void addItem(QLayoutItem *item);` ← unsupported param type: QLayoutItem *
@@ -210,25 +207,19 @@ classes: 146, methods generated: 943, skipped: 245
 
 ## DVariantListModel — 0 methods generated, 5 skipped
 - `int rowCount(const QModelIndex &parent = QModelIndex()) const;` ← unsupported param type: const QModelIndex &
-- `QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;` ← unsupported return type: QVariant
+- `QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;` ← unsupported param type: const QModelIndex &
 - `bool setData(const QModelIndex &index, const QVariant &value, int role);` ← unsupported param type: const QModelIndex &
 - `bool insertRows(int row, int count, const QModelIndex &parent = QModelIndex());` ← unsupported param type: const QModelIndex &
 - `bool removeRows(int row, int count, const QModelIndex &parent = QModelIndex());` ← unsupported param type: const QModelIndex &
 
-## DListView — 23 methods generated, 8 skipped
+## DListView — 28 methods generated, 3 skipped
 - `State state() const;` ← unsupported return type: State
-- `void setModel(QAbstractItemModel *model);` ← unsupported param type: QAbstractItemModel *
-- `bool addItem(const QVariant &data);` ← unsupported param type: const QVariant &
-- `bool addItems(const QVariantList &datas);` ← unsupported param type: const QVariantList &
-- `bool insertItem(int index, const QVariant &data);` ← unsupported param type: const QVariant &
-- `bool insertItems(int index, const QVariantList &datas);` ← unsupported param type: const QVariantList &
 - `void setOrientation(QListView::Flow flow, bool wrapping);` ← unsupported param type: QListView::Flow
 - `void edit(const QModelIndex &index);` ← unsupported param type: const QModelIndex &
 
-## DLoadingIndicator — 18 methods generated, 4 skipped
+## DLoadingIndicator — 19 methods generated, 3 skipped
 - `QEasingCurve::Type aniEasingType() const;` ← unsupported return type: QEasingCurve::Type
 - `void setAniEasingCurve(const QEasingCurve & easing);` ← unsupported param type: const QEasingCurve &
-- `void setRotate(QVariant angle);` ← unsupported param type: QVariant
 - `void setAniEasingType(QEasingCurve::Type aniEasingType);` ← unsupported param type: QEasingCurve::Type
 
 ## DMessageManager — 5 methods generated, 0 skipped
@@ -261,9 +252,7 @@ classes: 146, methods generated: 943, skipped: 245
 
 ## DPrintPickColorWidget — 6 methods generated, 0 skipped
 
-## DPrintPreviewDialog — 11 methods generated, 4 skipped
-- `static void setPluginMimeData(const QVariant &mimeData);` ← unsupported param type: const QVariant &
-- `static QVariant pluginMimeData();` ← unsupported return type: QVariant
+## DPrintPreviewDialog — 13 methods generated, 2 skipped
 - `virtual bool event(QEvent *event) override;` ← unsupported param type: QEvent *
 - `bool eventFilter(QObject *watched, QEvent *event) override;` ← unsupported param type: QObject *
 
@@ -293,9 +282,7 @@ classes: 146, methods generated: 943, skipped: 245
 
 ## DPrintPreviewWatermarkInfo — 0 methods generated, 0 skipped
 
-## DPrintPreviewSettingInterface — 1 methods generated, 2 skipped
-- `inline virtual bool settingFilter(const QVariant &mimeData, DPrintPreviewSetting` ← unsupported param type: const QVariant &
-- `inline virtual SettingStatus settingStatus(const QVariant &mimeData, SettingSubC` ← unsupported param type: const QVariant &
+## DPrintPreviewSettingInterface — 3 methods generated, 0 skipped
 
 ## DPrinter — 1 methods generated, 1 skipped
 - `QList<const QPicture *> getPrinterPages();` ← unsupported return type: QList<const QPicture *>
@@ -491,9 +478,7 @@ classes: 146, methods generated: 943, skipped: 245
 
 ## DSwitchLineExpand — 3 methods generated, 0 skipped
 
-## DTabBar — 63 methods generated, 3 skipped
-- `void setTabData(int index, const QVariant &data);` ← unsupported param type: const QVariant &
-- `QVariant tabData(int index) const;` ← unsupported return type: QVariant
+## DTabBar — 65 methods generated, 1 skipped
 - `QWindow *dragIconWindow() const;` ← unsupported return type: QWindow *
 
 ## DTabletWindowOptionButton — 1 methods generated, 0 skipped

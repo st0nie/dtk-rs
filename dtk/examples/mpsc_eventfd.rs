@@ -74,7 +74,7 @@ fn main() {
     let paused = Arc::new(AtomicBool::new(false));
 
     // GUI side: notifier fires on eventfd → drain channel, update widgets.
-    let notifier = QSocketNotifier::new(fd);
+    let notifier = QSocketNotifier::new(fd, &win);
     {
         let status = status.clone();
         let bar = bar.clone();
@@ -138,7 +138,6 @@ fn main() {
             });
         }
     }
-    notifier.leak();
 
     // control channel GUI → worker: plain atomics are enough for start/cancel
     let running = Arc::new(AtomicBool::new(false));

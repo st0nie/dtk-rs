@@ -9,10 +9,10 @@ Three layers plus a header-scanning generator:
 
 ```
 ┌────────────────────────────────────────────────────────────────┐
-│ dtk/            safe layer (pure Rust, no unsafe in app code)  │
+│ dtk/            Rust-facing API (raw-handle safety unfinished)  │
 │   src/lib.rs      hand-written: core classes, macros, signals  │
-│   src/widgets.rs  GENERATED: ~60 DTK class wrappers            │
-│   ↑ raw-pointer structs, non-owning, !Send                     │
+│   src/widgets.rs  GENERATED: 146 DTK class wrappers            │
+│   ↑ guarded QObject views, non-owning, !Send                   │
 ├────────────────────────────────────────────────────────────────┤
 │ cxx::bridge #1  dtk-sys/src/lib.rs      hand-written core      │
 │ cxx::bridge #2  dtk-sys/src/gen_ffi.rs  GENERATED (~100 types) │
@@ -28,8 +28,8 @@ Three layers plus a header-scanning generator:
 │ dtk6widget / Qt6   (pkg-config link, moc for relay.h)          │
 └────────────────────────────────────────────────────────────────┘
 
-tools/gen.py  scans /usr/include/dtk6/DWidget/*.h and regenerates
-              the four files marked GENERATED (+ GEN_REPORT.md)
+tools/gen.py  scans /usr/include/dtk6/DWidget/*.h, classifies Qt ancestry,
+              and regenerates the four GENERATED files (+ GEN_REPORT.md)
 ```
 
 ## Why a C++ shim at all
@@ -168,17 +168,26 @@ Base-class Qt methods (e.g. `QProgressBar::setValue`) are not in DTK headers,
 so the generator never sees them — they're added by hand to shim.cpp /
 bridge #1 when needed (e.g. `impl widgets::DProgressBar` in dtk/src/lib.rs).
 
-## Type mapping
+## Type mapping and inheritance
 
-| C++ | crosses the bridge as | Rust safe side |
+Classified using the transitive Qt base hierarchy from the headers: 85 QWidget
+subclasses, 26 QObject subclasses without QWidget, 35 non-QObject opaque
+classes. Only the first category gets `as_widget`/QWidget operations; only the
+first two get QObject signal operations. A prefix-based guess previously gave
+`DPrinter` and `DStylePainter` invalid QWidget casts. Generated DTK/Qt
+pointer getters return `Option<Wrapper>` (e.g. an empty stack has no current
+widget) rather than panicking on Qt's null. This classification is checked by
+`python3 -m unittest tools.test_gen` and reflected in GEN_REPORT.md.
+
+| C++ | crosses the bridge as | Rust-facing type |
 |---|---|---|
 | `QString` | `rust::Str` (in) / `rust::String` (out) | `&str` / `String` |
 | `int`/`qint32`, `bool`, `qreal`… | `int32_t`, `bool`, `double`… | `i32`, `bool`, `f64`… |
 | enums | `int32_t` + `static_cast` | `i32`; constants in `dtk::qt` |
 | `QFlags` (e.g. `Qt::Alignment`) | `int32_t` + `fromInt`/`toInt` | `i32` |
-| value types (`QColor`, `QFont`, `QPixmap`, `QIcon`, `QPalette`, `QSize`, `QPoint`, `QRect`, `QMargins`, `DDciIcon`) | owning heap pointer | wrapper with `Drop` → shim `*_delete` |
-| `QWidget*` / DTK class pointers | opaque pointer | non-owning wrapper struct |
-| `QList<T>`, `QVariant`, `QAction*`, … | — | **unmapped → skipped** (GEN_REPORT.md, TODO.md) |
+| value types (`QColor`, `QFont`, `QPixmap`, `QIcon`, `QPalette`, `QSize`, `QPoint`, `QRect`, `QMargins`, `QVariant`, `QVariantList`, `DDciIcon`) | owning heap pointer | wrapper with `Drop` → shim `*_delete` |
+| `QWidget*` / `QLayout*` / `QBoxLayout*` / `QAction*` / `QAbstractItemModel*` / DTK class pointers | opaque pointer | guarded non-owning QObject view |
+| other `QList<T>`/`QMap`, `QPrinter*`, … | — | **unmapped → skipped** (GEN_REPORT.md, TODO.md) |
 
 Two bridges, one namespace: bridge #1 (hand, core) and #2 (generated, bulk)
 both declare opaque types in `namespace dtkrs`. Only `QWidget*` and a fixed
@@ -192,16 +201,16 @@ The audit is recorded in tools/gen.py comments.
 No per-signal glue code. Any signal on any QObject can be connected at runtime:
 
 ```rust
-btn.connect_signal("clicked()", || { ... });
+btn.connect_signal("clicked(bool)", || { ... });
 table.connect_signal_i32("currentRowChanged(int)", |row| { ... });
 ```
 
 Mechanism:
 
 ```
-Rust:  connect_signal("clicked()", f)
+Rust:  connect_signal("clicked(bool)", f)
          1. register_cb0(f) → id      closure boxed into thread_local HashMap<usize, Cb>
-         2. relay_connect0(obj, "clicked()", id)
+         2. relay_connect0(obj, "clicked(bool)", id)
 C++:   DtkRelay (Q_OBJECT, SLOTs fire0()/fireI32(int))
          3. string-based connect: "2" + QMetaObject::normalizedSignature(signal)
             QObject::connect(sender, sig, relay, SLOT(fire0()))
@@ -219,8 +228,10 @@ Details that matter:
   main thread.
 - Dispatch is **remove-then-call-then-reinsert**, so a callback may safely
   register new callbacks (no RefCell double-borrow).
-- `dtk::unregister_callback(id)` removes the closure; the Qt-side connection
-  stays but becomes a harmless no-op.
+- `dtk::unregister_callback(id)` removes the closure and disconnects its relay;
+  destruction of the Qt owner removes its Rust callback automatically. Callback
+  ids currently being dispatched are cancelled without resurrecting the closure.
+  One-shot timers use `FnOnce` (no extra `Rc<Cell>`), including panic cleanup.
 - Signals with other argument types (e.g. `checkedChanged(bool)`) can still be
   connected via the arg-less relay — the argument is dropped; read the state
   from the widget inside the closure.
@@ -235,6 +246,12 @@ and forwards to Rust callback ids (same registry):
 | `DtkAppEx : DApplication` | `event()` — `QEvent::Quit` asks a guard; `false` swallows the quit | `DApplication::new_with_quit_guard(guard)` |
 | `DtkMainWindowEx : DMainWindow` | `showEvent` / `closeEvent` (close can be vetoed) | `DMainWindow::new_with_events(...)` |
 | `RustDelegate : QStyledItemDelegate` | `paint` — paints the default DTK background first, then calls Rust for the overlay (icon/text) | `PaintDelegate::new(...)` |
+| `DtkPaintWidget : QWidget` | paint, keyboard, mouse, IME, resize and focus forwarding | `PaintWidget::new(...)` |
+
+Reentrant `PaintWidget` events with owned payloads (keys, resize, etc.) are
+queued until the current Rust callback returns. A nested paint event cannot be
+queued: its stack-scoped `QPainter*` becomes invalid when that inner C++ event
+returns. Instead it requests another Qt repaint on the next event-loop turn.
 
 `dtk_cb_paint` hands Rust the raw `QPainter*`/`QModelIndex*`; the safe layer
 wraps them as `Painter` (draw_text/draw_pixmap/fill_rect/…) and `ModelIndex`
@@ -242,36 +259,59 @@ wraps them as `Painter` (draw_text/draw_pixmap/fill_rect/…) and `ModelIndex`
 
 ## Lifetime & memory
 
-Two wrapper kinds, deliberately different:
+Three wrapper cases, deliberately different:
 
 1. **Widget/object wrappers** (`DComboBox`, `DLabel`, layouts, …): non-owning
-   raw pointers, **no `Drop`**. Qt's parent-child tree owns the objects:
-   children die with their parent, top-level windows die with `QApplication`.
-   Use `delete_later()` for explicit deferred destruction.
-2. **Value-type wrappers** (`QColor`, `QFont`, `QPixmap`, `QIcon`, `QPalette`,
-   `QSize`, `QPoint`, `QRect`, `QMargins`, `DDciIcon`): own a heap copy created
+   `Clone` views sharing a `QPointer<QObject>` guard, **no `Drop` on Qt objects**.
+   Generated DTK methods and hand-written widget operations check the guard
+   before crossing FFI; C++ `static_cast` adjusts QObject/QWidget base pointers
+   for generated subclasses once at wrapper construction and caches both base
+   pointers. This avoids an extra upcast FFI call on every common QWidget op. Qt deletes children when their parent is deleted,
+   **not** unparented top-level windows when `QApplication` exits. Use
+   `delete_later()` explicitly for unparented objects. Constructors require an
+   existing `DApplication` before allocating GUI QObjects; `QVariant` and
+   `QVariantList` remain usable as QtCore values without it.
+   `QTimer`, `QSocketNotifier`, and `PaintDelegate` require an owning QObject parent.
+   Parent deletion clears the guard and a later method call panics rather than
+   dereferencing the dead pointer; `lifetime_selfcheck` exercises QWidget,
+   generated widget and QObject handles. This alone does not prove every C++
+   method safe against destruction *during* a reentrant call, nor provide RAII
+   for top-level QObject ownership.
+2. **Non-QObject generated constructors** (`DPrinter`, `DStyleOptionButton`,
+   `DFileIconProvider`, etc.): return `OwnedOpaque<T>`, which uniquely owns the
+   allocation and calls a generated `gen_*_delete` in `Drop`. Getter results
+   (`global_provider()` etc.) remain non-owning and must never be deleted by
+   Rust. The borrowed views must not outlive their C++ owner.
+3. **Value-type wrappers** (`QColor`, `QFont`, `QPixmap`, `QIcon`, `QPalette`,
+   `QSize`, `QPoint`, `QRect`, `QMargins`, `QVariant`, `QVariantList`,
+   `DDciIcon`): own a heap copy created
    by the shim (`new QColor(...)`), freed in `Drop` via shim `*_delete`.
 
-All wrappers carry `PhantomData<*mut ()>` → `!Send`/`!Sync`. Qt widgets may
-only be touched from the GUI thread; the compiler enforces it. Callbacks are
+Object and value wrappers carry `PhantomData<*mut ()>` → `!Send`/`!Sync`;
+`OwnedOpaque<T>` inherits its non-Send semantics from its inner view.
+`Painter`/`ModelIndex` are temporary raw callback views, not storable references;
+Qt widgets must only be touched from the GUI thread. Callbacks are
 `'static` — share state into them with `Rc`/`RefCell`/`Cell` (never
 `Arc<Mutex>`: everything runs on one thread anyway).
 
 ## Threading: worker → GUI
 
-Since widgets are `!Send`, background work reaches the UI through plain `Send`
-data + a wakeup fd, the same trick as Qt's queued `invokeMethod`:
+`GuiSender<T: Send>` (in `dtk/src/threading.rs`) exposes a typed, cloneable
+producer. Its `FnMut(T)` handler is registered on the Qt owner's GUI thread:
 
 ```
- worker thread                    GUI thread
- tx.send(msg) ── mpsc ──────────▶ receiver drained with try_recv()
- write(eventfd) ── 8 bytes ─────▶ QSocketNotifier::on_activated(...)
-                                   → callback runs on GUI thread
+worker: sender.send(msg) ── mpsc ───────────▶ GUI: bounded try_recv() + handler
+        coalesced eventfd write ────────────▶ QSocketNotifier::on_activated()
 ```
 
-Always drain the eventfd counter in the callback (level-triggered notifier
-refires forever otherwise). Full working example with a headless `--smoke`
-check: `dtk/examples/mpsc_eventfd.rs`. Same pattern works for signalfd/pipes.
+The low-level Linux fd is private and RAII-owned; no widget or raw QObject
+pointer crosses threads. Dropping the Qt owner destroys the notifier/relay,
+drops the receiver, then `send()` returns BrokenPipe. Enqueue does not imply
+successful delivery if destruction races with the GUI dispatch. Counter drains
+are nonblocking, messages are processed in batches of 256, and the next batch
+is rescheduled so fast workers do not starve GUI input. See
+`dtk/examples/threading_selfcheck.rs`; `mpsc_eventfd.rs` illustrates the
+older manual fd pattern for other external event sources.
 
 ## Build
 
@@ -306,7 +346,20 @@ Regenerate after DTK upgrades or when adding coverage:
 python3 tools/gen.py && cargo build
 ```
 
-Adding a new DTK method almost never needs hand work — extend the generator's
-type map if the types are mappable, regenerate, done. Hand-written additions
+Adding a new DTK method usually means extending the generator's type map and
+regenerating. The current 228 skipped methods, raw non-QObject borrowed
+pointers and unfinished top-level ownership mean this is not yet an exhaustive,
+memory-safe Qt/DTK binding. CXX-Qt's
+`extern "C++Qt"` can import C++ QObject methods and typed signals; integration
+for existing DTK object types is a candidate for the next API layer. A local
+DSwitchButton probe confirms CXX-Qt's typed `checkedChanged(bool)` connection
+is disconnected on guard drop and its callback is released when Qt destroys the
+widget. But the generated API requires `Pin<&mut DSwitchButton>`: converting
+these clonable guarded handles to mutable pinned references from safe `&self` would
+create unsound aliasing during reentrant Qt callbacks. Fix handle ownership and
+borrowing first. CXX-Qt 0.10.0 also needs an edition-2021 bridge crate on this
+Rust 1.97 setup; its macro currently fails in edition 2024. Its `CxxQtThread`
+helper targets CXX-Qt-generated QObjects, so imported DTK objects still need a
+verified cross-thread delivery strategy. Hand-written additions
 (new Qt base-class methods, new value types, new event overrides) go in
 shim.cpp + bridge #1.

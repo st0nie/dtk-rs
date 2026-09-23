@@ -13,7 +13,7 @@ public:
     explicit DtkRelay(size_t cb_id, QObject *parent);
     ~DtkRelay() override;
 
-    /// signal looks like "clicked()" / "timeout()"; returns false on failure (qWarning logged)
+    /// signal looks like "clicked(bool)" / "timeout()"; returns false on failure (qWarning logged)
     static bool connect0(QObject *sender, const char *signal, size_t cb_id);
     static bool connectI32(QObject *sender, const char *signal, size_t cb_id);
     static bool connectBool(QObject *sender, const char *signal, size_t cb_id);

@@ -8,10 +8,14 @@
 #include <rust/cxx.h>
 
 #include <QObject>
+#include <QPointer>
 #include <QWidget>
 #include <QAbstractButton>
 #include <QStringList>
 #include <QLayout>
+#include <QBoxLayout>
+#include <QAbstractItemModel>
+#include <QStandardItemModel>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QTableWidget>
@@ -19,6 +23,8 @@
 #include <QTimer>
 #include <QIcon>
 #include <QString>
+#include <QVariant>
+#include <QList>
 #include <QColor>
 #include <QFont>
 #include <QFontMetrics>
@@ -40,6 +46,7 @@
 #include <QCloseEvent>
 #include <QShowEvent>
 #include <QMenu>
+#include <QAction>
 
 #include <DApplication>
 #include <DMainWindow>
@@ -55,6 +62,9 @@ using ::QObject;
 using ::QWidget;
 using ::QAbstractButton;
 using ::QLayout;
+using ::QBoxLayout;
+using ::QAbstractItemModel;
+using ::QStandardItemModel;
 using ::QVBoxLayout;
 using ::QHBoxLayout;
 using ::QTableWidget;
@@ -66,6 +76,8 @@ using ::QFont;
 using ::QPalette;
 using ::QPixmap;
 using ::QMargins;
+using ::QVariant;
+using ::QVariantList;
 using Dtk::Gui::DDciIcon;
 using ::QPoint;
 using ::QRect;
@@ -76,6 +88,7 @@ using ::QSocketNotifier;
 using ::QEvent;
 using ::QStyledItemDelegate;
 using ::QMenu;
+using ::QAction;
 
 using DApplication = Dtk::Widget::DApplication;
 using DMainWindow = Dtk::Widget::DMainWindow;
@@ -85,11 +98,30 @@ using DSuggestButton = Dtk::Widget::DSuggestButton;
 using DPushButton = Dtk::Widget::DPushButton;
 using QMessageBox = ::QMessageBox;
 
-// ---- QMenu (DMenu = QMenu typedef in DTK6) ----
+// Qt invalidates QPointer before emitting destroyed(QObject*); unlike a raw
+// handle, it can be inspected after a parent has destroyed the object.
+struct QObjectGuard {
+    explicit QObjectGuard(QObject *object) : watched(object) {}
+    QPointer<QObject> watched;
+};
+std::unique_ptr<QObjectGuard> guard_object(QObject *object);
+std::unique_ptr<QObjectGuard> guard_widget(QWidget *widget);
+bool guard_alive(const QObjectGuard &guard);
+
+// ---- QAction / QMenu (DMenu = QMenu typedef in DTK6) ----
+QAction *action_new(rust::Str text, QObject *parent);
+void action_set_enabled(QAction *action, bool enabled);
+bool action_is_enabled(QAction *action);
+void action_set_visible(QAction *action, bool visible);
+bool action_is_visible(QAction *action);
+void action_set_text(QAction *action, rust::Str text);
+rust::String action_text(QAction *action);
+void action_trigger(QAction *action);
 QMenu *menu_new(QWidget *parent);
+void menu_add_existing_action(QMenu *menu, QAction *action);
 void menu_add_action_cb(QMenu *m, rust::Str text, size_t cb_id); // cb fires on triggered
 void menu_add_separator(QMenu *m);
-void menu_popup(QMenu *m, QWidget *ref, int32_t x, int32_t y); // x,y in ref coords; WA_DeleteOnClose
+void menu_popup(QMenu *m, QWidget *ref, int32_t x, int32_t y); // x,y in ref coords; hides on close
 
 // ---- QString <-> rust string ----
 rust::String to_rust_string(const QString &s);
@@ -98,9 +130,11 @@ rust::Vec<rust::String> to_rust_string_vec(const QStringList &qsl);
 QStringList to_qstringlist(rust::Vec<rust::String> v);
 
 // ---- DApplication ----
-// args: '|'-separated argv (incl. argv[0]); ponytail: '|' can't appear in normal flags like --hidden
-DApplication *application_new(rust::Str name, rust::Str args);
-DApplication *application_new_ex(rust::Str name, rust::Str args, size_t quit_guard_id); // guard returning false swallows the Quit event
+// Raw argv bytes + entry lengths (including argv[0]); make_argv owns the writable strings.
+DApplication *application_new(rust::Str name, rust::Vec<uint8_t> argv, rust::Vec<size_t> lengths);
+DApplication *application_new_ex(rust::Str name, rust::Vec<uint8_t> argv,
+                                 rust::Vec<size_t> lengths, size_t quit_guard_id); // guard returning false swallows the Quit event
+bool application_is_gui();
 int32_t application_exec(DApplication *app);
 void application_quit();
 void application_set_quit_on_last_window_closed(bool quit);
@@ -254,6 +288,18 @@ void table_set_frame_shape(QTableWidget *t, int32_t shape); // QFrame::Shape
 void table_set_icon_size(QTableWidget *t, int32_t w, int32_t h);
 void table_set_delegate_for_column(QTableWidget *t, int32_t col, QStyledItemDelegate *delegate);
 
+// ---- QAbstractItemModel (the QModelIndex is short-lived inside each call) ----
+QStandardItemModel *standard_item_model_new(QObject *parent);
+void standard_item_model_set_column_count(QStandardItemModel *model, int32_t count);
+QAbstractItemModel *standard_item_model_as_model(QStandardItemModel *model);
+void model_set_parent(QAbstractItemModel *model, QObject *parent);
+int32_t model_row_count(QAbstractItemModel *model);
+int32_t model_column_count(QAbstractItemModel *model);
+QVariant *model_data(QAbstractItemModel *model, int32_t row, int32_t col, int32_t role);
+bool model_set_data(QAbstractItemModel *model, int32_t row, int32_t col, QVariant *data, int32_t role);
+bool model_insert_rows(QAbstractItemModel *model, int32_t row, int32_t count);
+bool model_remove_rows(QAbstractItemModel *model, int32_t row, int32_t count);
+
 // ---- QTableWidgetItem ----
 void item_set_icon(QTableWidgetItem *it, QIcon *icon);
 void item_set_text_alignment(QTableWidgetItem *it, int32_t alignment);
@@ -264,6 +310,23 @@ void item_set_data_bool(QTableWidgetItem *it, int32_t role, bool value);
 bool item_data_bool(QTableWidgetItem *it, int32_t role);
 
 // ---- value types ----
+QVariant *variant_new();
+QVariant *variant_from_bool(bool value);
+QVariant *variant_from_i64(int64_t value);
+QVariant *variant_from_f64(double value);
+QVariant *variant_from_string(rust::Str value);
+QVariant *variant_clone(QVariant *value);
+bool variant_is_valid(QVariant *value);
+bool variant_to_bool(QVariant *value);
+int64_t variant_to_i64(QVariant *value, bool *ok);
+rust::String variant_to_string(QVariant *value);
+void variant_delete(QVariant *value);
+QVariantList *variant_list_new();
+QVariantList *variant_list_clone(QVariantList *list);
+void variant_list_push(QVariantList *list, QVariant *value);
+size_t variant_list_len(QVariantList *list);
+QVariant *variant_list_get(QVariantList *list, size_t index); // nullptr if out of range
+void variant_list_delete(QVariantList *list);
 QColor *color_new_rgb(int32_t r, int32_t g, int32_t b, int32_t a);
 int32_t color_rgba(QColor *c); // packed 0xAARRGGBB
 void color_delete(QColor *c);
@@ -310,7 +373,7 @@ DDciIcon *ddci_icon_from_file(rust::Str path);
 void ddci_icon_delete(DDciIcon *i);
 
 // ---- QSocketNotifier ----
-QSocketNotifier *socket_notifier_new(int32_t fd); // Read type; activated goes through the relay
+QSocketNotifier *socket_notifier_new(int32_t fd, QObject *parent); // Read type; activated goes through the relay
 void socket_notifier_set_enabled(QSocketNotifier *n, bool on);
 
 // ---- generic paint delegate ----
