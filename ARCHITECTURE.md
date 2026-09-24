@@ -192,7 +192,7 @@ widget) rather than panicking on Qt's null. This classification is checked by
 | `int`/`qint32`, `bool`, `qreal`… | `int32_t`, `bool`, `double`… | `i32`, `bool`, `f64`… |
 | enums | `int32_t` + `static_cast` | `i32`; constants in `dtk::qt` |
 | `QFlags` (e.g. `Qt::Alignment`) | `int32_t` + `fromInt`/`toInt` | `i32` |
-| value types (`QColor`, `QFont`, `QPixmap`, `QIcon`, `QPalette`, `QSize`, `QPoint`, `QRect`, `QMargins`, `QVariant`, `QVariantList`, `DDciIcon`) | owning heap pointer | wrapper with `Drop` → shim `*_delete` |
+| value types (`QColor`, `QFont`, `QPixmap`, `QImage`, `QBrush`, `QPainterPath`, `QKeySequence`, `QUrl`, `QIcon`, `QPalette`, `QSize`, `QPoint`, `QRect`, `QMargins`, `QVariant`, `QVariantList`, `DDciIcon`) | owning heap pointer | wrapper with `Drop` → shim `*_delete` |
 | `QWidget*` / `QLayout*` / `QBoxLayout*` / `QAction*` / `QAbstractItemModel*` / DTK class pointers | opaque pointer | guarded non-owning QObject view |
 | other `QList<T>`/`QMap`, `QPrinter*`, … | — | **unmapped → skipped** (GEN_REPORT.md, TODO.md) |
 
@@ -234,9 +234,15 @@ Details that matter:
 - The registry is `thread_local` — no locks; callbacks only ever fire on the Qt
   main thread.
 - Dispatch is **remove-then-call-then-reinsert**, so a callback may safely
-  register new callbacks (no RefCell double-borrow).
-- `dtk::unregister_callback(id)` removes the closure and disconnects its relay;
-  destruction of the Qt owner removes its Rust callback automatically. Callback
+  register new callbacks (no RefCell double-borrow). Nested emissions of the
+  same 0/int/bool/int,int signal are queued with copied arguments and delivered
+  after its outer `FnMut` invocation returns; cancellation/destroy drops them.
+  One-shot callbacks remain one-shot, and painter/guard callbacks cannot be
+  replayed from an expired native pointer or return value.
+- `dtk::unregister_callback(id)` removes the closure and disconnects its relay
+  **on the Qt thread where it was registered**; calling it on a worker for a GUI
+  id returns false without accessing Qt's GUI-thread-only relay registry.
+  Destruction of the Qt owner removes its Rust callback automatically. Callback
   ids currently being dispatched are cancelled without resurrecting the closure.
   One-shot timers use `FnOnce` (no extra `Rc<Cell>`), including panic cleanup.
 - Signals with other argument types (e.g. `checkedChanged(bool)`) can still be
@@ -284,7 +290,8 @@ Three wrapper cases, deliberately different:
    `DListView::takeHeaderWidget()` does **not**: it returns a still-parented
    widget scheduled for deletion by native code on the next event turn. Never
    infer return ownership from a method name in the generator. Constructors
-   require an existing `DApplication` before allocating GUI QObjects; `QVariant`
+   require an existing `DApplication` **on its GUI thread** before allocating
+   GUI QObjects; `QVariant`
    and `QVariantList` remain usable as QtCore values without it. `QTimer`,
    `QSocketNotifier`, and `PaintDelegate` require an owning QObject parent.
    Parent deletion clears the guard and a later method call panics rather than
@@ -295,12 +302,17 @@ Three wrapper cases, deliberately different:
 2. **Non-QObject generated constructors** (`DPrinter`, `DStyleOptionButton`,
    `DFileIconProvider`, etc.): return `OwnedOpaque<T>`, which uniquely owns the
    allocation and calls a generated `gen_*_delete` in `Drop`. Getter results
-   (`global_provider()` etc.) remain non-owning and must never be deleted by
-   Rust. The borrowed views must not outlive their C++ owner.
-3. **Value-type wrappers** (`QColor`, `QFont`, `QPixmap`, `QIcon`, `QPalette`,
-   `QSize`, `QPoint`, `QRect`, `QMargins`, `QVariant`, `QVariantList`,
-   `DDciIcon`): own a heap copy created
-   by the shim (`new QColor(...)`), freed in `Drop` via shim `*_delete`.
+   (`global_provider()` etc.) now require `unsafe`: these non-QObject pointers
+   have no QPointer guard and DTK-specific ownership/lifetime rules are not
+   proven. The views are not `Copy`/`Clone`; callers must determine whether
+   the native allocation is borrowed or transferred before deleting anything.
+3. **Value-type wrappers** (`QColor`, `QFont`, `QPixmap`, `QImage`, `QBrush`,
+   `QPainterPath`, `QKeySequence`, `QUrl`, `QIcon`, `QPalette`, `QSize`,
+   `QPoint`, `QRect`, `QMargins`, `QVariant`, `QVariantList`, `DDciIcon`): own
+   a heap copy created by the shim (`new QColor(...)`), freed in `Drop` via
+   shim `*_delete`. `WaterMarkData` returned by value or const& is explicitly
+   copy-constructed into `OwnedOpaque<WaterMarkData>`; its generated deleter
+   runs in `Drop`, not when the Qt widget owning its original data is destroyed.
 
 Object and value wrappers carry `PhantomData<*mut ()>` → `!Send`/`!Sync`;
 `OwnedOpaque<T>` inherits its non-Send semantics from its inner view.
@@ -364,7 +376,7 @@ python3 tools/gen.py && cargo build
 ```
 
 Adding a new DTK method usually means extending the generator's type map and
-regenerating. The current 228 skipped methods, raw non-QObject borrowed
+regenerating. The current 204 skipped methods, raw non-QObject borrowed
 pointers, deferred-deletion shutdown semantics, and reentrant native calls
 mean this is not yet an exhaustive, memory-safe Qt/DTK binding. CXX-Qt's
 `extern "C++Qt"` can import C++ QObject methods and typed signals; integration

@@ -4,9 +4,14 @@ Known gaps in dtk-rs, roughly in priority order.
 
 ## Safety/ownership (blocking a fully safe public API)
 
-- [x] Fail before entering Qt GUI constructors without `DApplication`, including
-      generated QWidget/QObject, timers, menus, clipboard and QPixmap; QtCore
-      `QVariant` still works first (`no_application_selfcheck`).
+- [x] Queue copied arguments for nested emissions of the same 0/int/bool/
+      int,int Qt signal until the outer `FnMut` returns; do not drop nested
+      events or alias mutable callbacks. Cancellation destroys queued events;
+      one-shot callbacks fire once (`signal_reentrancy_selfcheck`, sys tests).
+- [x] Fail before entering Qt GUI constructors without `DApplication` **or on
+      the wrong thread**, including generated QWidget/QObject, timers, menus,
+      clipboard and QPixmap; QtCore `QVariant` still works first
+      (`no_application_selfcheck`).
 - [x] Replace generated QWidget/QObject and hand core widget/timer/notifier/
       delegate/layout `Copy` raw handles with `Clone` views sharing a Qt QPointer.
       Generated methods, widget operations and signal traits check liveness
@@ -25,9 +30,13 @@ Known gaps in dtk-rs, roughly in priority order.
       must not become sound solely because QPointer was checked earlier.
 - [x] Split 18 generated non-QObject constructors (including `DPrinter`,
       `DStyleOptionButton`, `DFileIconProvider`) into `OwnedOpaque<T>` with a
-      generated C++ deleter in `Drop`. Getter results such as `globalProvider()`
-      remain borrowed and are never deleted by Rust; the owning wrappers are not
-      `Copy` and cannot be moved out of their `Deref` view.
+      generated C++ deleter in `Drop`; opaque views are not `Copy`/`Clone`.
+      Unguarded opaque pointer getters (e.g. `globalProvider()`,
+      `createDialogSettingInfo()`) now require `unsafe` because the native
+      ownership and lifetime of their return allocations have not been audited.
+- [ ] Audit each unsafe opaque pointer getter's native ownership (some may
+      return borrowed singletons, others transferred heap storage), model
+      ownership correctly, and remove `unsafe` only with lifetime evidence.
 - [ ] Audit all native pointer-return ownership and handoff APIs individually;
       never infer from method names. Local DTK6 `DListView::takeHeaderWidget()`
       returns a still-parented widget *scheduled for native deletion*, so it
@@ -96,11 +105,22 @@ Known gaps in dtk-rs, roughly in priority order.
       parser registers their enums but can't bind the classes themselves.
 - [ ] `Q_ENUM`-exposed enum *values*: we map enums to bare i32 today and hand-maintain
       `dtk::qt` constants. gen.py could scrape enum bodies and emit Rust consts automatically.
-- [ ] Painting/model APIs skipped: `QPainter*`/`QStyle*` params, `QVariant`,
-      `QModelIndex`, `QAbstractItemModel*` — need a real QVariant/model mapping
-      and ownership-aware model/view integration for full application coverage.
-- [ ] Value types not yet wrapped: `QImage`, `QPainterPath`, `QBrush`, `QEasingCurve`,
-      `QKeySequence`, `QUrl` — each is one shim pair + VALUE_TYPES entry.
+- [ ] Remaining painting/model APIs skipped: `QPainter*`/`QStyle*`/
+      `QStyleOption*` and `QModelIndex` params require scope-aware borrowing
+      or an appropriate Rust-defined model subclass. `QVariant` and
+      `QAbstractItemModel*` already have basic mappings; typed model events,
+      proxy models and complete view integration are not yet available.
+- [x] `QImage`, `QPainterPath`, `QBrush`, `QKeySequence`, `QUrl` now use
+      owning value wrappers; `image_selfcheck` and `value_types_selfcheck`
+      roundtrip through image viewer, watermark, clip, shortcut and chooser APIs.
+      `WaterMarkData` returned by value/const& becomes an owned C++ copy.
+- [x] `QTableWidget::set_horizontal_header_labels` sends a real QStringList;
+      `table_header_selfcheck` covers embedded `|`, NUL, Unicode and empty text.
+      Out-of-bounds cell setters return false without allocating a Qt item;
+      writing UserRole data into an empty valid cell now creates an item,
+      and later setting its text preserves the role.
+- [ ] Value types still not wrapped: `QEasingCurve`, `QTextOption`, `QRegion`,
+      `QTransform`, `QRectF`, etc. Add explicit ownership and roundtrip tests.
 
 ## Libraries
 
@@ -116,6 +136,9 @@ Known gaps in dtk-rs, roughly in priority order.
       coalesce wakeups, bound GUI dispatch and release the receiver with its Qt owner.
 - [x] Value-type wrappers (QColor/QFont/QPalette/QPixmap/QSize/QPoint/QRect, QIcon):
       fixed — `Drop` calls a shim `*_delete` fn; no more intentional leak.
+- [x] `unregister_callback` records Qt relay ids per thread. A worker call on a
+      GUI callback id now returns false without touching the GUI-only C++ QHash;
+      GUI disconnect and destruction clean up the id (`signal_reentrancy_selfcheck`).
 - [x] Callback registry: fixed — `unregister_cb`/`dtk::unregister_callback(id)` exists,
       `connect_signal*` returns the id, and `QTimer::single_shot` self-cleans.
       Object destruction now releases callbacks from relays, actions, shortcuts,

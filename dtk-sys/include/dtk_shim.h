@@ -30,6 +30,11 @@
 #include <QFontMetrics>
 #include <QPalette>
 #include <QPixmap>
+#include <QImage>
+#include <QBrush>
+#include <QPainterPath>
+#include <QKeySequence>
+#include <QUrl>
 #include <QMargins>
 #include <DDciIcon>
 #include <QPoint>
@@ -75,6 +80,11 @@ using ::QColor;
 using ::QFont;
 using ::QPalette;
 using ::QPixmap;
+using ::QImage;
+using ::QBrush;
+using ::QPainterPath;
+using ::QKeySequence;
+using ::QUrl;
 using ::QMargins;
 using ::QVariant;
 using ::QVariantList;
@@ -274,9 +284,10 @@ void layout_set_contents_margins(QLayout *l, int32_t l_, int32_t t, int32_t r, i
 QTableWidget *table_new(int32_t rows, int32_t cols);
 void table_set_column_count(QTableWidget *t, int32_t cols);
 void table_set_row_count(QTableWidget *t, int32_t rows);
-void table_set_horizontal_header_labels(QTableWidget *t, rust::Str joined); // '|'-separated
-void table_set_cell_text(QTableWidget *t, int32_t row, int32_t col, rust::Str text);
-void table_set_cell_data(QTableWidget *t, int32_t row, int32_t col, int64_t data);
+void table_set_horizontal_header_labels(QTableWidget *t, rust::Vec<rust::String> labels);
+rust::String table_horizontal_header_label(QTableWidget *t, int32_t col); // empty if no item
+bool table_set_cell_text(QTableWidget *t, int32_t row, int32_t col, rust::Str text);
+bool table_set_cell_data(QTableWidget *t, int32_t row, int32_t col, int64_t data);
 int64_t table_cell_data(QTableWidget *t, int32_t row, int32_t col);
 rust::String table_cell_text(QTableWidget *t, int32_t row, int32_t col);
 int32_t table_current_row(QTableWidget *t);
@@ -358,6 +369,29 @@ QColor *palette_color(QPalette *pal, int32_t group, int32_t role); // heap copy,
 void palette_delete(QPalette *pal);
 QPixmap *pixmap_new(rust::Str path); // file or qrc path
 void pixmap_delete(QPixmap *pm);
+QImage *image_new(int32_t width, int32_t height);
+QImage *image_from_file(rust::Str path);
+bool image_is_null(QImage *image);
+int32_t image_width(QImage *image);
+int32_t image_height(QImage *image);
+void image_fill(QImage *image, QColor *color);
+QColor *image_pixel_color(QImage *image, int32_t x, int32_t y);
+void image_delete(QImage *image);
+QPainterPath *painter_path_new();
+void painter_path_add_rect(QPainterPath *path, double x, double y, double w, double h);
+bool painter_path_is_empty(QPainterPath *path);
+int32_t painter_path_element_count(QPainterPath *path);
+void painter_path_delete(QPainterPath *path);
+QBrush *brush_from_color(QColor *color);
+QColor *brush_color(QBrush *brush);
+void brush_delete(QBrush *brush);
+QKeySequence *key_sequence_from_string(rust::Str text);
+rust::String key_sequence_to_string(QKeySequence *seq);
+void key_sequence_delete(QKeySequence *seq);
+QUrl *url_from_string(rust::Str url);
+rust::String url_to_string(QUrl *url);
+bool url_is_valid(QUrl *url);
+void url_delete(QUrl *url);
 QPixmap *standard_icon_pixmap(QWidget *w, int32_t icon, int32_t size); // QStyle::StandardPixmap
 QSize *size_new(int32_t w, int32_t h);
 void size_delete(QSize *s);

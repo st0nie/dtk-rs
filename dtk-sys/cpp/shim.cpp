@@ -3,6 +3,7 @@
 #include "dtk-sys/src/lib.rs.h" // Rust callback declarations (dtk_cb0/dtk_cb_i32)
 
 #include <QCoreApplication>
+#include <QThread>
 #include <QGuiApplication>
 #include <QApplication>
 #include <QHBoxLayout>
@@ -328,7 +329,8 @@ DApplication *application_new(rust::Str name, rust::Vec<uint8_t> bytes,
 }
 
 bool application_is_gui() {
-    return qobject_cast<QApplication *>(QCoreApplication::instance()) != nullptr;
+    auto *app = qobject_cast<QApplication *>(QCoreApplication::instance());
+    return app && QThread::currentThread() == app->thread();
 }
 int32_t application_exec(DApplication *app) { return app->exec(); }
 void application_quit() { QCoreApplication::quit(); }
@@ -650,18 +652,36 @@ void layout_set_contents_margins(QLayout *l, int32_t l_, int32_t t, int32_t r, i
 QTableWidget *table_new(int32_t rows, int32_t cols) { return new QTableWidget(rows, cols); }
 void table_set_column_count(QTableWidget *t, int32_t cols) { t->setColumnCount(cols); }
 void table_set_row_count(QTableWidget *t, int32_t rows) { t->setRowCount(rows); }
-void table_set_horizontal_header_labels(QTableWidget *t, rust::Str joined) {
-    t->setHorizontalHeaderLabels(from_rust_str(joined).split(QLatin1Char('|')));
+void table_set_horizontal_header_labels(QTableWidget *t, rust::Vec<rust::String> labels) {
+    t->setHorizontalHeaderLabels(to_qstringlist(std::move(labels)));
 }
-void table_set_cell_text(QTableWidget *t, int32_t row, int32_t col, rust::Str text) {
+rust::String table_horizontal_header_label(QTableWidget *t, int32_t col) {
+    auto *item = t->horizontalHeaderItem(col);
+    return item ? to_rust_string(item->text()) : rust::String();
+}
+static bool table_cell_in_bounds(QTableWidget *t, int32_t row, int32_t col) {
+    return row >= 0 && row < t->rowCount() && col >= 0 && col < t->columnCount();
+}
+bool table_set_cell_text(QTableWidget *t, int32_t row, int32_t col, rust::Str text) {
+    if (!table_cell_in_bounds(t, row, col))
+        return false; // don't allocate an item Qt may reject without taking ownership
     if (auto *item = t->item(row, col))
         item->setText(from_rust_str(text)); // preserve UserRole, icon, foreground, etc.
     else
         t->setItem(row, col, new QTableWidgetItem(from_rust_str(text)));
+    return true;
 }
-void table_set_cell_data(QTableWidget *t, int32_t row, int32_t col, int64_t data) {
-    if (auto *item = t->item(row, col))
+bool table_set_cell_data(QTableWidget *t, int32_t row, int32_t col, int64_t data) {
+    if (!table_cell_in_bounds(t, row, col))
+        return false;
+    if (auto *item = t->item(row, col)) {
         item->setData(Qt::UserRole, QVariant::fromValue<qint64>(data));
+    } else {
+        auto *fresh = new QTableWidgetItem;
+        fresh->setData(Qt::UserRole, QVariant::fromValue<qint64>(data));
+        t->setItem(row, col, fresh);
+    }
+    return true;
 }
 int64_t table_cell_data(QTableWidget *t, int32_t row, int32_t col) {
     if (auto *item = t->item(row, col))
@@ -813,6 +833,39 @@ QColor *palette_color(QPalette *pal, int32_t group, int32_t role) {
 void palette_delete(QPalette *pal) { delete pal; }
 QPixmap *pixmap_new(rust::Str path) { return new QPixmap(from_rust_str(path)); }
 void pixmap_delete(QPixmap *pm) { delete pm; }
+QImage *image_new(int32_t width, int32_t height) {
+    return new QImage(width, height, QImage::Format_ARGB32);
+}
+QImage *image_from_file(rust::Str path) { return new QImage(from_rust_str(path)); }
+bool image_is_null(QImage *image) { return image->isNull(); }
+int32_t image_width(QImage *image) { return image->width(); }
+int32_t image_height(QImage *image) { return image->height(); }
+void image_fill(QImage *image, QColor *color) { image->fill(*color); }
+QColor *image_pixel_color(QImage *image, int32_t x, int32_t y) {
+    return new QColor(image->pixelColor(x, y));
+}
+void image_delete(QImage *image) { delete image; }
+QPainterPath *painter_path_new() { return new QPainterPath; }
+void painter_path_add_rect(QPainterPath *path, double x, double y, double w, double h) {
+    path->addRect(x, y, w, h);
+}
+bool painter_path_is_empty(QPainterPath *path) { return path->isEmpty(); }
+int32_t painter_path_element_count(QPainterPath *path) { return path->elementCount(); }
+void painter_path_delete(QPainterPath *path) { delete path; }
+QBrush *brush_from_color(QColor *color) { return new QBrush(*color); }
+QColor *brush_color(QBrush *brush) { return new QColor(brush->color()); }
+void brush_delete(QBrush *brush) { delete brush; }
+QKeySequence *key_sequence_from_string(rust::Str text) {
+    return new QKeySequence(from_rust_str(text), QKeySequence::PortableText);
+}
+rust::String key_sequence_to_string(QKeySequence *seq) {
+    return to_rust_string(seq->toString(QKeySequence::PortableText));
+}
+void key_sequence_delete(QKeySequence *seq) { delete seq; }
+QUrl *url_from_string(rust::Str url) { return new QUrl(from_rust_str(url)); }
+rust::String url_to_string(QUrl *url) { return to_rust_string(url->toString()); }
+bool url_is_valid(QUrl *url) { return url->isValid(); }
+void url_delete(QUrl *url) { delete url; }
 
 // ---- QMargins ----
 QMargins *q_margins_new(int32_t left, int32_t top, int32_t right, int32_t bottom) {

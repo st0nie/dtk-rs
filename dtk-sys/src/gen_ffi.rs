@@ -13,15 +13,20 @@ pub mod genffi {
         type QBoxLayout;
         type QLayout;
         type QWidget;
+        type QBrush;
         type QColor;
         type QFont;
         type QIcon;
+        type QImage;
+        type QKeySequence;
         type QMargins;
+        type QPainterPath;
         type QPalette;
         type QPixmap;
         type QPoint;
         type QRect;
         type QSize;
+        type QUrl;
         type QVariant;
         type QVariantList;
         type DDciIcon;
@@ -507,6 +512,15 @@ pub mod genffi {
         unsafe fn gen_d_blur_effect_widget_mask_color(self_: *mut DBlurEffectWidget)
         -> *mut QColor;
         unsafe fn gen_d_blur_effect_widget_mask_alpha(self_: *mut DBlurEffectWidget) -> u8;
+        unsafe fn gen_d_blur_effect_widget_set_mask_path(
+            self_: *mut DBlurEffectWidget,
+            path: *mut QPainterPath,
+        );
+        unsafe fn gen_d_blur_effect_widget_set_source_image(
+            self_: *mut DBlurEffectWidget,
+            image: *mut QImage,
+            autoScale: bool,
+        );
         unsafe fn gen_d_blur_effect_widget_set_radius(self_: *mut DBlurEffectWidget, radius: i32);
         unsafe fn gen_d_blur_effect_widget_set_mode(self_: *mut DBlurEffectWidget, mode: i32);
         unsafe fn gen_d_blur_effect_widget_set_blend_mode(
@@ -537,6 +551,11 @@ pub mod genffi {
         );
         unsafe fn gen_d_blur_effect_group_new() -> *mut DBlurEffectGroup;
         unsafe fn gen_d_blur_effect_group_delete(self_: *mut DBlurEffectGroup);
+        unsafe fn gen_d_blur_effect_group_set_source_image(
+            self_: *mut DBlurEffectGroup,
+            image: *mut QImage,
+            blurRadius: i32,
+        );
         unsafe fn gen_d_blur_effect_group_add_widget(
             self_: *mut DBlurEffectGroup,
             widget: *mut DBlurEffectWidget,
@@ -625,9 +644,16 @@ pub mod genffi {
         unsafe fn gen_d_clip_effect_widget_as_widget(self_: *mut DClipEffectWidget)
         -> *mut QWidget;
         unsafe fn gen_d_clip_effect_widget_margins(self_: *mut DClipEffectWidget) -> *mut QMargins;
+        unsafe fn gen_d_clip_effect_widget_clip_path(
+            self_: *mut DClipEffectWidget,
+        ) -> *mut QPainterPath;
         unsafe fn gen_d_clip_effect_widget_set_margins(
             self_: *mut DClipEffectWidget,
             margins: *mut QMargins,
+        );
+        unsafe fn gen_d_clip_effect_widget_set_clip_path(
+            self_: *mut DClipEffectWidget,
+            path: *mut QPainterPath,
         );
         unsafe fn gen_d_colored_progress_bar_new() -> *mut DColoredProgressBar;
         unsafe fn gen_d_colored_progress_bar_as_qobject(
@@ -636,6 +662,11 @@ pub mod genffi {
         unsafe fn gen_d_colored_progress_bar_as_widget(
             self_: *mut DColoredProgressBar,
         ) -> *mut QWidget;
+        unsafe fn gen_d_colored_progress_bar_add_threshold(
+            self_: *mut DColoredProgressBar,
+            threshold: i32,
+            brush: *mut QBrush,
+        );
         unsafe fn gen_d_colored_progress_bar_remove_threshold(
             self_: *mut DColoredProgressBar,
             threshold: i32,
@@ -665,6 +696,11 @@ pub mod genffi {
         unsafe fn gen_d_crumb_text_format_set_text_color(
             self_: *mut DCrumbTextFormat,
             color: *mut QColor,
+        );
+        unsafe fn gen_d_crumb_text_format_background(self_: *mut DCrumbTextFormat) -> *mut QBrush;
+        unsafe fn gen_d_crumb_text_format_set_background(
+            self_: *mut DCrumbTextFormat,
+            background: *mut QBrush,
         );
         unsafe fn gen_d_crumb_text_format_background_radius(self_: *mut DCrumbTextFormat) -> i32;
         unsafe fn gen_d_crumb_text_format_set_background_radius(
@@ -875,6 +911,11 @@ pub mod genffi {
         );
         unsafe fn gen_d_file_chooser_edit_name_filters(self_: *mut DFileChooserEdit)
         -> Vec<String>;
+        unsafe fn gen_d_file_chooser_edit_set_directory_url(
+            self_: *mut DFileChooserEdit,
+            directory: *mut QUrl,
+        );
+        unsafe fn gen_d_file_chooser_edit_directory_url(self_: *mut DFileChooserEdit) -> *mut QUrl;
         unsafe fn gen_d_file_chooser_edit_set_dialog_display_position(
             self_: *mut DFileChooserEdit,
             dialogDisplayPosition: i32,
@@ -1006,9 +1047,16 @@ pub mod genffi {
         unsafe fn gen_d_graphics_clip_effect_margins(
             self_: *mut DGraphicsClipEffect,
         ) -> *mut QMargins;
+        unsafe fn gen_d_graphics_clip_effect_clip_path(
+            self_: *mut DGraphicsClipEffect,
+        ) -> *mut QPainterPath;
         unsafe fn gen_d_graphics_clip_effect_set_margins(
             self_: *mut DGraphicsClipEffect,
             margins: *mut QMargins,
+        );
+        unsafe fn gen_d_graphics_clip_effect_set_clip_path(
+            self_: *mut DGraphicsClipEffect,
+            clipPath: *mut QPainterPath,
         );
         unsafe fn gen_d_graphics_glow_effect_new() -> *mut DGraphicsGlowEffect;
         unsafe fn gen_d_graphics_glow_effect_as_qobject(
@@ -1067,6 +1115,8 @@ pub mod genffi {
         unsafe fn gen_d_image_viewer_new() -> *mut DImageViewer;
         unsafe fn gen_d_image_viewer_as_qobject(self_: *mut DImageViewer) -> *mut QObject;
         unsafe fn gen_d_image_viewer_as_widget(self_: *mut DImageViewer) -> *mut QWidget;
+        unsafe fn gen_d_image_viewer_image(self_: *mut DImageViewer) -> *mut QImage;
+        unsafe fn gen_d_image_viewer_set_image(self_: *mut DImageViewer, image: *mut QImage);
         unsafe fn gen_d_image_viewer_file_name(self_: *mut DImageViewer) -> String;
         unsafe fn gen_d_image_viewer_set_file_name(self_: *mut DImageViewer, fileName: &str);
         unsafe fn gen_d_image_viewer_scale_factor(self_: *mut DImageViewer) -> f64;
@@ -1176,10 +1226,21 @@ pub mod genffi {
         unsafe fn gen_d_key_sequence_edit_as_qobject(self_: *mut DKeySequenceEdit) -> *mut QObject;
         unsafe fn gen_d_key_sequence_edit_as_widget(self_: *mut DKeySequenceEdit) -> *mut QWidget;
         unsafe fn gen_d_key_sequence_edit_clear(self_: *mut DKeySequenceEdit);
+        unsafe fn gen_d_key_sequence_edit_set_key_sequence(
+            self_: *mut DKeySequenceEdit,
+            keySequence: *mut QKeySequence,
+        ) -> bool;
+        unsafe fn gen_d_key_sequence_edit_key_sequence(
+            self_: *mut DKeySequenceEdit,
+        ) -> *mut QKeySequence;
         unsafe fn gen_d_key_sequence_edit_shortcut_direction(
             self_: *mut DKeySequenceEdit,
             alig: i32,
         );
+        unsafe fn gen_d_key_sequence_edit_get_key_sequence(
+            self_: *mut DKeySequenceEdit,
+            sequence: *mut QKeySequence,
+        ) -> String;
         unsafe fn gen_d_license_dialog_new() -> *mut DLicenseDialog;
         unsafe fn gen_d_license_dialog_as_qobject(self_: *mut DLicenseDialog) -> *mut QObject;
         unsafe fn gen_d_license_dialog_as_widget(self_: *mut DLicenseDialog) -> *mut QWidget;
@@ -1667,6 +1728,10 @@ pub mod genffi {
         unsafe fn gen_d_print_preview_widget_set_water_mark_type(
             self_: *mut DPrintPreviewWidget,
             type_: i32,
+        );
+        unsafe fn gen_d_print_preview_widget_set_water_marg_image(
+            self_: *mut DPrintPreviewWidget,
+            image: *mut QImage,
         );
         unsafe fn gen_d_print_preview_widget_set_water_mark_rotate(
             self_: *mut DPrintPreviewWidget,
@@ -2416,6 +2481,11 @@ pub mod genffi {
             self_: *mut DWaterMarkHelper,
             w: *mut QWidget,
         );
+        unsafe fn gen_d_water_mark_helper_data(self_: *mut DWaterMarkHelper) -> *mut WaterMarkData;
+        unsafe fn gen_d_water_mark_helper_set_data(
+            self_: *mut DWaterMarkHelper,
+            data: *mut WaterMarkData,
+        );
         unsafe fn gen_water_mark_data_new() -> *mut WaterMarkData;
         unsafe fn gen_water_mark_data_delete(self_: *mut WaterMarkData);
         unsafe fn gen_water_mark_data_type_(self_: *mut WaterMarkData) -> i32;
@@ -2438,11 +2508,18 @@ pub mod genffi {
         unsafe fn gen_water_mark_data_set_rotation(self_: *mut WaterMarkData, rotation: f64);
         unsafe fn gen_water_mark_data_opacity(self_: *mut WaterMarkData) -> f64;
         unsafe fn gen_water_mark_data_set_opacity(self_: *mut WaterMarkData, opacity: f64);
+        unsafe fn gen_water_mark_data_image(self_: *mut WaterMarkData) -> *mut QImage;
+        unsafe fn gen_water_mark_data_set_image(self_: *mut WaterMarkData, image: *mut QImage);
         unsafe fn gen_water_mark_data_gray_scale(self_: *mut WaterMarkData) -> bool;
         unsafe fn gen_water_mark_data_set_gray_scale(self_: *mut WaterMarkData, grayScale: bool);
         unsafe fn gen_d_water_mark_widget_new() -> *mut DWaterMarkWidget;
         unsafe fn gen_d_water_mark_widget_as_qobject(self_: *mut DWaterMarkWidget) -> *mut QObject;
         unsafe fn gen_d_water_mark_widget_as_widget(self_: *mut DWaterMarkWidget) -> *mut QWidget;
+        unsafe fn gen_d_water_mark_widget_data(self_: *mut DWaterMarkWidget) -> *mut WaterMarkData;
+        unsafe fn gen_d_water_mark_widget_set_data(
+            self_: *mut DWaterMarkWidget,
+            data: *mut WaterMarkData,
+        );
         unsafe fn gen_d_water_progress_new() -> *mut DWaterProgress;
         unsafe fn gen_d_water_progress_as_qobject(self_: *mut DWaterProgress) -> *mut QObject;
         unsafe fn gen_d_water_progress_as_widget(self_: *mut DWaterProgress) -> *mut QWidget;

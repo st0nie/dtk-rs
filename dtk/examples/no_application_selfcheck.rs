@@ -35,6 +35,15 @@ fn main() {
     DApplication::set_quit_on_last_window_closed(false);
     let widget = QWidget::new(None);
     assert!(widget.is_alive());
+    std::thread::spawn(|| {
+        // A process-global QApplication existing on the GUI thread is NOT
+        // permission for a worker to allocate a QWidget or QObject there.
+        expect_panic("GUI thread", || QWidget::new(None));
+        expect_panic("GUI thread", DListView::new);
+        expect_panic("GUI thread", || QTimer::single_shot(0, || {}));
+    })
+    .join()
+    .unwrap();
     widget.delete_later();
     QTimer::single_shot(10, DApplication::quit);
     assert_eq!(app.exec(), 0);

@@ -1,6 +1,7 @@
 """Regression tests for generated wrapper ancestry (run with python3 -m unittest)."""
 import glob
 import os
+import re
 import unittest
 from pathlib import Path
 
@@ -61,11 +62,19 @@ class QtAncestryTests(unittest.TestCase):
     def test_generated_opaque_owner_and_borrowed_getter(self):
         generated = Path(REPO, "dtk/src/widgets.rs").read_text()
         cpp = Path(REPO, "dtk-sys/cpp/dtk_gen_shim.cpp").read_text()
-        self.assertIn("owned_opaque_wrapper!(DPrinter, genffi::DPrinter);", generated)
+        self.assertIn("opaque_wrapper!(DPrinter, genffi::DPrinter);", generated)
         self.assertIn("impl Default for OwnedOpaque<DPrinter>", generated)
         self.assertIn("void gen_d_printer_delete(DPrinter *self) { delete self; }", cpp)
-        self.assertIn("pub fn global_provider() -> Option<DFileIconProvider>", generated)
-        self.assertIn("owned_opaque_wrapper!(DFileIconProvider, genffi::DFileIconProvider);", generated)
+        self.assertIn("pub unsafe fn global_provider() -> Option<DFileIconProvider>", generated)
+        self.assertIn("opaque_wrapper!(DFileIconProvider, genffi::DFileIconProvider);", generated)
+        self.assertTrue(
+            re.search(
+                r"pub unsafe fn create_dialog_setting_info\(\s*&self,\s*type_: i32,\s*\) -> Option<DPrintPreviewSettingInfo>",
+                generated,
+            ),
+            "unguarded DPrintPreviewSettingInfo getter must require unsafe",
+        )
+        self.assertIn("pub unsafe fn instance() -> Option<DFontSizeManager>", generated)
 
     def test_qt_layout_pointer_binding(self):
         generated = Path(REPO, "dtk/src/widgets.rs").read_text()
@@ -131,6 +140,33 @@ class QtAncestryTests(unittest.TestCase):
         self.assertIn("pub fn set_model(&self, model: &QAbstractItemModel)", generated)
         self.assertIn("gen_d_variant_list_model_as_model", cpp)
         self.assertNotIn("unsupported param type: QAbstractItemModel *", report)
+
+    def test_qimage_value_mapping(self):
+        generated = Path(REPO, "dtk/src/widgets.rs").read_text()
+        report = Path(REPO, "GEN_REPORT.md").read_text()
+        self.assertIn("pub fn set_image(&self, image: &QImage)", generated)
+        self.assertIn("pub fn image(&self) -> QImage", generated)
+        self.assertIn("pub fn data(&self) -> OwnedOpaque<WaterMarkData>", generated)
+        self.assertIn("pub fn set_data(&self, data: &WaterMarkData)", generated)
+        self.assertIn("return new WaterMarkData(self->data());", Path(REPO, "dtk-sys/cpp/dtk_gen_shim.cpp").read_text())
+        self.assertNotIn("unsupported param type: const QImage &", report)
+        self.assertNotIn("unsupported return type: QImage", report)
+        self.assertNotIn("unsupported return type: const WaterMarkData &", report)
+
+    def test_qt_graphics_and_url_value_mapping(self):
+        generated = Path(REPO, "dtk/src/widgets.rs").read_text()
+        for signature in (
+            "pub fn clip_path(&self) -> QPainterPath",
+            "pub fn set_clip_path(&self, path: &QPainterPath)",
+            "pub fn background(&self) -> QBrush",
+            "pub fn set_background(&self, background: &QBrush)",
+            "pub fn set_directory_url(&self, directory: &QUrl)",
+            "pub fn directory_url(&self) -> QUrl",
+            "pub fn key_sequence(&self) -> QKeySequence",
+            "pub fn set_key_sequence(&self, keySequence: &QKeySequence)",
+        ):
+            with self.subTest(signature=signature):
+                self.assertIn(signature, generated)
 
     def test_qvariant_value_mapping(self):
         generated = Path(REPO, "dtk/src/widgets.rs").read_text()

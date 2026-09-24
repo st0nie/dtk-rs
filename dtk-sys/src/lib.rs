@@ -1,7 +1,7 @@
 //! DTK6 (dtkwidget) FFI layer. See cpp/shim.cpp for the C++ shim.
 
 use std::cell::RefCell;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::marker::PhantomData;
 
 pub mod gen_ffi;
@@ -41,6 +41,11 @@ pub mod ffi {
         type QFont;
         type QPalette;
         type QPixmap;
+        type QImage;
+        type QBrush;
+        type QPainterPath;
+        type QKeySequence;
+        type QUrl;
         type QMargins;
         type QVariant;
         type QVariantList;
@@ -251,9 +256,11 @@ pub mod ffi {
         unsafe fn table_new(rows: i32, cols: i32) -> *mut QTableWidget;
         unsafe fn table_set_column_count(t: *mut QTableWidget, cols: i32);
         unsafe fn table_set_row_count(t: *mut QTableWidget, rows: i32);
-        unsafe fn table_set_horizontal_header_labels(t: *mut QTableWidget, joined: &str);
-        unsafe fn table_set_cell_text(t: *mut QTableWidget, row: i32, col: i32, text: &str);
-        unsafe fn table_set_cell_data(t: *mut QTableWidget, row: i32, col: i32, data: i64);
+        unsafe fn table_set_horizontal_header_labels(t: *mut QTableWidget, labels: Vec<String>);
+        unsafe fn table_horizontal_header_label(t: *mut QTableWidget, col: i32) -> String;
+        unsafe fn table_set_cell_text(t: *mut QTableWidget, row: i32, col: i32, text: &str)
+        -> bool;
+        unsafe fn table_set_cell_data(t: *mut QTableWidget, row: i32, col: i32, data: i64) -> bool;
         unsafe fn table_cell_data(t: *mut QTableWidget, row: i32, col: i32) -> i64;
         unsafe fn table_cell_text(t: *mut QTableWidget, row: i32, col: i32) -> String;
         unsafe fn table_current_row(t: *mut QTableWidget) -> i32;
@@ -350,6 +357,29 @@ pub mod ffi {
         unsafe fn palette_delete(pal: *mut QPalette);
         unsafe fn pixmap_new(path: &str) -> *mut QPixmap;
         unsafe fn pixmap_delete(pm: *mut QPixmap);
+        unsafe fn image_new(width: i32, height: i32) -> *mut QImage;
+        unsafe fn image_from_file(path: &str) -> *mut QImage;
+        unsafe fn image_is_null(image: *mut QImage) -> bool;
+        unsafe fn image_width(image: *mut QImage) -> i32;
+        unsafe fn image_height(image: *mut QImage) -> i32;
+        unsafe fn image_fill(image: *mut QImage, color: *mut QColor);
+        unsafe fn image_pixel_color(image: *mut QImage, x: i32, y: i32) -> *mut QColor;
+        unsafe fn image_delete(image: *mut QImage);
+        unsafe fn painter_path_new() -> *mut QPainterPath;
+        unsafe fn painter_path_add_rect(path: *mut QPainterPath, x: f64, y: f64, w: f64, h: f64);
+        unsafe fn painter_path_is_empty(path: *mut QPainterPath) -> bool;
+        unsafe fn painter_path_element_count(path: *mut QPainterPath) -> i32;
+        unsafe fn painter_path_delete(path: *mut QPainterPath);
+        unsafe fn brush_from_color(color: *mut QColor) -> *mut QBrush;
+        unsafe fn brush_color(brush: *mut QBrush) -> *mut QColor;
+        unsafe fn brush_delete(brush: *mut QBrush);
+        unsafe fn key_sequence_from_string(text: &str) -> *mut QKeySequence;
+        unsafe fn key_sequence_to_string(seq: *mut QKeySequence) -> String;
+        unsafe fn key_sequence_delete(seq: *mut QKeySequence);
+        unsafe fn url_from_string(url: &str) -> *mut QUrl;
+        unsafe fn url_to_string(url: *mut QUrl) -> String;
+        unsafe fn url_is_valid(url: *mut QUrl) -> bool;
+        unsafe fn url_delete(url: *mut QUrl);
         // QMargins
         unsafe fn q_margins_new(left: i32, top: i32, right: i32, bottom: i32) -> *mut QMargins;
         unsafe fn margins_delete(m: *mut QMargins);
@@ -629,6 +659,24 @@ thread_local! {
     // Checked-out callbacks are absent from CALLBACKS. Track only live dispatches,
     // so unregistering an unknown/already-fired id cannot grow an unbounded tombstone set.
     static IN_FLIGHT: RefCell<HashMap<usize, bool>> = RefCell::new(HashMap::new());
+    // Only these ids have a C++ DtkRelay to disconnect. Thread-local so a
+    // foreign-thread unregister never touches Qt's GUI-thread-only QHash.
+    static RELAY_IDS: RefCell<HashSet<usize>> = RefCell::new(HashSet::new());
+}
+
+/// Record a successfully connected Qt relay on its GUI thread.
+///
+/// # Safety
+/// The relay must have been created for `id` on the current Qt object's
+/// thread by `ffi::relay_connect*`. Do not call from a worker thread.
+pub unsafe fn register_qt_relay(id: usize) {
+    if CALLBACKS.with(|c| c.borrow().contains_key(&id))
+        || IN_FLIGHT.with(|active| active.borrow().contains_key(&id))
+    {
+        RELAY_IDS.with(|relays| {
+            relays.borrow_mut().insert(id);
+        });
+    }
 }
 
 fn next_id() -> usize {
@@ -712,15 +760,23 @@ fn remove_callback(id: usize) -> bool {
 /// Remove a callback, including one currently executing. Does not call back into Qt:
 /// Qt invokes this while destroying the owning QObject or relay.
 fn dtk_cb_dispose(id: usize) {
+    RELAY_IDS.with(|relays| {
+        relays.borrow_mut().remove(&id);
+    });
     remove_callback(id);
 }
 
-/// Remove a callback and disconnect its Qt-side relay. Returns false only for an
-/// unknown/already-disposed id. Safe to call from inside the callback itself.
+/// Remove a callback and disconnect its Qt-side relay. Returns false for an
+/// unknown, disposed or foreign-thread id. A worker call with a GUI-owned id
+/// does not touch Qt; disconnect that callback on its owning GUI thread.
+/// Safe to call from inside the callback itself.
 pub fn unregister_cb(id: usize) -> bool {
     let removed = remove_callback(id);
-    // no-op for ids without a relay (e.g. timer callbacks)
-    unsafe { ffi::relay_disconnect(id) };
+    if RELAY_IDS.with(|relays| relays.borrow_mut().remove(&id)) {
+        // This id was registered through Qt on *this* thread; only now may
+        // we touch DtkRelay's GUI-thread-only global QHash.
+        unsafe { ffi::relay_disconnect(id) };
+    }
     removed
 }
 
@@ -744,37 +800,94 @@ fn finish_dispatch(id: usize, cb: Option<Cb>) {
     }
 }
 
+// FnMut cannot be invoked again while its previous invocation is still on
+// the stack. Qt can synchronously emit the same signal inside a Rust callback;
+// queue its copied arguments and deliver them when the outer callback returns.
+// Paint-widget events have their own queue because Paint holds stack pointers.
+#[derive(Clone, Copy)]
+enum SignalEvent {
+    Zero,
+    I32(i32),
+    Bool(bool),
+    I32I32(i32, i32),
+}
+thread_local! {
+    static SIGNAL_QUEUED: RefCell<HashMap<usize, std::collections::VecDeque<SignalEvent>>> =
+        RefCell::new(HashMap::new());
+}
+
 // remove-then-call so callbacks can safely (un)register callbacks; put back after.
 // catch_unwind: a panicking Rust callback must never unwind across the FFI boundary (UB).
-fn dtk_cb0(id: usize) {
-    let mut cb = begin_dispatch(id);
-    match &mut cb {
-        Some(Cb::C0(f)) => {
-            if std::panic::catch_unwind(std::panic::AssertUnwindSafe(&mut *f)).is_err() {
-                eprintln!("dtk-rs: callback {id} panicked, swallowed at FFI boundary");
-            }
+fn dispatch_signal(id: usize, event: SignalEvent) {
+    let nested = SIGNAL_QUEUED.with(|pending| {
+        let mut pending = pending.borrow_mut();
+        if let Some(queue) = pending.get_mut(&id) {
+            queue.push_back(event);
+            true
+        } else {
+            pending.insert(id, Default::default());
+            false
         }
-        Some(Cb::Once0(_)) => {
-            let Some(Cb::Once0(f)) = cb.take() else {
-                unreachable!()
-            };
-            if std::panic::catch_unwind(std::panic::AssertUnwindSafe(f)).is_err() {
-                eprintln!("dtk-rs: callback {id} panicked, swallowed at FFI boundary");
-            }
-        }
-        _ => {}
+    });
+    if nested {
+        return;
     }
+    let mut cb = begin_dispatch(id);
+    let mut next = Some(event);
+    while let Some(event) = next
+        .take()
+        .or_else(|| SIGNAL_QUEUED.with(|pending| pending.borrow_mut().get_mut(&id)?.pop_front()))
+    {
+        if IN_FLIGHT.with(|active| active.borrow().get(&id).copied()) == Some(true) {
+            break; // Qt destroyed the sender or user explicitly disconnected
+        }
+        let result = match event {
+            SignalEvent::Zero => match &mut cb {
+                Some(Cb::C0(f)) => Some(std::panic::catch_unwind(std::panic::AssertUnwindSafe(
+                    &mut *f,
+                ))),
+                Some(Cb::Once0(_)) => {
+                    let Some(Cb::Once0(f)) = cb.take() else {
+                        unreachable!()
+                    };
+                    Some(std::panic::catch_unwind(std::panic::AssertUnwindSafe(f)))
+                }
+                _ => None,
+            },
+            SignalEvent::I32(v) => match &mut cb {
+                Some(Cb::I32(f)) => Some(std::panic::catch_unwind(std::panic::AssertUnwindSafe(
+                    || f(v),
+                ))),
+                _ => None,
+            },
+            SignalEvent::Bool(v) => match &mut cb {
+                Some(Cb::Bool(f)) => Some(std::panic::catch_unwind(std::panic::AssertUnwindSafe(
+                    || f(v),
+                ))),
+                _ => None,
+            },
+            SignalEvent::I32I32(a, b) => match &mut cb {
+                Some(Cb::I32I32(f)) => Some(std::panic::catch_unwind(
+                    std::panic::AssertUnwindSafe(|| f(a, b)),
+                )),
+                _ => None,
+            },
+        };
+        if result.is_some_and(|r| r.is_err()) {
+            eprintln!("dtk-rs: callback {id} panicked, swallowed at FFI boundary");
+        }
+    }
+    SIGNAL_QUEUED.with(|pending| {
+        pending.borrow_mut().remove(&id);
+    });
     finish_dispatch(id, cb);
 }
 
+fn dtk_cb0(id: usize) {
+    dispatch_signal(id, SignalEvent::Zero);
+}
 fn dtk_cb_i32(id: usize, v: i32) {
-    let mut cb = begin_dispatch(id);
-    if let Some(Cb::I32(f)) = &mut cb
-        && std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| f(v))).is_err()
-    {
-        eprintln!("dtk-rs: callback {id} panicked, swallowed at FFI boundary");
-    }
-    finish_dispatch(id, cb);
+    dispatch_signal(id, SignalEvent::I32(v));
 }
 
 thread_local! {
@@ -880,23 +993,10 @@ fn dtk_cb_pw_focus(id: usize, focus_in: bool) {
 }
 
 fn dtk_cb_bool(id: usize, v: bool) {
-    let mut cb = begin_dispatch(id);
-    if let Some(Cb::Bool(f)) = &mut cb
-        && std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| f(v))).is_err()
-    {
-        eprintln!("dtk-rs: callback {id} panicked, swallowed at FFI boundary");
-    }
-    finish_dispatch(id, cb);
+    dispatch_signal(id, SignalEvent::Bool(v));
 }
-
 fn dtk_cb_i32_i32(id: usize, a: i32, b: i32) {
-    let mut cb = begin_dispatch(id);
-    if let Some(Cb::I32I32(f)) = &mut cb
-        && std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| f(a, b))).is_err()
-    {
-        eprintln!("dtk-rs: callback {id} panicked, swallowed at FFI boundary");
-    }
-    finish_dispatch(id, cb);
+    dispatch_signal(id, SignalEvent::I32I32(a, b));
 }
 
 fn dtk_cb_guard(id: usize) -> bool {
@@ -1013,6 +1113,75 @@ mod tests {
         dtk_cb0(id);
         assert_eq!(calls.get(), 1);
         assert!(unregister_cb(id));
+    }
+
+    #[test]
+    fn reentrant_signal_events_are_delivered_in_order() {
+        let log = Rc::new(RefCell::new(Vec::new()));
+        let id_slot = Rc::new(std::cell::Cell::new(0));
+        let (log_cb, id_cb) = (log.clone(), id_slot.clone());
+        let id = register_cb_i32(move |value| {
+            log_cb.borrow_mut().push(value);
+            if value == 1 {
+                dtk_cb_i32(id_cb.get(), 2);
+                dtk_cb_i32(id_cb.get(), 3);
+            }
+        });
+        id_slot.set(id);
+        dtk_cb_i32(id, 1);
+        assert_eq!(*log.borrow(), vec![1, 2, 3]);
+        assert!(unregister_cb(id));
+    }
+
+    #[test]
+    fn reentrant_one_shot_stays_one_shot() {
+        let calls = Rc::new(std::cell::Cell::new(0));
+        let id_slot = Rc::new(std::cell::Cell::new(0));
+        let (calls_cb, id_cb) = (calls.clone(), id_slot.clone());
+        let id = register_cb_once(move || {
+            calls_cb.set(calls_cb.get() + 1);
+            dtk_cb0(id_cb.get());
+        });
+        id_slot.set(id);
+        dtk_cb0(id);
+        assert_eq!(calls.get(), 1);
+        assert!(!unregister_cb(id));
+    }
+
+    #[test]
+    fn reentrant_two_argument_signals_preserve_order() {
+        let log = Rc::new(RefCell::new(Vec::new()));
+        let id_slot = Rc::new(std::cell::Cell::new(0));
+        let (log_cb, id_cb) = (log.clone(), id_slot.clone());
+        let id = register_cb_i32_i32(move |a, b| {
+            log_cb.borrow_mut().push((a, b));
+            if a == 1 {
+                dtk_cb_i32_i32(id_cb.get(), 2, 20);
+                dtk_cb_i32_i32(id_cb.get(), 3, 30);
+            }
+        });
+        id_slot.set(id);
+        dtk_cb_i32_i32(id, 1, 10);
+        assert_eq!(*log.borrow(), vec![(1, 10), (2, 20), (3, 30)]);
+        assert!(unregister_cb(id));
+    }
+
+    #[test]
+    fn destroying_owner_during_nested_signal_discards_pending_events() {
+        let calls = Rc::new(std::cell::Cell::new(0));
+        let id_slot = Rc::new(std::cell::Cell::new(0));
+        let (calls_cb, id_cb) = (calls.clone(), id_slot.clone());
+        let id = register_cb_bool(move |value| {
+            calls_cb.set(calls_cb.get() + 1);
+            if value {
+                dtk_cb_bool(id_cb.get(), false);
+                dtk_cb_dispose(id_cb.get());
+            }
+        });
+        id_slot.set(id);
+        dtk_cb_bool(id, true);
+        assert_eq!(calls.get(), 1);
+        assert!(!unregister_cb(id));
     }
 
     #[test]

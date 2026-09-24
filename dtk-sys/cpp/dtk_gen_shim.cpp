@@ -192,6 +192,8 @@ bool gen_d_blur_effect_widget_is_full(DBlurEffectWidget *self) { return self->is
 bool gen_d_blur_effect_widget_blur_enabled(DBlurEffectWidget *self) { return self->blurEnabled(); }
 QColor * gen_d_blur_effect_widget_mask_color(DBlurEffectWidget *self) { return new QColor(self->maskColor()); }
 uint8_t gen_d_blur_effect_widget_mask_alpha(DBlurEffectWidget *self) { return self->maskAlpha(); }
+void gen_d_blur_effect_widget_set_mask_path(DBlurEffectWidget *self, QPainterPath * path) { self->setMaskPath(*path); }
+void gen_d_blur_effect_widget_set_source_image(DBlurEffectWidget *self, QImage * image, bool autoScale) { self->setSourceImage(*image, autoScale); }
 void gen_d_blur_effect_widget_set_radius(DBlurEffectWidget *self, int32_t radius) { self->setRadius(radius); }
 void gen_d_blur_effect_widget_set_mode(DBlurEffectWidget *self, int32_t mode) { self->setMode(static_cast<DBlurEffectWidget::BlurMode>(mode)); }
 void gen_d_blur_effect_widget_set_blend_mode(DBlurEffectWidget *self, int32_t blendMode) { self->setBlendMode(static_cast<DBlurEffectWidget::BlendMode>(blendMode)); }
@@ -204,6 +206,7 @@ void gen_d_blur_effect_widget_set_full(DBlurEffectWidget *self, bool full) { sel
 void gen_d_blur_effect_widget_set_blur_enabled(DBlurEffectWidget *self, bool blurEnabled) { self->setBlurEnabled(blurEnabled); }
 DBlurEffectGroup *gen_d_blur_effect_group_new() { return new DBlurEffectGroup; }
 void gen_d_blur_effect_group_delete(DBlurEffectGroup *self) { delete self; }
+void gen_d_blur_effect_group_set_source_image(DBlurEffectGroup *self, QImage * image, int32_t blurRadius) { self->setSourceImage(*image, blurRadius); }
 void gen_d_blur_effect_group_add_widget(DBlurEffectGroup *self, DBlurEffectWidget * widget, QPoint * offset) { self->addWidget(widget, *offset); }
 void gen_d_blur_effect_group_remove_widget(DBlurEffectGroup *self, DBlurEffectWidget * widget) { self->removeWidget(widget); }
 DBlurEffectWithBorderWidget *gen_d_blur_effect_with_border_widget_new() { return new DBlurEffectWithBorderWidget; }
@@ -258,10 +261,13 @@ void gen_d_circle_progress_set_line_width(DCircleProgress *self, int32_t width) 
 QObject *gen_d_clip_effect_widget_as_qobject(DClipEffectWidget *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_clip_effect_widget_as_widget(DClipEffectWidget *self) { return static_cast<QWidget *>(self); }
 QMargins * gen_d_clip_effect_widget_margins(DClipEffectWidget *self) { return new QMargins(self->margins()); }
+QPainterPath * gen_d_clip_effect_widget_clip_path(DClipEffectWidget *self) { return new QPainterPath(self->clipPath()); }
 void gen_d_clip_effect_widget_set_margins(DClipEffectWidget *self, QMargins * margins) { self->setMargins(*margins); }
+void gen_d_clip_effect_widget_set_clip_path(DClipEffectWidget *self, QPainterPath * path) { self->setClipPath(*path); }
 DColoredProgressBar *gen_d_colored_progress_bar_new() { return new DColoredProgressBar; }
 QObject *gen_d_colored_progress_bar_as_qobject(DColoredProgressBar *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_colored_progress_bar_as_widget(DColoredProgressBar *self) { return static_cast<QWidget *>(self); }
+void gen_d_colored_progress_bar_add_threshold(DColoredProgressBar *self, int32_t threshold, QBrush * brush) { self->addThreshold(threshold, *brush); }
 void gen_d_colored_progress_bar_remove_threshold(DColoredProgressBar *self, int32_t threshold) { self->removeThreshold(threshold); }
 DComboBox *gen_d_combo_box_new() { return new DComboBox; }
 QObject *gen_d_combo_box_as_qobject(DComboBox *self) { return static_cast<QObject *>(self); }
@@ -278,6 +284,8 @@ rust::String gen_d_crumb_text_format_text(DCrumbTextFormat *self) { return to_ru
 void gen_d_crumb_text_format_set_text(DCrumbTextFormat *self, rust::Str text) { self->setText(from_rust_str(text)); }
 QColor * gen_d_crumb_text_format_text_color(DCrumbTextFormat *self) { return new QColor(self->textColor()); }
 void gen_d_crumb_text_format_set_text_color(DCrumbTextFormat *self, QColor * color) { self->setTextColor(*color); }
+QBrush * gen_d_crumb_text_format_background(DCrumbTextFormat *self) { return new QBrush(self->background()); }
+void gen_d_crumb_text_format_set_background(DCrumbTextFormat *self, QBrush * background) { self->setBackground(*background); }
 int32_t gen_d_crumb_text_format_background_radius(DCrumbTextFormat *self) { return self->backgroundRadius(); }
 void gen_d_crumb_text_format_set_background_radius(DCrumbTextFormat *self, int32_t radius) { self->setBackgroundRadius(radius); }
 DCrumbEdit *gen_d_crumb_edit_new() { return new DCrumbEdit; }
@@ -395,6 +403,8 @@ QObject *gen_d_file_chooser_edit_as_qobject(DFileChooserEdit *self) { return sta
 QWidget *gen_d_file_chooser_edit_as_widget(DFileChooserEdit *self) { return static_cast<QWidget *>(self); }
 void gen_d_file_chooser_edit_set_name_filters(DFileChooserEdit *self, rust::Vec<rust::String> filters) { self->setNameFilters(to_qstringlist(std::move(filters))); }
 rust::Vec<rust::String> gen_d_file_chooser_edit_name_filters(DFileChooserEdit *self) { return to_rust_string_vec(self->nameFilters()); }
+void gen_d_file_chooser_edit_set_directory_url(DFileChooserEdit *self, QUrl * directory) { self->setDirectoryUrl(*directory); }
+QUrl * gen_d_file_chooser_edit_directory_url(DFileChooserEdit *self) { return new QUrl(self->directoryUrl()); }
 void gen_d_file_chooser_edit_set_dialog_display_position(DFileChooserEdit *self, int32_t dialogDisplayPosition) { self->setDialogDisplayPosition(static_cast<DFileChooserEdit::DialogDisplayPosition>(dialogDisplayPosition)); }
 int32_t gen_d_file_chooser_edit_dialog_display_position(DFileChooserEdit *self) { return static_cast<int32_t>(self->dialogDisplayPosition()); }
 void gen_d_file_chooser_edit_init_dialog(DFileChooserEdit *self) { self->initDialog(); }
@@ -473,7 +483,9 @@ QWidget *gen_d_vertical_line_as_widget(DVerticalLine *self) { return static_cast
 DGraphicsClipEffect *gen_d_graphics_clip_effect_new() { return new DGraphicsClipEffect; }
 QObject *gen_d_graphics_clip_effect_as_qobject(DGraphicsClipEffect *self) { return static_cast<QObject *>(self); }
 QMargins * gen_d_graphics_clip_effect_margins(DGraphicsClipEffect *self) { return new QMargins(self->margins()); }
+QPainterPath * gen_d_graphics_clip_effect_clip_path(DGraphicsClipEffect *self) { return new QPainterPath(self->clipPath()); }
 void gen_d_graphics_clip_effect_set_margins(DGraphicsClipEffect *self, QMargins * margins) { self->setMargins(*margins); }
+void gen_d_graphics_clip_effect_set_clip_path(DGraphicsClipEffect *self, QPainterPath * clipPath) { self->setClipPath(*clipPath); }
 DGraphicsGlowEffect *gen_d_graphics_glow_effect_new() { return new DGraphicsGlowEffect; }
 QObject *gen_d_graphics_glow_effect_as_qobject(DGraphicsGlowEffect *self) { return static_cast<QObject *>(self); }
 void gen_d_graphics_glow_effect_set_offset(DGraphicsGlowEffect *self, double dx, double dy) { self->setOffset(dx, dy); }
@@ -513,6 +525,8 @@ void gen_d_icon_button_set_flat(DIconButton *self, bool flat) { self->setFlat(fl
 DImageViewer *gen_d_image_viewer_new() { return new DImageViewer; }
 QObject *gen_d_image_viewer_as_qobject(DImageViewer *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_image_viewer_as_widget(DImageViewer *self) { return static_cast<QWidget *>(self); }
+QImage * gen_d_image_viewer_image(DImageViewer *self) { return new QImage(self->image()); }
+void gen_d_image_viewer_set_image(DImageViewer *self, QImage * image) { self->setImage(*image); }
 rust::String gen_d_image_viewer_file_name(DImageViewer *self) { return to_rust_string(self->fileName()); }
 void gen_d_image_viewer_set_file_name(DImageViewer *self, rust::Str fileName) { self->setFileName(from_rust_str(fileName)); }
 double gen_d_image_viewer_scale_factor(DImageViewer *self) { return self->scaleFactor(); }
@@ -594,7 +608,10 @@ DKeySequenceEdit *gen_d_key_sequence_edit_new() { return new DKeySequenceEdit; }
 QObject *gen_d_key_sequence_edit_as_qobject(DKeySequenceEdit *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_key_sequence_edit_as_widget(DKeySequenceEdit *self) { return static_cast<QWidget *>(self); }
 void gen_d_key_sequence_edit_clear(DKeySequenceEdit *self) { self->clear(); }
+bool gen_d_key_sequence_edit_set_key_sequence(DKeySequenceEdit *self, QKeySequence * keySequence) { return self->setKeySequence(*keySequence); }
+QKeySequence * gen_d_key_sequence_edit_key_sequence(DKeySequenceEdit *self) { return new QKeySequence(self->keySequence()); }
 void gen_d_key_sequence_edit_shortcut_direction(DKeySequenceEdit *self, int32_t alig) { self->ShortcutDirection(static_cast<Qt::AlignmentFlag>(alig)); }
+rust::String gen_d_key_sequence_edit_get_key_sequence(DKeySequenceEdit *self, QKeySequence * sequence) { return to_rust_string(self->getKeySequence(*sequence)); }
 DLicenseDialog *gen_d_license_dialog_new() { return new DLicenseDialog; }
 QObject *gen_d_license_dialog_as_qobject(DLicenseDialog *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_license_dialog_as_widget(DLicenseDialog *self) { return static_cast<QWidget *>(self); }
@@ -834,6 +851,7 @@ void gen_d_print_preview_widget_update_water_mark(DPrintPreviewWidget *self) { s
 void gen_d_print_preview_widget_refresh_begin(DPrintPreviewWidget *self) { self->refreshBegin(); }
 void gen_d_print_preview_widget_refresh_end(DPrintPreviewWidget *self) { self->refreshEnd(); }
 void gen_d_print_preview_widget_set_water_mark_type(DPrintPreviewWidget *self, int32_t type_) { self->setWaterMarkType(type_); }
+void gen_d_print_preview_widget_set_water_marg_image(DPrintPreviewWidget *self, QImage * image) { self->setWaterMargImage(*image); }
 void gen_d_print_preview_widget_set_water_mark_rotate(DPrintPreviewWidget *self, double rotate) { self->setWaterMarkRotate(rotate); }
 void gen_d_print_preview_widget_set_water_mark_scale(DPrintPreviewWidget *self, double scale) { self->setWaterMarkScale(scale); }
 void gen_d_print_preview_widget_set_water_mark_opacity(DPrintPreviewWidget *self, double opacity) { self->setWaterMarkOpacity(opacity); }
@@ -1225,6 +1243,8 @@ QWidget *gen_d_warning_button_as_widget(DWarningButton *self) { return static_ca
 QObject *gen_d_water_mark_helper_as_qobject(DWaterMarkHelper *self) { return static_cast<QObject *>(self); }
 DWaterMarkHelper * gen_d_water_mark_helper_instance() { return const_cast<DWaterMarkHelper *>(DWaterMarkHelper::instance()); }
 void gen_d_water_mark_helper_register_widget(DWaterMarkHelper *self, QWidget * w) { self->registerWidget(w); }
+WaterMarkData * gen_d_water_mark_helper_data(DWaterMarkHelper *self) { return new WaterMarkData(self->data()); }
+void gen_d_water_mark_helper_set_data(DWaterMarkHelper *self, WaterMarkData * data) { self->setData(*data); }
 WaterMarkData *gen_water_mark_data_new() { return new WaterMarkData; }
 void gen_water_mark_data_delete(WaterMarkData *self) { delete self; }
 int32_t gen_water_mark_data_type_(WaterMarkData *self) { return static_cast<int32_t>(self->type()); }
@@ -1247,11 +1267,15 @@ double gen_water_mark_data_rotation(WaterMarkData *self) { return self->rotation
 void gen_water_mark_data_set_rotation(WaterMarkData *self, double rotation) { self->setRotation(rotation); }
 double gen_water_mark_data_opacity(WaterMarkData *self) { return self->opacity(); }
 void gen_water_mark_data_set_opacity(WaterMarkData *self, double opacity) { self->setOpacity(opacity); }
+QImage * gen_water_mark_data_image(WaterMarkData *self) { return new QImage(self->image()); }
+void gen_water_mark_data_set_image(WaterMarkData *self, QImage * image) { self->setImage(*image); }
 bool gen_water_mark_data_gray_scale(WaterMarkData *self) { return self->grayScale(); }
 void gen_water_mark_data_set_gray_scale(WaterMarkData *self, bool grayScale) { self->setGrayScale(grayScale); }
 DWaterMarkWidget *gen_d_water_mark_widget_new() { return new DWaterMarkWidget; }
 QObject *gen_d_water_mark_widget_as_qobject(DWaterMarkWidget *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_water_mark_widget_as_widget(DWaterMarkWidget *self) { return static_cast<QWidget *>(self); }
+WaterMarkData * gen_d_water_mark_widget_data(DWaterMarkWidget *self) { return new WaterMarkData(self->data()); }
+void gen_d_water_mark_widget_set_data(DWaterMarkWidget *self, WaterMarkData * data) { self->setData(*data); }
 DWaterProgress *gen_d_water_progress_new() { return new DWaterProgress; }
 QObject *gen_d_water_progress_as_qobject(DWaterProgress *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_water_progress_as_widget(DWaterProgress *self) { return static_cast<QWidget *>(self); }

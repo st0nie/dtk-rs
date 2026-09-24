@@ -1,12 +1,12 @@
 # DTK6 widget binding coverage report
 
-classes: 146, methods generated: 960, skipped: 228
+classes: 146, methods generated: 984, skipped: 204
 
 Qt ancestry: 85 widgets, 26 QObjects, 35 opaque types
 
 ## skip reasons
-- unsupported param type: 153
-- unsupported return type: 71
+- unsupported param type: 146
+- unsupported return type: 54
 - signature parse failed: 4
 
 ## DAboutDialog — 19 methods generated, 0 skipped
@@ -46,13 +46,10 @@ Qt ancestry: 85 widgets, 26 QObjects, 35 opaque types
 
 ## DBaseLine — 8 methods generated, 0 skipped
 
-## DBlurEffectWidget — 19 methods generated, 3 skipped
-- `void setMaskPath(const QPainterPath &path);` ← unsupported param type: const QPainterPath &
-- `void setSourceImage(const QImage &image, bool autoScale = true);` ← unsupported param type: const QImage &
+## DBlurEffectWidget — 21 methods generated, 1 skipped
 - `void updateBlurSourceImage(const QRegion &ren);` ← unsupported param type: const QRegion &
 
-## DBlurEffectGroup — 2 methods generated, 2 skipped
-- `void setSourceImage(QImage image, int blurRadius = 35);` ← unsupported param type: QImage
+## DBlurEffectGroup — 3 methods generated, 1 skipped
 - `void paint(QPainter *pa, DBlurEffectWidget *widget) const;` ← unsupported param type: QPainter *
 
 ## DBlurEffectWithBorderWidget — 0 methods generated, 0 skipped
@@ -79,12 +76,9 @@ Qt ancestry: 85 widgets, 26 QObjects, 35 opaque types
 - `QLabel *topLabel();` ← unsupported return type: QLabel *
 - `QLabel *bottomLabel();` ← unsupported return type: QLabel *
 
-## DClipEffectWidget — 2 methods generated, 2 skipped
-- `QPainterPath clipPath() const;` ← unsupported return type: QPainterPath
-- `void setClipPath(const QPainterPath &path);` ← unsupported param type: const QPainterPath &
+## DClipEffectWidget — 4 methods generated, 0 skipped
 
-## DColoredProgressBar — 1 methods generated, 2 skipped
-- `void addThreshold(int threshold, QBrush brush);` ← unsupported param type: QBrush
+## DColoredProgressBar — 2 methods generated, 1 skipped
 - `QList<int> thresholds() const;` ← unsupported return type: QList<int>
 
 ## DComboBox — 1 methods generated, 1 skipped
@@ -92,9 +86,7 @@ Qt ancestry: 85 widgets, 26 QObjects, 35 opaque types
 
 ## DCommandLinkButton — 1 methods generated, 0 skipped
 
-## DCrumbTextFormat — 8 methods generated, 2 skipped
-- `QBrush background() const;` ← unsupported return type: QBrush
-- `void setBackground(const QBrush &background);` ← unsupported param type: const QBrush &
+## DCrumbTextFormat — 10 methods generated, 0 skipped
 
 ## DCrumbEdit — 12 methods generated, 5 skipped
 - `bool insertCrumb(const DCrumbTextFormat &format, int pos = -1);` ← unsupported param type: const DCrumbTextFormat &
@@ -122,11 +114,9 @@ Qt ancestry: 85 widgets, 26 QObjects, 35 opaque types
 ## DFeatureDisplayDialog — 8 methods generated, 1 skipped
 - `void addItems(QList<DFeatureItem*> items);` ← unsupported param type: QList<DFeatureItem*>
 
-## DFileChooserEdit — 5 methods generated, 6 skipped
+## DFileChooserEdit — 7 methods generated, 4 skipped
 - `void setFileMode(QFileDialog::FileMode mode);` ← unsupported param type: QFileDialog::FileMode
 - `QFileDialog::FileMode fileMode() const;` ← unsupported return type: QFileDialog::FileMode
-- `void setDirectoryUrl(const QUrl &directory);` ← unsupported param type: const QUrl &
-- `QUrl directoryUrl();` ← unsupported return type: QUrl
 - `void setFileDialog(QFileDialog *fileDialog);` ← unsupported param type: QFileDialog *
 - `QFileDialog *fileDialog() const;` ← unsupported return type: QFileDialog *
 
@@ -166,9 +156,7 @@ Qt ancestry: 85 widgets, 26 QObjects, 35 opaque types
 
 ## DVerticalLine — 0 methods generated, 0 skipped
 
-## DGraphicsClipEffect — 2 methods generated, 2 skipped
-- `QPainterPath clipPath() const;` ← unsupported return type: QPainterPath
-- `void setClipPath(const QPainterPath &clipPath);` ← unsupported param type: const QPainterPath &
+## DGraphicsClipEffect — 4 methods generated, 0 skipped
 
 ## DGraphicsGlowEffect — 13 methods generated, 2 skipped
 - `void draw(QPainter *painter);` ← unsupported param type: QPainter *
@@ -179,9 +167,7 @@ Qt ancestry: 85 widgets, 26 QObjects, 35 opaque types
 ## DIconButton — 12 methods generated, 1 skipped
 - `void setIcon(QStyle::StandardPixmap iconType);` ← unsupported param type: QStyle::StandardPixmap
 
-## DImageViewer — 21 methods generated, 2 skipped
-- `QImage image() const;` ← unsupported return type: QImage
-- `void setImage(const QImage &image);` ← unsupported param type: const QImage &
+## DImageViewer — 23 methods generated, 0 skipped
 
 ## DIndeterminateProgressbar — 0 methods generated, 0 skipped
 
@@ -193,10 +179,7 @@ Qt ancestry: 85 widgets, 26 QObjects, 35 opaque types
 
 ## DIpv4LineEdit — 9 methods generated, 0 skipped
 
-## DKeySequenceEdit — 2 methods generated, 3 skipped
-- `bool setKeySequence(const QKeySequence &keySequence);` ← unsupported param type: const QKeySequence &
-- `QKeySequence keySequence();` ← unsupported return type: QKeySequence
-- `QString getKeySequence(QKeySequence sequence);` ← unsupported param type: QKeySequence
+## DKeySequenceEdit — 5 methods generated, 0 skipped
 
 ## DLicenseDialog — 5 methods generated, 0 skipped
 
@@ -287,11 +270,10 @@ Qt ancestry: 85 widgets, 26 QObjects, 35 opaque types
 ## DPrinter — 1 methods generated, 1 skipped
 - `QList<const QPicture *> getPrinterPages();` ← unsupported return type: QList<const QPicture *>
 
-## DPrintPreviewWidget — 48 methods generated, 5 skipped
+## DPrintPreviewWidget — 49 methods generated, 4 skipped
 - `void setPageRange(const QVector<int> &rangePages);` ← unsupported param type: const QVector<int> &
 - `void setColorMode(const DPrinter::ColorMode &colorMode);` ← unsupported param type: const DPrinter::ColorMode &
 - `DPrinter::ColorMode getColorMode();` ← unsupported return type: DPrinter::ColorMode
-- `void setWaterMargImage(const QImage &image);` ← unsupported param type: const QImage &
 - `void themeTypeChanged(DGuiApplicationHelper::ColorType themeType);` ← unsupported param type: DGuiApplicationHelper::ColorType
 
 ## DProgressBar — 2 methods generated, 0 skipped
@@ -387,12 +369,12 @@ Qt ancestry: 85 widgets, 26 QObjects, 35 opaque types
 - `QSize sizeFromContents(QStyle::ContentsType ct, const QStyleOption *opt, const Q` ← unsupported param type: QStyle::ContentsType
 - `QIcon standardIcon(QStyle::StandardPixmap st, const QStyleOption *opt = nullptr,` ← unsupported param type: QStyle::StandardPixmap
 - `QPixmap generatedIconPixmap(QIcon::Mode iconMode, const QPixmap &pixmap, const Q` ← unsupported param type: QIcon::Mode
-- `QBrush generatedBrush(const QStyleOption *option, const QBrush &base, QPalette::` ← unsupported return type: QBrush
-- `QBrush generatedBrush(StyleState state, const QStyleOption *option, const QBrush` ← unsupported return type: QBrush
-- `virtual QBrush generatedBrush(StateFlags flags, const QBrush &base, QPalette::Co` ← unsupported return type: QBrush
-- `QBrush generatedBrush(const QStyleOption *option, const QBrush &base, DPalette::` ← unsupported return type: QBrush
-- `QBrush generatedBrush(StyleState state, const QStyleOption *option, const QBrush` ← unsupported return type: QBrush
-- `virtual QBrush generatedBrush(StateFlags flags, const QBrush &base, DPalette::Co` ← unsupported return type: QBrush
+- `QBrush generatedBrush(const QStyleOption *option, const QBrush &base, QPalette::` ← unsupported param type: const QStyleOption *
+- `QBrush generatedBrush(StyleState state, const QStyleOption *option, const QBrush` ← unsupported param type: const QStyleOption *
+- `virtual QBrush generatedBrush(StateFlags flags, const QBrush &base, QPalette::Co` ← unsupported param type: StateFlags
+- `QBrush generatedBrush(const QStyleOption *option, const QBrush &base, DPalette::` ← unsupported param type: const QStyleOption *
+- `QBrush generatedBrush(StyleState state, const QStyleOption *option, const QBrush` ← unsupported param type: const QStyleOption *
+- `virtual QBrush generatedBrush(StateFlags flags, const QBrush &base, DPalette::Co` ← unsupported param type: StateFlags
 - `static QSizeF viewItemTextLayout(QTextLayout &textLayout, int lineWidth);` ← unsupported return type: QSizeF
 - `static QSize viewItemSize(const QStyle *style, const QStyleOptionViewItem *optio` ← unsupported param type: const QStyle *
 - `static void viewItemLayout(const QStyle *style, const QStyleOptionViewItem *opt,` ← unsupported param type: const QStyle *
@@ -404,8 +386,8 @@ Qt ancestry: 85 widgets, 26 QObjects, 35 opaque types
 - `inline DStyleHelper(const QStyle *style = QApplication::style());` ← unsupported return type: D
 - `inline void setStyle(const QStyle *style);` ← unsupported param type: const QStyle *
 - `inline const QStyle *style() const` ← unsupported return type: const QStyle *
-- `inline QBrush generatedBrush(const QStyleOption *option, const QBrush &base, QPa` ← unsupported return type: QBrush
-- `inline QBrush generatedBrush(const QStyleOption *option, const QBrush &base, QPa` ← unsupported return type: QBrush
+- `inline QBrush generatedBrush(const QStyleOption *option, const QBrush &base, QPa` ← unsupported param type: const QStyleOption *
+- `inline QBrush generatedBrush(const QStyleOption *option, const QBrush &base, QPa` ← unsupported param type: const QStyleOption *
 - `inline QColor getColor(const QStyleOption *option, QPalette::ColorRole role) con` ← unsupported param type: const QStyleOption *
 - `inline QColor getColor(const QStyleOption *option, const DPalette &palette, DPal` ← unsupported param type: const QStyleOption *
 - `inline QColor getColor(const T *option, DPalette::ColorType type) const` ← unsupported param type: const T *
@@ -505,17 +487,11 @@ Qt ancestry: 85 widgets, 26 QObjects, 35 opaque types
 
 ## DWarningButton — 0 methods generated, 0 skipped
 
-## DWaterMarkHelper — 2 methods generated, 2 skipped
-- `WaterMarkData data() const;` ← unsupported return type: WaterMarkData
-- `void setData(const WaterMarkData &data);` ← unsupported param type: const WaterMarkData &
+## DWaterMarkHelper — 4 methods generated, 0 skipped
 
-## WaterMarkData — 22 methods generated, 2 skipped
-- `QImage image() const;` ← unsupported return type: QImage
-- `void setImage(const QImage &image);` ← unsupported param type: const QImage &
+## WaterMarkData — 24 methods generated, 0 skipped
 
-## DWaterMarkWidget — 0 methods generated, 2 skipped
-- `const WaterMarkData &data();` ← unsupported return type: const WaterMarkData &
-- `void setData(const WaterMarkData &data);` ← unsupported param type: const WaterMarkData &
+## DWaterMarkWidget — 2 methods generated, 0 skipped
 
 ## DWaterProgress — 5 methods generated, 0 skipped
 

@@ -2,13 +2,14 @@
 //!
 //! Lifetime: Qt parents own their children; every `T::new()`/similar constructor
 //! returns `Owned<T>`, which queues Qt deletion on drop *unless*
-//! it has since gained a Qt parent (added to a layout, set as a central widget,
-//! passed as another constructor's parent, ...) — checked at drop time, so it
-//! tracks parenting performed anywhere in the object's life. `Owned<T>` derefs
+//! Qt ever adopted it via a parent (added to a layout, set as a central widget,
+//! passed as another constructor's parent, ...) — the QObject guard records
+//! parent changes so an earlier owner never reclaims a detached object. `Owned<T>` derefs
 //! to the plain, `Clone`-able, non-owning view; share that (or an `Rc<Owned<T>>`)
 //! into closures/long-lived structs. Every view (owning or not) still must not
 //! be used after Qt destroys the object; a `QPointer`-backed guard makes that a
-//! panic instead of a dangling dereference.
+//! panic instead of a dangling dereference. A running event loop is required
+//! to execute the `deleteLater()` queued by an unadopted owner.
 //! Qt GUI objects are single-threaded; wrappers are !Send/!Sync.
 
 use dtk_sys::ffi;
@@ -24,11 +25,12 @@ fn opt_ptr(w: Option<&QWidget>) -> *mut ffi::QWidget {
     w.map_or(std::ptr::null_mut(), QWidget::live_ptr)
 }
 
-/// Qt widgets and event-driven QObjects must not be created before QApplication.
+/// Qt widgets and event-driven QObjects require the QApplication's own GUI
+/// thread, not merely a process-global QApplication created elsewhere.
 pub(crate) fn require_application() {
     assert!(
         unsafe { ffi::application_is_gui() },
-        "create DApplication before constructing Qt objects"
+        "create DApplication before constructing Qt objects and call them on its GUI thread"
     );
 }
 
@@ -330,15 +332,10 @@ macro_rules! opaque_wrapper_impl {
     };
 }
 
+// No Copy/Clone on opaque pointer views: an OwnedOpaque<T> must not be
+// duplicated through Deref, and an unguarded borrowed view must not be
+// inadvertently propagated beyond its native owner's lifetime.
 macro_rules! opaque_wrapper {
-    ($name:ident, $ffi:ty) => {
-        opaque_wrapper_impl!($name, $ffi, #[derive(Clone, Copy)]);
-    };
-}
-
-// Opaque types with `new()` have a unique owner. Borrowed views are deliberately
-// not Copy, so the owner cannot be copied out through Deref.
-macro_rules! owned_opaque_wrapper {
     ($name:ident, $ffi:ty) => {
         opaque_wrapper_impl!($name, $ffi,);
     };
@@ -862,6 +859,7 @@ pub unsafe trait Signal0 {
         let sender = self.qobject_ptr();
         let id = dtk_sys::register_cb0(f);
         if unsafe { ffi::relay_connect0(sender, signal, id) } {
+            unsafe { dtk_sys::register_qt_relay(id) };
             id
         } else {
             dtk_sys::unregister_cb(id); // roll back registration
@@ -881,6 +879,7 @@ pub unsafe trait SignalI32 {
         let sender = self.qobject_ptr();
         let id = dtk_sys::register_cb_i32(f);
         if unsafe { ffi::relay_connect_i32(sender, signal, id) } {
+            unsafe { dtk_sys::register_qt_relay(id) };
             id
         } else {
             dtk_sys::unregister_cb(id);
@@ -900,6 +899,7 @@ pub unsafe trait SignalBool {
         let sender = self.qobject_ptr();
         let id = dtk_sys::register_cb_bool(f);
         if unsafe { ffi::relay_connect_bool(sender, signal, id) } {
+            unsafe { dtk_sys::register_qt_relay(id) };
             id
         } else {
             dtk_sys::unregister_cb(id);
@@ -919,6 +919,7 @@ pub unsafe trait SignalI32I32 {
         let sender = self.qobject_ptr();
         let id = dtk_sys::register_cb_i32_i32(f);
         if unsafe { ffi::relay_connect_i32_i32(sender, signal, id) } {
+            unsafe { dtk_sys::register_qt_relay(id) };
             id
         } else {
             dtk_sys::unregister_cb(id);
@@ -1106,6 +1107,11 @@ value_wrapper!(QColor, ffi::QColor, color_delete);
 value_wrapper!(QFont, ffi::QFont, font_delete);
 value_wrapper!(QPalette, ffi::QPalette, palette_delete);
 value_wrapper!(QPixmap, ffi::QPixmap, pixmap_delete);
+value_wrapper!(QImage, ffi::QImage, image_delete);
+value_wrapper!(QBrush, ffi::QBrush, brush_delete);
+value_wrapper!(QPainterPath, ffi::QPainterPath, painter_path_delete);
+value_wrapper!(QKeySequence, ffi::QKeySequence, key_sequence_delete);
+value_wrapper!(QUrl, ffi::QUrl, url_delete);
 value_wrapper!(QPoint, ffi::QPoint, point_delete);
 value_wrapper!(QRect, ffi::QRect, rect_delete);
 value_wrapper!(QSize, ffi::QSize, size_delete);
@@ -1281,6 +1287,87 @@ impl QPixmap {
     pub fn new(path: &str) -> Self {
         require_application();
         Self::from_raw(unsafe { ffi::pixmap_new(path) })
+    }
+}
+
+impl QImage {
+    /// ARGB32 pixel buffer. Pixels start uninitialised, as in Qt's QImage;
+    /// call `fill` before reading them.
+    pub fn new(width: i32, height: i32) -> Self {
+        Self::from_raw(unsafe { ffi::image_new(width, height) })
+    }
+    /// Load an image file. A failed load yields a null QImage, as in Qt.
+    pub fn from_file(path: &str) -> Self {
+        Self::from_raw(unsafe { ffi::image_from_file(path) })
+    }
+    pub fn is_null(&self) -> bool {
+        unsafe { ffi::image_is_null(self.ptr) }
+    }
+    pub fn width(&self) -> i32 {
+        unsafe { ffi::image_width(self.ptr) }
+    }
+    pub fn height(&self) -> i32 {
+        unsafe { ffi::image_height(self.ptr) }
+    }
+    pub fn fill(&mut self, color: &QColor) {
+        unsafe { ffi::image_fill(self.ptr, color.ptr) }
+    }
+    /// Pixel color; x/y must be in bounds (Qt warns on invalid coordinates).
+    pub fn pixel_color(&self, x: i32, y: i32) -> QColor {
+        assert!(x >= 0 && x < self.width() && y >= 0 && y < self.height());
+        QColor::from_raw(unsafe { ffi::image_pixel_color(self.ptr, x, y) })
+    }
+}
+
+impl QBrush {
+    pub fn from_color(color: &QColor) -> Self {
+        Self::from_raw(unsafe { ffi::brush_from_color(color.ptr) })
+    }
+    pub fn color(&self) -> QColor {
+        QColor::from_raw(unsafe { ffi::brush_color(self.ptr) })
+    }
+}
+
+impl QPainterPath {
+    pub fn new() -> Self {
+        Self::from_raw(unsafe { ffi::painter_path_new() })
+    }
+    pub fn add_rect(&mut self, x: f64, y: f64, w: f64, h: f64) {
+        unsafe { ffi::painter_path_add_rect(self.ptr, x, y, w, h) }
+    }
+    pub fn is_empty(&self) -> bool {
+        unsafe { ffi::painter_path_is_empty(self.ptr) }
+    }
+    pub fn element_count(&self) -> i32 {
+        unsafe { ffi::painter_path_element_count(self.ptr) }
+    }
+}
+
+impl QKeySequence {
+    /// Parse a Qt portable shortcut such as `Ctrl+Shift+K`.
+    pub fn from_portable_text(text: &str) -> Self {
+        Self::from_raw(unsafe { ffi::key_sequence_from_string(text) })
+    }
+}
+
+impl std::fmt::Display for QKeySequence {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&unsafe { ffi::key_sequence_to_string(self.ptr) })
+    }
+}
+
+impl QUrl {
+    pub fn from_string(url: &str) -> Self {
+        Self::from_raw(unsafe { ffi::url_from_string(url) })
+    }
+    pub fn is_valid(&self) -> bool {
+        unsafe { ffi::url_is_valid(self.ptr) }
+    }
+}
+
+impl std::fmt::Display for QUrl {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&unsafe { ffi::url_to_string(self.ptr) })
     }
 }
 
@@ -1902,15 +1989,23 @@ impl QTableWidget {
     pub fn set_row_count(&self, rows: i32) {
         unsafe { ffi::table_set_row_count(self.live_ptr(), rows) }
     }
-    /// labels are '|'-separated, e.g. "App|Memory"
-    pub fn set_horizontal_header_labels(&self, joined: &str) {
-        unsafe { ffi::table_set_horizontal_header_labels(self.live_ptr(), joined) }
+    /// Set one header label per column; strings are passed verbatim to Qt,
+    /// including separators and embedded NUL (no delimiter-encoded protocol).
+    pub fn set_horizontal_header_labels<S: AsRef<str>>(&self, labels: &[S]) {
+        let values = labels.iter().map(|s| s.as_ref().to_owned()).collect();
+        unsafe { ffi::table_set_horizontal_header_labels(self.live_ptr(), values) }
     }
-    pub fn set_cell_text(&self, row: i32, col: i32, text: &str) {
+    /// Text of an existing horizontal header item; empty for a missing item.
+    pub fn horizontal_header_label(&self, col: i32) -> String {
+        unsafe { ffi::table_horizontal_header_label(self.live_ptr(), col) }
+    }
+    /// Set text without replacing an existing item; return false if out of bounds.
+    pub fn set_cell_text(&self, row: i32, col: i32, text: &str) -> bool {
         unsafe { ffi::table_set_cell_text(self.live_ptr(), row, col, text) }
     }
-    /// store i64 user data (e.g. a pid) on a cell
-    pub fn set_cell_data(&self, row: i32, col: i32, data: i64) {
+    /// Store i64 UserRole data (e.g. a pid), creating an item when needed.
+    /// Return false if out of bounds; no allocation occurs for invalid cells.
+    pub fn set_cell_data(&self, row: i32, col: i32, data: i64) -> bool {
         unsafe { ffi::table_set_cell_data(self.live_ptr(), row, col, data) }
     }
     pub fn cell_data(&self, row: i32, col: i32) -> i64 {
@@ -2195,7 +2290,7 @@ impl widgets::DProgressBar {
     }
 }
 
-impl_default!(QFont, QPalette, DDciIcon);
+impl_default!(QFont, QPalette, QPainterPath, DDciIcon);
 impl_default_owned!(DMainWindow, DMessageBox);
 
 unsafe impl Signal0 for DApplication {
