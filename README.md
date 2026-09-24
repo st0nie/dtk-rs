@@ -5,7 +5,7 @@
 Rust bindings for DTK6 (dtkwidget). Goal: write deepin apps with DTK UIs in pure Rust.
 
 - Rust-facing wrappers over a `cxx` FFI layer; QObject handles are guarded, but reentrant native calls and non-QObject borrowed lifetimes are **not yet fully memory-safe** (see Design).
-- **~100 DTK classes** bound by a header-scanning generator (`DComboBox`, `DSpinner`, `DDialog`, `DListView`, …) plus hand-written core (`DApplication`, `DMainWindow`, layouts, `QTableWidget`, timers, painting).
+- **146 DTK Widget classes** bound by a header-scanning generator (`DComboBox`, `DSpinner`, `DDialog`, `DListView`, …), with first generated DCore/DGui pilots. The core also has hand-written `DApplication`, `DMainWindow`, layouts, `QTableWidget`, timers and painting.
 - **Any signal** can be connected at runtime by name — no per-signal glue code.
 - Linux + Qt6 + DTK6 only. Not cross-platform (DTK isn't either).
 
@@ -21,9 +21,9 @@ cargo build
 
 ```
 dtk-sys/   FFI layer: C++ shim (cpp/) + cxx::bridge + build.rs (locates Qt6/DTK6 via pkg-config, moc for the signal relay)
-dtk/       safe wrappers: hand-written core classes + widgets.rs (generator output)
-tools/gen.py  header-scanning generator; rescans /usr/include/dtk6/DWidget/*.h and regenerates bindings
-GEN_REPORT.md coverage report: what was generated, what was skipped (with reasons)
+dtk/       Rust wrappers: hand-written core + generated widgets.rs/core.rs/gui.rs
+tools/gen.py  scans DWidget headers and selected DCore/DGui pilot headers; regenerates all bridges
+GEN_REPORT.md / GEN_CORE_REPORT.md / GEN_GUI_REPORT.md: coverage (DCore/DGui reports are pilots only)
 TODO.md      known gaps and follow-ups
 ```
 
@@ -63,7 +63,7 @@ callback discards pending invocations; see `signal_reentrancy_selfcheck`.
 `unregister_callback` for a GUI connection must be called on its GUI thread;
 a worker call returns `false` without touching Qt's relay map.
 
-The generator-covered classes live under `dtk::widgets` (DComboBox, DSpinner, DDialog…).
+Generated Widget classes live under `dtk::widgets` (DComboBox, DSpinner, DDialog…). `dtk::core::{DStandardPaths, DSysInfo}` and `dtk::gui::DGuiApplicationHelper` are **pilot classes only**; they do not imply that all DCore/DGui types are bound. Core path locations/options and GUI palette/size modes use generated Rust enums with their discriminants read from the compiled native headers; remaining raw `i32` enum inputs (e.g. `set_mode`, `set_attribute`) require `unsafe` pending a typed/synchronization audit.
 
 ## Examples
 
@@ -85,7 +85,9 @@ All examples live in [`dtk/examples/`](dtk/examples/) and build with `cargo buil
 | [`variant_selfcheck.rs`](dtk/examples/variant_selfcheck.rs) | QVariant/QVariantList roundtrip through DTK tabs and list items | `QT_QPA_PLATFORM=offscreen cargo run --example variant_selfcheck` |
 | [`action_selfcheck.rs`](dtk/examples/action_selfcheck.rs) | QAction/QMenu state, triggered(bool), Qt-owned callback cleanup | `QT_QPA_PLATFORM=offscreen cargo run --example action_selfcheck` |
 | [`model_selfcheck.rs`](dtk/examples/model_selfcheck.rs) | Guarded QAbstractItemModel, DListView, QVariant data and parent ownership | `QT_QPA_PLATFORM=offscreen cargo run --example model_selfcheck` |
-| [`no_application_selfcheck.rs`](dtk/examples/no_application_selfcheck.rs) | Reject GUI object creation before DApplication, keep QtCore values usable | `QT_QPA_PLATFORM=offscreen cargo run --example no_application_selfcheck` |
+| [`no_application_selfcheck.rs`](dtk/examples/no_application_selfcheck.rs) | Reject GUI object creation before DApplication or on a worker thread; keep QtCore values usable | `QT_QPA_PLATFORM=offscreen cargo run --example no_application_selfcheck` |
+| [`core_paths_selfcheck.rs`](dtk/examples/core_paths_selfcheck.rs) | DCore path lookup and system info without QApplication | `cargo run --example core_paths_selfcheck` |
+| [`gui_helper_selfcheck.rs`](dtk/examples/gui_helper_selfcheck.rs) | DGui image/color adjustments and checked singleton | `QT_QPA_PLATFORM=offscreen cargo run --example gui_helper_selfcheck` |
 
 Headless smoke tests (CI-friendly, no display needed):
 
@@ -122,12 +124,12 @@ The owner owns the Qt notifier and Rust callback; dropping the owner disconnects
 Deep dive (layers, full binding walkthrough, signal mechanism, lifetime rules): [ARCHITECTURE.md](ARCHITECTURE.md).
 
 - **Application**: construct one `DApplication` **before** QWidget/QObject, timers, clipboard, pixmaps and themed icons; these safe entry points now reject calls made without it **or from another thread**, instead of entering native Qt from the wrong context. QtCore-only values (`QVariant`, `QVariantList`) can be made before it. Trying to create a second application fails before Qt's singleton constructor and cleans up the pending Rust callback. Arguments pass as raw Linux argv bytes rather than lossy delimiter-joined strings.
-- **Lifetime — three wrapper cases.** QObject/widget constructors return `Owned<T>`; their dereferenced `T` is a non-owning `Clone` view guarded by `QPointer` (`!Send`, GUI thread). Drop of an owner *never adopted by Qt* queues `deleteLater()`; after the first Qt parent change its original owner permanently relinquishes deletion, even if an audited `take` method later produces a **new** owner. This requires a running event loop to execute deferred deletion; dropping after shutdown is not deterministic cleanup. Pointer getters remain borrowed `Option<T>`, not owned based on method names—this version of DTK schedules deletion after `DListView::take_header_widget`. Non-QObject constructors such as `DPrinter::new()` return `OwnedOpaque<DPrinter>` with a generated C++ deleter. Generated non-QObject pointer getters require `unsafe` because their native allocation lifetime and ownership (borrowed versus transferred) have not been verified; their views are not `Copy`/`Clone`. Value types (`QColor`, `QImage`, `QBrush`, `QPainterPath`, `QKeySequence`, `QUrl`, …) own copies freed in `Drop`; `WaterMarkData` returned by DTK is copy-constructed into `OwnedOpaque<WaterMarkData>`. Native reentrant destruction and opaque borrows still need auditing; this is **not yet a fully memory-safe binding**.
+- **Lifetime — three wrapper cases.** QObject/widget constructors return `Owned<T>`; their dereferenced `T` is a non-owning `Clone` view guarded by `QPointer` (`!Send`, GUI thread). Drop of an owner *never adopted by Qt* queues `deleteLater()`; after the first Qt parent change its original owner permanently relinquishes deletion, even if an audited `take` method later produces a **new** owner. This requires a running event loop to execute deferred deletion; dropping after shutdown is not deterministic cleanup. Pointer getters remain borrowed `Option<T>`, not owned based on method names—this version of DTK schedules deletion after `DListView::take_header_widget`. Non-QObject constructors such as `DPrinter::new()` return `OwnedOpaque<DPrinter>` with a generated C++ deleter. Generated non-QObject pointer getters require `unsafe` because their native allocation lifetime and ownership (borrowed versus transferred) have not been verified; their views are not `Copy`/`Clone`. Value types (`QColor`, `QImage`, `QBrush`, `QPainterPath`, `QKeySequence`, `QUrl`, `DPalette`, …) own copies freed in `Drop`; `WaterMarkData` returned by DTK is copy-constructed into `OwnedOpaque<WaterMarkData>`. Native reentrant destruction and opaque borrows still need auditing; this is **not yet a fully memory-safe binding**.
 - **Callbacks are `'static`** — share widgets/state into them with `Rc`/`RefCell`/`Cell` (never `Arc<Mutex>`: everything runs on one thread anyway).
 - **Signals**: `DtkRelay` (Q_OBJECT + SLOT) string-connects any signal -> Rust callback id -> closure in a thread_local registry. Qt-object destruction releases its Rust callbacks; `dtk::unregister_callback(id)` disconnects early. `QTimer::single_shot` runs a `FnOnce` and cleans up even on panic or Qt cancellation.
 - **Event overrides**: `DtkAppEx` (QEvent::Quit guard) / `DtkMainWindowEx` (showEvent/closeEvent) shim subclasses -> Rust callbacks. Entry points: `DApplication::new_with_quit_guard`, `DMainWindow::new_with_events`.
 - **Custom painting**: `PaintDelegate` (QStyledItemDelegate subclass) forwards paint to Rust, with `Painter` primitives + `ModelIndex::data_*`. `PaintWidgetEvent::Paint` only borrows a `Painter` within its callback; storing it afterward is a compile error.
-- **Type mapping**: QString<->&str/String, numbers direct, enums/QFlags->i32 (`dtk::qt` constants module); QColor/QImage/QBrush/QPainterPath/QKeySequence/QUrl/QFont/QPalette/QPixmap/QSize/QPoint/QRect/QVariant/QVariantList values -> owning wrappers, QWidget* and DTK class pointers <-> guarded views. QImage is usable before QApplication; QPixmap is not.
+- **Type mapping**: QString<->&str/String, numbers direct, enums/QFlags->i32 (`dtk::qt` constants module); QColor/QImage/QBrush/QPainterPath/QKeySequence/QUrl/DPalette/QFont/QPalette/QPixmap/QSize/QPoint/QRect/QVariant/QVariantList values -> owning wrappers, QWidget* and DTK class pointers <-> guarded views. QImage is usable before QApplication; QPixmap is not.
 - **Qt ownership**: `QTimer::new(&owner)`, `QSocketNotifier::new(fd, &owner)` and `PaintDelegate::new(&owner, f)` require a QObject parent; the returned `Owned<T>` can be cloned as a non-owning view for callbacks. `DMainWindow::take_central_widget()` has verified ownership transfer and returns `Option<Owned<QWidget>>`, whereas generated `take_*` getters do **not** assume transfer. See [`ownership_transfer_selfcheck.rs`](dtk/examples/ownership_transfer_selfcheck.rs) for the native difference and [`lifetime_selfcheck.rs`](dtk/examples/lifetime_selfcheck.rs) for callback cleanup.
 - **QSocketNotifier**: `new(fd, &owner)` + `on_activated`; for custom eventfd/signalfd/pipe sources, not required for ordinary worker → GUI messages.
 - **Generator**: regex-parses DTK headers and classifies verified Qt ancestry as QWidget, QObject or opaque (non-QObject). C++ `static_cast` computes actual base pointers once per wrapper (cached for QWidget operations); generated QObject/Widget wrappers share a QPointer guard. Pointer getters return `Option<T>` because Qt may return `nullptr` (e.g. an empty `DStackWidget::current_widget()`). Only mapped signatures are generated; skips land in GEN_REPORT.md. Base-class Qt methods (e.g. `QProgressBar::setValue`) are added to the shim when needed.

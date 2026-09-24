@@ -124,8 +124,23 @@ Known gaps in dtk-rs, roughly in priority order.
 
 ## Libraries
 
-- [ ] DGui bindings (`/usr/include/dtk6/DGui`) — same generator pass, second output module.
-- [ ] DCore bindings (`/usr/include/dtk6/DCore`) — DConfig, DStandardPaths, DLog...
+- [x] Add generator-backed DCore/DGui pilot modules with separate bridges,
+      shims and scoped coverage reports: `DStandardPaths` (13 methods) and
+      `DSysInfo` (28 methods) work without QApplication;
+      `DGuiApplicationHelper` (29 mapped methods) is guarded and requires the
+      GUI app thread (`core_paths_selfcheck`,
+      `gui_helper_selfcheck`). Core XDG/DSG and Qt StandardLocation/LocateOption,
+      plus GUI ColorType/SizeMode/SingleScope inputs use Rust enums whose
+      values are read from generated C++ functions. `DPalette` is a value-type
+      wrapper, copied on return, deleted on Drop; non-const `DPalette&` inputs
+      require `&mut DPalette`. Remaining raw integer enum inputs (`set_mode`,
+      `set_attribute`) require `unsafe` pending validation.
+- [ ] Expand DGui bindings beyond `DGuiApplicationHelper`/`DPalette`
+      (`/usr/include/dtk6/DGui`): DCI icons, platform themes, image handlers, etc.
+- [ ] Expand DCore bindings beyond `DStandardPaths`/`DSysInfo` (`/usr/include/dtk6/DCore`):
+      DConfig, DSettings, DLog, file watchers etc. QObject wrappers need
+      QCoreApplication-aware constructors and thread affinity, not the Widget
+      module's GUI-application requirement.
 
 ## Hygiene
 

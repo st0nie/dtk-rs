@@ -742,6 +742,8 @@ int32_t gen_d_page_indicator_point_distance(DPageIndicator *self) { return self-
 void gen_d_page_indicator_set_point_distance(DPageIndicator *self, int32_t distance) { self->setPointDistance(distance); }
 QObject *gen_d_palette_helper_as_qobject(DPaletteHelper *self) { return static_cast<QObject *>(self); }
 DPaletteHelper * gen_d_palette_helper_instance() { return const_cast<DPaletteHelper *>(DPaletteHelper::instance()); }
+DPalette * gen_d_palette_helper_palette(DPaletteHelper *self, QWidget * widget, QPalette * base) { return new DPalette(self->palette(widget, *base)); }
+void gen_d_palette_helper_set_palette(DPaletteHelper *self, QWidget * widget, DPalette * palette) { self->setPalette(widget, *palette); }
 void gen_d_palette_helper_reset_palette(DPaletteHelper *self, QWidget * widget) { self->resetPalette(widget); }
 DPasswordEdit *gen_d_password_edit_new() { return new DPasswordEdit; }
 QObject *gen_d_password_edit_as_qobject(DPasswordEdit *self) { return static_cast<QObject *>(self); }

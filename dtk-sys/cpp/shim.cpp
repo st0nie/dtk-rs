@@ -831,6 +831,9 @@ QColor *palette_color(QPalette *pal, int32_t group, int32_t role) {
                                  static_cast<QPalette::ColorRole>(role)));
 }
 void palette_delete(QPalette *pal) { delete pal; }
+DPalette *dpalette_new() { return new DPalette; }
+QBrush *dpalette_text_title(DPalette *pal) { return new QBrush(pal->textTitle()); }
+void dpalette_delete(DPalette *pal) { delete pal; }
 QPixmap *pixmap_new(rust::Str path) { return new QPixmap(from_rust_str(path)); }
 void pixmap_delete(QPixmap *pm) { delete pm; }
 QImage *image_new(int32_t width, int32_t height) {

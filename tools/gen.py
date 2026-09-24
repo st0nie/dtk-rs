@@ -3,11 +3,14 @@
 
 Usage: tools/gen.py   (idempotent, overwrites generated files)
 Outputs:
-  dtk-sys/include/dtk_gen_shim.h   shim declarations
-  dtk-sys/cpp/dtk_gen_shim.cpp     shim implementations
-  dtk-sys/src/gen_ffi.rs           cxx::bridge
-  dtk/src/widgets.rs               safe wrappers
-  GEN_REPORT.md                    coverage report (with skip reasons)
+  dtk-sys/include/dtk_{gen,core,gui}_shim.h  shim declarations
+  dtk-sys/cpp/dtk_{gen,core,gui}_shim.cpp    shim implementations
+  dtk-sys/src/{gen,core,gui}_ffi.rs          cxx::bridges
+  dtk/src/{widgets,core,gui}.rs              wrappers
+  GEN_REPORT.md, GEN_CORE_REPORT.md, GEN_GUI_REPORT.md  coverage reports
+
+Widget coverage scans all DWidget headers. DCore/DGui currently select only
+explicitly audited pilot classes; their reports do not cover whole libraries.
 
 Rules:
   - only generate methods whose param/return types all map cleanly; the rest go to the report
@@ -46,6 +49,23 @@ QT_OBJECT_BASES = {
 }
 QT_MODEL_BASES = {"QAbstractItemModel", "QAbstractListModel", "QAbstractTableModel"}
 
+# Named enums used by the new domain wrappers. Member names come from the
+# installed native headers; values are returned by tiny generated C++ functions
+# rather than guessing the C++ discriminants in Rust.
+TYPED_ENUMS = {
+    "core": {
+        "DStandardPaths::XDG": ("XdgDirectory", "/usr/include/dtk6/DCore/dstandardpaths.h"),
+        "DStandardPaths::DSG": ("DsgDirectory", "/usr/include/dtk6/DCore/dstandardpaths.h"),
+        "QStandardPaths::StandardLocation": ("StandardLocation", "QtCore/qstandardpaths.h"),
+        "QStandardPaths::LocateOption": ("LocateOption", "QtCore/qstandardpaths.h"),
+    },
+    "gui": {
+        "DGuiApplicationHelper::ColorType": ("GuiColorType", "/usr/include/dtk6/DGui/dguiapplicationhelper.h"),
+        "DGuiApplicationHelper::SizeMode": ("GuiSizeMode", "/usr/include/dtk6/DGui/dguiapplicationhelper.h"),
+        "DGuiApplicationHelper::SingleScope": ("GuiSingleScope", "/usr/include/dtk6/DGui/dguiapplicationhelper.h"),
+    },
+}
+
 
 def classify_class(name: str, bases_by_class: dict[str, list[str]]) -> str:
     """Return widget/object/opaque; unknown Qt/DTK bases are opaque, never guessed."""
@@ -65,12 +85,11 @@ def classify_class(name: str, bases_by_class: dict[str, list[str]]) -> str:
 
 VALUE_TYPES = {"QColor", "QSize", "QPoint", "QRect", "QFont", "QPixmap", "QImage", "QBrush", "QPainterPath", "QKeySequence", "QUrl", "QIcon", "QPalette", "QMargins", "QVariant", "QVariantList"}
 # cross-namespace (dtkgui) value types: name -> (fully-qualified namespace, include header)
-EXT_VALUE_TYPES = {"DDciIcon": ("Dtk::Gui", "DDciIcon")}
-# cross-namespace classes we only need enums from (include + using in the gen shim header)
-EXT_CLASSES = {"DPalette": ("Dtk::Gui", "DPalette")}
+EXT_VALUE_TYPES = {"DDciIcon": ("Dtk::Gui", "DDciIcon"),
+                   "DPalette": ("Dtk::Gui", "DPalette")}
 # Qt-class enums usable as i32 (header pulled in via the DTK widget headers)
 QT_ENUMS = {"QLineEdit::EchoMode", "QTabBar::Shape", "QTabBar::ButtonPosition",
-            "QTabBar::SelectionBehavior"}
+            "QTabBar::SelectionBehavior", "QStandardPaths::StandardLocation"}
 # DTK-outer-class enums (dtkgui) usable as i32
 EXT_ENUMS = {"DPalette::ColorType", "DPalette::ColorRole"}
 # Qt pointer types allowed across the bridge (QWidget-style `as _` casts; each needs
@@ -79,7 +98,8 @@ QT_PTRS = {"QWidget", "QAbstractButton", "QLayout", "QBoxLayout", "QAction", "QA
 # types that are QFlags in Qt (fromInt/toInt conversion)
 QT_QFLAGS = {"Qt::Alignment", "Qt::WindowFlags", "Qt::MouseButtons", "Qt::KeyboardModifiers",
              "Qt::Orientations", "Qt::ItemFlags", "Qt::MatchFlags", "Qt::ApplicationStates",
-             "Qt::InputMethodHints", "Qt::DockWidgetAreas", "Qt::ToolBarAreas"}
+             "Qt::InputMethodHints", "Qt::DockWidgetAreas", "Qt::ToolBarAreas",
+             "QStandardPaths::LocateOptions"}
 
 PRIM = {
     "void": "()", "bool": "bool", "int": "i32", "qint32": "i32", "short": "i16",
@@ -92,7 +112,7 @@ CPP_OF_RUST = {"()": "void", "bool": "bool", "i32": "int32_t", "i16": "int16_t",
                "u32": "uint32_t", "u64": "uint64_t", "f64": "double", "f32": "float",
                "i8": "int8_t", "u8": "uint8_t", "u16": "uint16_t", "String": "rust::String"}
 
-CLASS_RE = re.compile(r"^class\s+(?:LIBDTKWIDGETSHARED_EXPORT\s+|D_DECL_DEPRECATED\s+)*(\w+)\s*(?::\s*(.+?))?\s*$")
+CLASS_RE = re.compile(r"^class\s+(?:(?:LIBDTK(?:WIDGET|GUI|CORE)SHARED_EXPORT|D_DECL_DEPRECATED)\s+)*(\w+)\s*(?::\s*(.+?))?\s*$")
 METHOD_RE = re.compile(
     r"^\s*(?:virtual\s+|inline\s+|Q_SLOT\s+|Q_INVOKABLE\s+|D_DECL_DEPRECATED\s+|explicit\s+)*"
     r"(static\s+)?([\w:<>&*~ ]+?)\s*(~?\w+)\s*\((.*)\)\s*(const)?\s*(?:override\s*)?(?:=\s*\w+\s*)?;?\s*(?://.*)?$"
@@ -108,6 +128,47 @@ RUST_KEYWORDS = {"type", "ref", "self", "mod", "fn", "in", "match", "loop", "mov
 
 def snake(name: str) -> str:
     return re.sub(r"(?<!^)(?=[A-Z])", "_", name).lower()
+
+
+def enum_members(source: str, name: str) -> list[str]:
+    """Extract explicitly visible enum member names, never compute C++ values."""
+    source = re.sub(r"/\*.*?\*/", "", source, flags=re.S)
+    source = re.sub(r"//[^\n]*", "", source)
+    m = re.search(rf"\benum\s+(?:class\s+)?{re.escape(name)}\s*\{{([^}}]*)\}}", source, re.S)
+    if not m:
+        raise ValueError(f"enum {name} missing from installed header")
+    members, dt_k5 = [], []
+    for line in m.group(1).splitlines():
+        s = line.strip()
+        if not s:
+            continue
+        if s.startswith("#if"):
+            if not re.match(r"#if\s+DTK_VERSION\s*<\s*DTK_VERSION_CHECK\(\s*6", s):
+                raise ValueError(f"enum {name}: unrecognised conditional {s}")
+            dt_k5.append(True)
+            continue
+        if s.startswith("#else"):
+            if not dt_k5:
+                raise ValueError(f"enum {name}: unmatched #else")
+            dt_k5[-1] = not dt_k5[-1]
+            continue
+        if s.startswith("#endif"):
+            if not dt_k5:
+                raise ValueError(f"enum {name}: unmatched #endif")
+            dt_k5.pop()
+            continue
+        if any(dt_k5):
+            continue
+        for part in s.split(","):
+            head = part.split("=", 1)[0].strip()
+            if not head:
+                continue
+            if not re.fullmatch(r"[A-Za-z_]\w*", head):
+                raise ValueError(f"enum {name}: unsupported member {head}")
+            members.append(head)
+    if dt_k5 or not members:
+        raise ValueError(f"enum {name}: incomplete member list")
+    return members
 
 
 def split_params(s: str):
@@ -155,10 +216,11 @@ class Ctx:
         ptr = t.endswith("*")
         base = t.rstrip("*").strip()
         base = base.replace("DTK_CORE_NAMESPACE::", "").replace("DGUI_NAMESPACE::", "").replace("DTK_GUI_NAMESPACE::", "")
-        # Qt enums / QFlags
+        # Qt enums / QFlags (some are nested under a Qt class rather than Qt::)
+        if base in QT_QFLAGS:
+            return ("i32", "int32_t", "qflags", base)
         if base.startswith("Qt::"):
-            kind = "qflags" if base in QT_QFLAGS else "qtenum"
-            return ("i32", "int32_t", kind, base)
+            return ("i32", "int32_t", "qtenum", base)
         # DTK enums: own class first -> qualified lookup -> unqualified global
         if scope and f"{scope}::{base}" in self.qenums:
             return ("i32", "int32_t", "enum", f"{scope}::{base}")
@@ -251,11 +313,13 @@ def parse_header(path, ctx):
                 if pp_stack:
                     pp_stack.pop()
                 continue
-            # track namespace opens/closes (DWIDGET_BEGIN_NAMESPACE expands to namespace Dtk { namespace Widget {)
-            if re.match(r"^DWIDGET_BEGIN_NAMESPACE\b", s):
-                ns_stack.append("Dtk::Widget")
+            # Expand the three DTK namespace macros without guessing a class's
+            # origin from its name (DGui and DCore can use the same prefixes).
+            nm = re.match(r"^D(WIDGET|GUI|CORE)_BEGIN_NAMESPACE\b", s)
+            if nm:
+                ns_stack.append("Dtk::" + {"WIDGET": "Widget", "GUI": "Gui", "CORE": "Core"}[nm.group(1)])
                 continue
-            if re.match(r"^DWIDGET_END_NAMESPACE\b", s):
+            if re.match(r"^D(?:WIDGET|GUI|CORE)_END_NAMESPACE\b", s):
                 if ns_stack:
                     ns_stack.pop()
                 continue
@@ -292,7 +356,7 @@ def parse_header(path, ctx):
             if cur is None:
                 em = ENUM_RE.match(line)
                 if em:
-                    ctx.register_enum("Dtk::Widget", em.group(1))
+                    ctx.register_enum(current_ns() or "Dtk::Widget", em.group(1))
                 continue
             if line.startswith("};"):
                 classes.append(cur)
@@ -414,21 +478,25 @@ def gen_method(ctx, cls, is_static, ret, name, params):
         elif pkind in ("ptr", "qtptr"):
             args.append((f"{pname}: *mut {pcls}", f"{pcpp} {pname}", pname, pkind, pcls))
         elif pkind in ("val", "valref"):
-            args.append((f"{pname}: *mut {pcls}", f"{pcpp} {pname}", f"*{pname}", pkind, pcls))
+            # C++ non-const reference mutates the value. Preserve Rust's
+            # exclusive borrow rather than accepting a shared &T to mutable
+            # native storage (DGui::generatePalette(DPalette&) is an example).
+            kind = ("valmut" if "&" in ptype and not re.search(r"\bconst\b", ptype)
+                    else pkind)
+            args.append((f"{pname}: *mut {pcls}", f"{pcpp} {pname}", f"*{pname}", kind, pcls))
         elif pkind == "qflags":
-            args.append((f"{pname}: i32", f"int32_t {pname}", f"{q[3]}::fromInt({pname})", "qflags", None))
+            args.append((f"{pname}: i32", f"int32_t {pname}", f"{q[3]}::fromInt({pname})", "qflags", q[3]))
         elif pkind in ("enum", "qtenum"):
-            args.append((f"{pname}: i32", f"int32_t {pname}", f"static_cast<{q[3]}>({pname})", pkind, None))
+            args.append((f"{pname}: i32", f"int32_t {pname}", f"static_cast<{q[3]}>({pname})", pkind, q[3]))
         else:
             args.append((f"{pname}: {prs}", f"{pcpp} {pname}", pname, "prim", None))
     return (ret_rs, ret_cpp, ret_kind, ret_cls, is_static, name, args), None
 
 
-def main():
-    headers = sorted(
-        os.path.join(HDR_DIR, f) for f in os.listdir(HDR_DIR)
-        if f.endswith(".h") and not f.endswith("_p.h") and f != "dwidgetstype.h"
-    )
+def collect_models(headers, excluded=(), included=None):
+    """Parse a domain once and feed every backend the same type/ownership rules."""
+    excluded = set(excluded)
+    included = None if included is None else set(included)
     # first pass: collect class names to build the context
     all_classes = set()
     for h in headers:
@@ -442,13 +510,13 @@ def main():
                 if m and not prev_t:
                     all_classes.add(m.group(1))
                 prev_t = s.startswith("template") and "<" in s
-    ctx = Ctx(all_classes - HAND_BOUND)
+    ctx = Ctx((all_classes if included is None else all_classes & included) - excluded)
 
     # two passes: parse everything (collecting cross-class enum refs), then generate
     parsed = []
     for h in headers:
         for c in parse_header(h, ctx):
-            if c["name"] in HAND_BOUND:
+            if c["name"] in excluded or included is not None and c["name"] not in included:
                 continue
             c["header"] = os.path.basename(h)
             parsed.append(c)
@@ -456,34 +524,58 @@ def main():
     bases_by_class = {c["name"]: c["bases"] for c in parsed}
     classes_out = []
     for c in parsed:
-            kind = classify_class(c["name"], bases_by_class)
-            gen_methods = []
-            skipped = c["skipped"]
-            for is_static, ret, name, params, raw in c["methods"]:
-                g, why = gen_method(ctx, c["name"], is_static, ret, name, params)
-                if g is None:
-                    skipped.append((raw, why))
-                else:
-                    gen_methods.append(g)
-            classes_out.append({
-                "name": c["name"], "kind": kind, "bases": c["bases"], "header": c["header"], "ns": c.get("ns", ""),
-                # exactly one all-default ctor: two would make `new X()` ambiguous
-                "ctor_new": c.get("all_default_ctors", 0) == 1 and not c.get("abstract", False), "methods": gen_methods, "skipped": skipped,
-            })
+        kind = classify_class(c["name"], bases_by_class)
+        gen_methods = []
+        skipped = c["skipped"]
+        for is_static, ret, name, params, raw in c["methods"]:
+            g, why = gen_method(ctx, c["name"], is_static, ret, name, params)
+            if g is None:
+                skipped.append((raw, why))
+            else:
+                gen_methods.append(g)
+        classes_out.append({
+            "name": c["name"], "kind": kind, "bases": c["bases"], "header": c["header"], "ns": c.get("ns", ""),
+            # exactly one all-default ctor: two would make `new X()` ambiguous
+            "ctor_new": c.get("all_default_ctors", 0) == 1 and not c.get("abstract", False), "methods": gen_methods, "skipped": skipped,
+        })
+    return classes_out
 
-    emit(classes_out)
+
+def main():
+    widget_headers = sorted(
+        os.path.join(HDR_DIR, f) for f in os.listdir(HDR_DIR)
+        if f.endswith(".h") and not f.endswith("_p.h") and f != "dwidgetstype.h"
+    )
+    emit(collect_models(widget_headers, HAND_BOUND))
+    # First DCore module is deliberately limited to a static QtCore utility:
+    # QObject construction there needs a QCoreApplication/thread-affinity model,
+    # not the Widgets-only require_application() of the existing wrappers.
+    core_headers = [
+        "/usr/include/dtk6/DCore/dstandardpaths.h",
+        "/usr/include/dtk6/DCore/dsysinfo.h",
+    ]
+    emit(collect_models(core_headers), domain="core")
+    gui_headers = ["/usr/include/dtk6/DGui/dguiapplicationhelper.h"]
+    emit(collect_models(gui_headers, included={"DGuiApplicationHelper"}), domain="gui")
 
 
-def emit(classes):
+def emit(classes, domain="widget"):
+    """Emit a domain using the same checked type mapper and owning wrapper rules."""
+    assert domain in ("widget", "core", "gui")
+    stem = "gen" if domain == "widget" else domain
+    header = f"dtk_{stem}_shim.h"
     shim_h, shim_cpp, bridge, wrapper, report = [], [], [], [], []
     shim_h.append("// auto-generated by tools/gen.py, do not edit\n#pragma once\n#include \"dtk_shim.h\"\n")
-    shim_cpp.append('// auto-generated by tools/gen.py, do not edit\n#include "dtk_gen_shim.h"\n\nnamespace dtkrs {\n')
+    shim_cpp.append(f'// auto-generated by tools/gen.py, do not edit\n#include "{header}"\n\nnamespace dtkrs {{\n')
+    # cxx requires an unsafe extern block when it contains genuinely safe C++
+    # helpers (enum getters). Ordinary object methods remain explicitly unsafe.
+    extern_block = 'unsafe extern "C++"' if domain != "widget" else 'extern "C++"'
     bridge.append("// auto-generated by tools/gen.py, do not edit\n"
                   "// Every unsafe declaration has the same contract: pointers must refer to live\n"
                   "// Qt/DTK objects on their owning thread, with the correct dynamic type.\n"
                   "#[allow(clippy::missing_safety_doc, clippy::too_many_arguments)]\n"
                   "#[cxx::bridge(namespace = \"dtkrs\")]\n"
-                  "pub mod genffi {\n    extern \"C++\" {\n        include!(\"dtk_gen_shim.h\");\n")
+                  f"pub mod genffi {{\n    {extern_block} {{\n        include!(\"{header}\");\n")
     # QObject is used only for checked base casts, not for mapping arbitrary
     # QObject* method parameters until the Rust API has a general QObject view.
     bridge.append("        type QObject;\n")
@@ -493,8 +585,12 @@ def emit(classes):
         bridge.append(f"        type {vt};\n")
     for vt in sorted(EXT_VALUE_TYPES):
         bridge.append(f"        type {vt};\n")
-    wrapper.append("// auto-generated by tools/gen.py, do not edit\n#![allow(clippy::all, non_snake_case, unused_imports)]\nuse crate::{QAbstractButton, QAbstractItemModel, QAction, QBoxLayout, QLayout, Signal0, SignalBool, SignalI32, SignalI32I32, QWidget};\nuse crate::{QBrush, QColor, QFont, QIcon, QImage, QKeySequence, QMargins, QPainterPath, QPalette, QPixmap, QPoint, QRect, QSize, QUrl, QVariant, QVariantList};\nuse crate::{DDciIcon, Owned, OwnedOpaque, QtLifecycle};\nuse dtk_sys::ffi;\nuse dtk_sys::gen_ffi::genffi;\nuse std::marker::PhantomData;\n")
-    report.append("# DTK6 widget binding coverage report\n")
+    wrapper.append("// auto-generated by tools/gen.py, do not edit\n#![allow(clippy::all, non_snake_case, unused_imports)]\nuse crate::{QAbstractButton, QAbstractItemModel, QAction, QBoxLayout, QLayout, Signal0, SignalBool, SignalI32, SignalI32I32, QWidget};\nuse crate::{QBrush, QColor, QFont, QIcon, QImage, QKeySequence, QMargins, QPainterPath, QPalette, QPixmap, QPoint, QRect, QSize, QUrl, QVariant, QVariantList};\nuse crate::{DDciIcon, DPalette, Owned, OwnedOpaque, QtLifecycle};\nuse dtk_sys::ffi;\n"
+                   f"use dtk_sys::{stem}_ffi::genffi;\nuse std::marker::PhantomData;\n")
+    title = "widget" if domain == "widget" else f"{domain} pilot"
+    report.append(f"# DTK6 {title} binding coverage report\n")
+    if domain != "widget":
+        report.append("\n> Pilot scope: only the listed classes/headers were scanned; this is NOT library-wide coverage.\n")
 
     total_ok, total_skip = 0, 0
     used_headers = sorted({c["header"] for c in classes})
@@ -503,15 +599,11 @@ def emit(classes):
     # cross-namespace value types (e.g. dtkgui DDciIcon): include + namespaced using
     for vt, (ns, inc) in EXT_VALUE_TYPES.items():
         shim_h.append(f"#include <{inc}>\n")
-    for ec, (ns, inc) in EXT_CLASSES.items():
-        shim_h.append(f"#include <{inc}>\n")
     shim_h.append("\nnamespace dtkrs {\n")
     for vt in sorted(VALUE_TYPES):
         shim_h.append(f"using ::{vt};\n")
     for vt, (ns, _inc) in EXT_VALUE_TYPES.items():
         shim_h.append(f"using {ns}::{vt};\n")
-    for ec, (ns, inc) in EXT_CLASSES.items():
-        shim_h.append(f"using {ns}::{ec};\n")
     for qp in sorted(QT_PTRS - {"QWidget"}):  # QWidget already via dtk_shim.h
         shim_h.append(f"using ::{qp};\n")
     for c in classes:
@@ -522,6 +614,34 @@ def emit(classes):
         else:
             shim_h.append(f"using ::{name};\n")
         bridge.append(f"        type {name};\n")
+
+    domain_enums = {}
+    for cpp, (rust_name, header_path) in TYPED_ENUMS.get(domain, {}).items():
+        if not os.path.isabs(header_path):
+            qt_includes = subprocess.check_output(
+                ["pkg-config", "--variable=includedir", "Qt6Core"], text=True
+            ).strip()
+            header_path = os.path.join(qt_includes, header_path)
+        with open(header_path, encoding="utf-8") as source:
+            members = enum_members(source.read(), cpp.rsplit("::", 1)[-1])
+        values = []
+        for member in members:
+            fn = "gen_enum_" + "_".join(snake(piece) for piece in cpp.split("::")) + "_" + snake(member)
+            shim_h.append(f"int32_t {fn}();\n")
+            shim_cpp.append(f"int32_t {fn}() {{ return static_cast<int32_t>({cpp}::{member}); }}\n")
+            bridge.append(f"        fn {fn}() -> i32;\n")
+            values.append((member, fn))
+        domain_enums[cpp] = (rust_name, values)
+        wrapper.append(f"#[derive(Clone, Copy, Debug, PartialEq, Eq)]\npub enum {rust_name} {{\n")
+        wrapper.extend(f"    {member},\n" for member, _ in values)
+        wrapper.append("}\n")
+        wrapper.append(f"impl {rust_name} {{\n    fn native_value(self) -> i32 {{\n        match self {{\n")
+        wrapper.extend(f"            Self::{member} => genffi::{fn}(),\n" for member, fn in values)
+        wrapper.append("        }\n    }\n}\n")
+    if domain == "core":
+        # LocateOptions is QFlags<LocateOption>, so either enumerator is a
+        # valid argument. Reuse the generated native values, not guessed bits.
+        domain_enums["QStandardPaths::LocateOptions"] = domain_enums["QStandardPaths::LocateOption"]
 
     bridge.append("\n")
     for c in classes:
@@ -661,9 +781,13 @@ def emit(classes):
                     # QWidget is now a guarded view: validate the live Qt object
                     # before passing its pointer into generated C++ code.
                     call_args.append(f"{pname}.live_ptr() as _")
-                elif pkind in ("val", "valref"):
-                    wr_args.append(f"{pname}: &{pcls}")
+                elif pkind in ("val", "valref", "valmut"):
+                    wr_args.append(f"{pname}: {'&mut ' if pkind == 'valmut' else '&'}{pcls}")
                     call_args.append(f"{pname}.ptr as _")  # same audit as qtptr above
+                elif pkind in ("enum", "qtenum", "qflags") and pcls in domain_enums:
+                    rust_enum, _members = domain_enums[pcls]
+                    wr_args.append(f"{pname}: {rust_enum}")
+                    call_args.append(f"{pname}.native_value()")
                 else:
                     wr_args.append(rs)
                     call_args.append(pname)
@@ -709,7 +833,19 @@ def emit(classes):
                       "    /// allocation live for every access, and arrange deletion only if\n"
                       "    /// ownership was explicitly transferred by native code.\n"
                       if unguarded_return else "")
-            marker = "unsafe " if unguarded_return else ""
+            # New DCore/DGui surfaces must not accept arbitrary i32 C++ enum
+            # discriminants as safe Rust. Until a typed enum is generated,
+            # callers must validate those arguments explicitly.
+            domain_enum_args = domain in ("core", "gui") and any(
+                arg[3] in ("enum", "qtenum", "qflags") and arg[4] not in domain_enums
+                for arg in args
+            )
+            if domain_enum_args:
+                if not safety:
+                    safety = "    /// # Safety\n"
+                safety += ("    /// Integer enum/flags arguments must be valid values of the\n"
+                           "    /// corresponding native Qt/DTK type.\n")
+            marker = "unsafe " if unguarded_return or domain_enum_args else ""
             wrapper.append(f"{safety}    pub {marker}fn {mname}({sig}){ret_decl} {{\n{precheck}        {expr}\n    }}\n")
         wrapper.append("}\n\n")
         total_skip_n = len(c["skipped"])
@@ -735,14 +871,16 @@ def emit(classes):
     report.insert(2, "\n## skip reasons\n" + "".join(f"- {k}: {v}\n" for k, v in reasons.most_common()))
 
     for path, content in [
-        ("dtk-sys/include/dtk_gen_shim.h", "".join(shim_h)),
-        ("dtk-sys/cpp/dtk_gen_shim.cpp", "".join(shim_cpp)),
-        ("dtk-sys/src/gen_ffi.rs", rustfmt_text("".join(bridge))),
-        ("dtk/src/widgets.rs", rustfmt_text("".join(wrapper))),
-        ("GEN_REPORT.md", "".join(report)),
+        (f"dtk-sys/include/dtk_{stem}_shim.h", "".join(shim_h)),
+        (f"dtk-sys/cpp/dtk_{stem}_shim.cpp", "".join(shim_cpp)),
+        (f"dtk-sys/src/{stem}_ffi.rs", rustfmt_text("".join(bridge))),
+        ({"widget": "dtk/src/widgets.rs", "core": "dtk/src/core.rs", "gui": "dtk/src/gui.rs"}[domain],
+         rustfmt_text("".join(wrapper))),
+        ({"widget": "GEN_REPORT.md", "core": "GEN_CORE_REPORT.md", "gui": "GEN_GUI_REPORT.md"}[domain],
+         "".join(report)),
     ]:
         write(os.path.join(REPO, path), content)
-    print(f"classes {len(classes)}, methods generated {total_ok}, skipped {total_skip}")
+    print(f"{domain}: classes {len(classes)}, methods generated {total_ok}, skipped {total_skip}")
 
 
 def write(path, content):

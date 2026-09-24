@@ -4,7 +4,9 @@ use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::marker::PhantomData;
 
+pub mod core_ffi;
 pub mod gen_ffi;
+pub mod gui_ffi;
 
 // All raw FFI functions share one safety contract: pointers must be live Qt/DTK
 // objects with the stated dynamic type, accessed on their owning GUI thread.
@@ -40,6 +42,7 @@ pub mod ffi {
         type QColor;
         type QFont;
         type QPalette;
+        type DPalette;
         type QPixmap;
         type QImage;
         type QBrush;
@@ -355,6 +358,9 @@ pub mod ffi {
         unsafe fn palette_set_color(pal: *mut QPalette, group: i32, role: i32, color: *mut QColor);
         unsafe fn palette_color(pal: *mut QPalette, group: i32, role: i32) -> *mut QColor;
         unsafe fn palette_delete(pal: *mut QPalette);
+        unsafe fn dpalette_new() -> *mut DPalette;
+        unsafe fn dpalette_text_title(pal: *mut DPalette) -> *mut QBrush;
+        unsafe fn dpalette_delete(pal: *mut DPalette);
         unsafe fn pixmap_new(path: &str) -> *mut QPixmap;
         unsafe fn pixmap_delete(pm: *mut QPixmap);
         unsafe fn image_new(width: i32, height: i32) -> *mut QImage;

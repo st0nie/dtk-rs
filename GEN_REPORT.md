@@ -1,12 +1,12 @@
 # DTK6 widget binding coverage report
 
-classes: 146, methods generated: 984, skipped: 204
+classes: 146, methods generated: 986, skipped: 202
 
 Qt ancestry: 85 widgets, 26 QObjects, 35 opaque types
 
 ## skip reasons
-- unsupported param type: 146
-- unsupported return type: 54
+- unsupported param type: 145
+- unsupported return type: 53
 - signature parse failed: 4
 
 ## DAboutDialog — 19 methods generated, 0 skipped
@@ -211,9 +211,7 @@ Qt ancestry: 85 widgets, 26 QObjects, 35 opaque types
 
 ## DPageIndicator — 16 methods generated, 0 skipped
 
-## DPaletteHelper — 2 methods generated, 2 skipped
-- `DPalette palette(const QWidget *widget, const QPalette &base = QPalette()) const` ← unsupported return type: DPalette
-- `void setPalette(QWidget *widget, const DPalette &palette);` ← unsupported param type: const DPalette &
+## DPaletteHelper — 4 methods generated, 0 skipped
 
 ## DPasswordEdit — 4 methods generated, 0 skipped
 

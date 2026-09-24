@@ -1,5 +1,6 @@
 // dtk-rs C++ shim: flattens the DTK6/Qt6 C++ API into free functions for cxx::bridge.
-// All objects are lifetime-managed by Qt parent-child; the Rust side only holds raw pointers.
+// QObject handles are guarded views; constructor ownership is tracked by Rust.
+// Value-type pointers are uniquely owned and freed through matching deleters.
 #pragma once
 
 #include <cstddef>
@@ -37,6 +38,7 @@
 #include <QUrl>
 #include <QMargins>
 #include <DDciIcon>
+#include <DPalette>
 #include <QPoint>
 #include <QRect>
 #include <QSize>
@@ -89,6 +91,7 @@ using ::QMargins;
 using ::QVariant;
 using ::QVariantList;
 using Dtk::Gui::DDciIcon;
+using Dtk::Gui::DPalette;
 using ::QPoint;
 using ::QRect;
 using ::QSize;
@@ -367,6 +370,9 @@ QPalette *palette_new();
 void palette_set_color(QPalette *pal, int32_t group, int32_t role, QColor *color);
 QColor *palette_color(QPalette *pal, int32_t group, int32_t role); // heap copy, owned by the caller
 void palette_delete(QPalette *pal);
+DPalette *dpalette_new();
+QBrush *dpalette_text_title(DPalette *pal); // copy of a native const&
+void dpalette_delete(DPalette *pal);
 QPixmap *pixmap_new(rust::Str path); // file or qrc path
 void pixmap_delete(QPixmap *pm);
 QImage *image_new(int32_t width, int32_t height);

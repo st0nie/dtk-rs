@@ -30,6 +30,7 @@ pub mod genffi {
         type QVariant;
         type QVariantList;
         type DDciIcon;
+        type DPalette;
         type DAboutDialog;
         type DAbstractDialog;
         type DAccessibilityChecker;
@@ -1492,6 +1493,16 @@ pub mod genffi {
         );
         unsafe fn gen_d_palette_helper_as_qobject(self_: *mut DPaletteHelper) -> *mut QObject;
         unsafe fn gen_d_palette_helper_instance() -> *mut DPaletteHelper;
+        unsafe fn gen_d_palette_helper_palette(
+            self_: *mut DPaletteHelper,
+            widget: *mut QWidget,
+            base: *mut QPalette,
+        ) -> *mut DPalette;
+        unsafe fn gen_d_palette_helper_set_palette(
+            self_: *mut DPaletteHelper,
+            widget: *mut QWidget,
+            palette: *mut DPalette,
+        );
         unsafe fn gen_d_palette_helper_reset_palette(
             self_: *mut DPaletteHelper,
             widget: *mut QWidget,

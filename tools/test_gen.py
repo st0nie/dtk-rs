@@ -5,10 +5,60 @@ import re
 import unittest
 from pathlib import Path
 
-from tools.gen import HAND_BOUND, HDR_DIR, REPO, classify_class, parse_header, Ctx
+from tools.gen import HAND_BOUND, HDR_DIR, REPO, classify_class, enum_members, parse_header, Ctx
 
 
 class QtAncestryTests(unittest.TestCase):
+    def test_native_enum_members_exclude_dtk5_alias(self):
+        source = '''enum class XDG {\nDataHome,\nConfigHome,\n#if DTK_VERSION < DTK_VERSION_CHECK(6, 0, 0, 0)\nLegacy [[deprecated]] = ConfigHome,\n#endif\nStateHome\n};'''
+        self.assertEqual(enum_members(source, "XDG"), ["DataHome", "ConfigHome", "StateHome"])
+        with self.assertRaises(ValueError):
+            enum_members("enum class XDG {\n#if UNKNOWN\nStateHome,\n#endif\n};", "XDG")
+
+    def test_core_gui_pilot_generated_bridges(self):
+        root = Path(REPO)
+        core = (root / "dtk/src/core.rs").read_text()
+        gui = (root / "dtk/src/gui.rs").read_text()
+        self.assertIn("pub fn home_path() -> String", core)
+        self.assertIn("pub fn path(type_: XdgDirectory) -> String", core)
+        self.assertIn("pub fn path_2(type_: DsgDirectory) -> String", core)
+        self.assertIn("pub fn writable_location(type_: StandardLocation) -> String", core)
+        self.assertIn("options: LocateOption", core)
+        self.assertIn("Self::ConfigHome => genffi::gen_enum_d_standard_paths_x_d_g_config_home()", core)
+        self.assertIn("pub unsafe fn set_mode(mode: i32)", core)
+        self.assertIn("pub fn find_executable(executableName: &str, paths: Vec<String>)", core)
+        self.assertIn("pub fn operating_system_name() -> String", core)
+        self.assertIn("pub fn memory_total_size() -> i64", core)
+        self.assertIn("opaque_wrapper!(DSysInfo, genffi::DSysInfo);", core)
+        self.assertIn("pub fn instance() -> Option<DGuiApplicationHelper>", gui)
+        self.assertIn("pub fn adjust_color_2(", gui)
+        self.assertIn("pub unsafe fn set_attribute(attribute: i32, enable: bool)", gui)
+        self.assertIn("pub fn set_palette_type(&self, paletteType: GuiColorType)", gui)
+        self.assertIn("pub fn set_size_mode(&self, mode: GuiSizeMode)", gui)
+        self.assertIn("pub fn application_palette(&self) -> DPalette", gui)
+        self.assertIn("pub fn generate_palette(base: &mut DPalette, type_: GuiColorType)", gui)
+        self.assertIn("value_wrapper!(DPalette, ffi::DPalette, dpalette_delete);", (root / "dtk/src/lib.rs").read_text())
+        self.assertIn("pub fn set_single_instance(key: &str, singleScope: GuiSingleScope)", gui)
+        self.assertIn("using Dtk::Core::DStandardPaths;", (root / "dtk-sys/include/dtk_core_shim.h").read_text())
+        self.assertIn("using Dtk::Gui::DGuiApplicationHelper;", (root / "dtk-sys/include/dtk_gui_shim.h").read_text())
+        for report in ("GEN_CORE_REPORT.md", "GEN_GUI_REPORT.md"):
+            self.assertIn("NOT library-wide coverage", (root / report).read_text())
+
+    def test_core_and_gui_header_namespaces(self):
+        cases = (
+            ("DCore", "dstandardpaths.h", "DStandardPaths", "Dtk::Core", "path"),
+            ("DCore", "dconfig.h", "DConfig", "Dtk::Core", "value"),
+            ("DCore", "dsysinfo.h", "DSysInfo", "Dtk::Core", "operatingSystemName"),
+            ("DGui", "dguiapplicationhelper.h", "DGuiApplicationHelper", "Dtk::Gui", "instance"),
+        )
+        for domain, header, name, namespace, method in cases:
+            with self.subTest(name=name):
+                parsed = parse_header(f"/usr/include/dtk6/{domain}/{header}", Ctx(set()))
+                cls = next(c for c in parsed if c["name"] == name)
+                self.assertEqual(cls["ns"], namespace)
+                self.assertIn(method, {m[2] for m in cls["methods"]})
+        self.assertEqual(classify_class("DConfig", {"DConfig": ["QObject", "DObject"]}), "object")
+
     def test_inherited_widget_not_just_prefix(self):
         bases = {
             "DBoxWidget": ["QWidget", "DObject"],

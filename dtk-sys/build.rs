@@ -19,11 +19,18 @@ fn main() {
         .unwrap();
     assert!(status.success(), "moc failed");
 
-    let mut build = cxx_build::bridges(["src/lib.rs", "src/gen_ffi.rs"]);
+    let mut build = cxx_build::bridges([
+        "src/lib.rs",
+        "src/gen_ffi.rs",
+        "src/core_ffi.rs",
+        "src/gui_ffi.rs",
+    ]);
     build
         .file("cpp/shim.cpp")
         .file("cpp/relay.cpp")
         .file("cpp/dtk_gen_shim.cpp")
+        .file("cpp/dtk_core_shim.cpp")
+        .file("cpp/dtk_gui_shim.cpp")
         .file(&moc_out)
         .include("include")
         .include("compat") // compat dir for alias headers missing from DTK6 packaging

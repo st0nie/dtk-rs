@@ -1106,6 +1106,7 @@ macro_rules! value_wrapper {
 value_wrapper!(QColor, ffi::QColor, color_delete);
 value_wrapper!(QFont, ffi::QFont, font_delete);
 value_wrapper!(QPalette, ffi::QPalette, palette_delete);
+value_wrapper!(DPalette, ffi::DPalette, dpalette_delete);
 value_wrapper!(QPixmap, ffi::QPixmap, pixmap_delete);
 value_wrapper!(QImage, ffi::QImage, image_delete);
 value_wrapper!(QBrush, ffi::QBrush, brush_delete);
@@ -1265,6 +1266,16 @@ impl QFont {
                 ffi::fontmetrics_ascent(self.ptr),
             )
         }
+    }
+}
+
+impl DPalette {
+    pub fn new() -> Self {
+        Self::from_raw(unsafe { ffi::dpalette_new() })
+    }
+    /// Copy the DTK title brush rather than exposing its internal const&.
+    pub fn text_title(&self) -> QBrush {
+        QBrush::from_raw(unsafe { ffi::dpalette_text_title(self.ptr) })
     }
 }
 
@@ -2290,7 +2301,7 @@ impl widgets::DProgressBar {
     }
 }
 
-impl_default!(QFont, QPalette, QPainterPath, DDciIcon);
+impl_default!(QFont, QPalette, DPalette, QPainterPath, DDciIcon);
 impl_default_owned!(DMainWindow, DMessageBox);
 
 unsafe impl Signal0 for DApplication {
@@ -2330,4 +2341,6 @@ impl widgets::DComboBox {
 }
 
 // generator output: bindings for the rest of dtkwidget
+pub mod core;
+pub mod gui;
 pub mod widgets;

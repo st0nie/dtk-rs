@@ -1011,6 +1011,8 @@ int32_t gen_d_page_indicator_point_distance(DPageIndicator *self);
 void gen_d_page_indicator_set_point_distance(DPageIndicator *self, int32_t distance);
 QObject *gen_d_palette_helper_as_qobject(DPaletteHelper *self);
 DPaletteHelper * gen_d_palette_helper_instance();
+DPalette * gen_d_palette_helper_palette(DPaletteHelper *self, QWidget * widget, QPalette * base);
+void gen_d_palette_helper_set_palette(DPaletteHelper *self, QWidget * widget, DPalette * palette);
 void gen_d_palette_helper_reset_palette(DPaletteHelper *self, QWidget * widget);
 DPasswordEdit *gen_d_password_edit_new();
 QObject *gen_d_password_edit_as_qobject(DPasswordEdit *self);

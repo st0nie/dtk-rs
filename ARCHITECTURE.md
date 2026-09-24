@@ -11,25 +11,27 @@ Three layers plus a header-scanning generator:
 ┌────────────────────────────────────────────────────────────────┐
 │ dtk/            Rust-facing API (raw-handle safety unfinished)  │
 │   src/lib.rs      hand-written: core classes, macros, signals  │
-│   src/widgets.rs  GENERATED: 146 DTK class wrappers            │
+│   src/widgets.rs  GENERATED: 146 DTK Widget classes             │
+│   src/core.rs/gui.rs GENERATED: DCore/DGui pilot classes      │
 │   ↑ guarded QObject views, non-owning, !Send                   │
 ├────────────────────────────────────────────────────────────────┤
-│ cxx::bridge #1  dtk-sys/src/lib.rs      hand-written core      │
-│ cxx::bridge #2  dtk-sys/src/gen_ffi.rs  GENERATED (~100 types) │
+│ cxx::bridge #1   dtk-sys/src/lib.rs      hand-written core     │
+│ cxx::bridge #2-4 dtk-sys/src/{gen,core,gui}_ffi.rs GENERATED  │
 │   ↑ cxx generates the Rust↔C++ ABI glue                        │
 ├────────────────────────────────────────────────────────────────┤
 │ dtk-sys/cpp/    C++ shim (the unsafe FFI layer)                │
 │   shim.cpp           hand-written: core + event-override       │
 │                      subclasses + painter primitives           │
-│   dtk_gen_shim.cpp   GENERATED: one free fn per DTK method     │
+│   dtk_{gen,core,gui}_shim.cpp GENERATED free DTK methods     │
 │   relay.cpp          DtkRelay (Q_OBJECT) signal forwarding     │
 │   ↓ calls the real DTK6/Qt6 API                                │
 ├────────────────────────────────────────────────────────────────┤
 │ dtk6widget / Qt6   (pkg-config link, moc for relay.h)          │
 └────────────────────────────────────────────────────────────────┘
 
-tools/gen.py  scans /usr/include/dtk6/DWidget/*.h, classifies Qt ancestry,
-              and regenerates the four GENERATED files (+ GEN_REPORT.md)
+tools/gen.py  scans all DWidget headers plus selected DCore/DGui pilot headers,
+              classifies Qt ancestry and regenerates three domain APIs/reports.
+              Pilot report counts do NOT describe full DCore/DGui coverage.
 ```
 
 ## Why a C++ shim at all
@@ -192,16 +194,25 @@ widget) rather than panicking on Qt's null. This classification is checked by
 | `int`/`qint32`, `bool`, `qreal`… | `int32_t`, `bool`, `double`… | `i32`, `bool`, `f64`… |
 | enums | `int32_t` + `static_cast` | `i32`; constants in `dtk::qt` |
 | `QFlags` (e.g. `Qt::Alignment`) | `int32_t` + `fromInt`/`toInt` | `i32` |
-| value types (`QColor`, `QFont`, `QPixmap`, `QImage`, `QBrush`, `QPainterPath`, `QKeySequence`, `QUrl`, `QIcon`, `QPalette`, `QSize`, `QPoint`, `QRect`, `QMargins`, `QVariant`, `QVariantList`, `DDciIcon`) | owning heap pointer | wrapper with `Drop` → shim `*_delete` |
+| value types (`QColor`, `QFont`, `QPixmap`, `QImage`, `QBrush`, `QPainterPath`, `QKeySequence`, `QUrl`, `QIcon`, `QPalette`, `DPalette`, `QSize`, `QPoint`, `QRect`, `QMargins`, `QVariant`, `QVariantList`, `DDciIcon`) | owning heap pointer | wrapper with `Drop` → shim `*_delete` |
 | `QWidget*` / `QLayout*` / `QBoxLayout*` / `QAction*` / `QAbstractItemModel*` / DTK class pointers | opaque pointer | guarded non-owning QObject view |
 | other `QList<T>`/`QMap`, `QPrinter*`, … | — | **unmapped → skipped** (GEN_REPORT.md, TODO.md) |
 
-Two bridges, one namespace: bridge #1 (hand, core) and #2 (generated, bulk)
-both declare opaque types in `namespace dtkrs`. Only `QWidget*` and a fixed
-list of value types cross between the two bridges, via a `as _` pointer cast.
-Sound because cxx opaque types are zero-sized Rust structs that are never
-dereferenced or moved in Rust, and both bridges name the same C++ type.
-The audit is recorded in tools/gen.py comments.
+Four bridges, one namespace: bridge #1 (hand, core) and #2-4 (generated
+DWidget/DCore/DGui) declare opaque types in `namespace dtkrs`. `QWidget*` and
+selected value types cross bridges via `as _` pointer casts. Sound because
+cxx opaque types are zero-sized Rust structs never dereferenced or moved in
+Rust, and each bridge names the same C++ type.
+The audit is recorded in tools/gen.py comments. DCore/DGui generation is
+currently **pilot scope**: only `DStandardPaths`, `DSysInfo` and
+`DGuiApplicationHelper` are scanned (see `GEN_CORE_REPORT.md` /
+`GEN_GUI_REPORT.md`). The DCore classes provide static functions usable
+without QApplication; the DGui class returns
+guarded QObject views and requires the application's GUI thread. New-domain
+core XDG/DSG and Qt StandardLocation/LocateOption plus GUI ColorType/SizeMode/
+SingleScope inputs use generated Rust enums. Their numeric values come from
+safe C++ getters compiled against installed headers, never guessed in Rust;
+other raw `i32` C++ enum/flags inputs require `unsafe` until similarly typed.
 
 ## Signals: runtime connect by name
 
@@ -308,7 +319,7 @@ Three wrapper cases, deliberately different:
    the native allocation is borrowed or transferred before deleting anything.
 3. **Value-type wrappers** (`QColor`, `QFont`, `QPixmap`, `QImage`, `QBrush`,
    `QPainterPath`, `QKeySequence`, `QUrl`, `QIcon`, `QPalette`, `QSize`,
-   `QPoint`, `QRect`, `QMargins`, `QVariant`, `QVariantList`, `DDciIcon`): own
+   `QPoint`, `QRect`, `QMargins`, `QVariant`, `QVariantList`, `DPalette`, `DDciIcon`): own
    a heap copy created by the shim (`new QColor(...)`), freed in `Drop` via
    shim `*_delete`. `WaterMarkData` returned by value or const& is explicitly
    copy-constructed into `OwnedOpaque<WaterMarkData>`; its generated deleter
@@ -348,8 +359,8 @@ older manual fd pattern for other external event sources.
 
 1. locates Qt6 **moc** (`/usr/lib/qt6/libexec/moc` → fallbacks), runs it on
    `include/relay.h` (the only header with `Q_OBJECT`);
-2. `cxx_build::bridges(["src/lib.rs", "src/gen_ffi.rs"])` — both bridges;
-3. compiles `shim.cpp` + `relay.cpp` + `dtk_gen_shim.cpp` + moc output with
+2. `cxx_build::bridges` for the hand, Widget, DCore and DGui bridges;
+3. compiles `shim.cpp` + `relay.cpp` + the three generated shim .cpp files + moc output with
    `-std=c++17 -fPIC` (Qt6 requires PIC);
 4. `pkg-config` probes `Qt6Widgets/Gui/Core` + `dtk6widget/gui/core` for
    include paths, defines, and link flags;
@@ -364,10 +375,10 @@ older manual fd pattern for other external event sources.
 | `dtk-sys/cpp/relay.cpp`, `include/relay.h` | hand |
 | `dtk-sys/build.rs` | hand |
 | `dtk/src/lib.rs` (core classes, macros, signals, qt constants) | hand |
-| `dtk-sys/src/gen_ffi.rs` | **generated** |
-| `dtk-sys/cpp/dtk_gen_shim.cpp`, `include/dtk_gen_shim.h` | **generated** |
-| `dtk/src/widgets.rs` | **generated** |
-| `GEN_REPORT.md` | generated report |
+| `dtk-sys/src/{gen,core,gui}_ffi.rs` | **generated** |
+| `dtk-sys/cpp/dtk_{gen,core,gui}_shim.cpp`, matching headers | **generated** |
+| `dtk/src/{widgets,core,gui}.rs` | **generated** |
+| `GEN_REPORT.md`, `GEN_CORE_REPORT.md`, `GEN_GUI_REPORT.md` | generated reports (last two are pilot scopes only) |
 
 Regenerate after DTK upgrades or when adding coverage:
 
@@ -376,7 +387,7 @@ python3 tools/gen.py && cargo build
 ```
 
 Adding a new DTK method usually means extending the generator's type map and
-regenerating. The current 204 skipped methods, raw non-QObject borrowed
+regenerating. The current 202 skipped Widget methods, raw non-QObject borrowed
 pointers, deferred-deletion shutdown semantics, and reentrant native calls
 mean this is not yet an exhaustive, memory-safe Qt/DTK binding. CXX-Qt's
 `extern "C++Qt"` can import C++ QObject methods and typed signals; integration
