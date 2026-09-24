@@ -40,5 +40,44 @@ void gen_d_gui_application_helper_open_url(rust::Str url) { DGuiApplicationHelpe
 int32_t gen_d_gui_application_helper_size_mode(DGuiApplicationHelper *self) { return static_cast<int32_t>(self->sizeMode()); }
 void gen_d_gui_application_helper_set_size_mode(DGuiApplicationHelper *self, int32_t mode) { self->setSizeMode(static_cast<DGuiApplicationHelper::SizeMode>(mode)); }
 void gen_d_gui_application_helper_reset_size_mode(DGuiApplicationHelper *self) { self->resetSizeMode(); }
+DImageHandler *gen_d_image_handler_new() { return new DImageHandler; }
+QObject *gen_d_image_handler_as_qobject(DImageHandler *self) { return static_cast<QObject *>(self); }
+void gen_d_image_handler_set_file_name(DImageHandler *self, rust::Str fileName) { self->setFileName(from_rust_str(fileName)); }
+rust::String gen_d_image_handler_file_name(DImageHandler *self) { return to_rust_string(self->fileName()); }
+QImage * gen_d_image_handler_read_image(DImageHandler *self) { return new QImage(self->readImage()); }
+QImage * gen_d_image_handler_thumbnail(DImageHandler *self, QSize * size, int32_t mode) { return new QImage(self->thumbnail(*size, static_cast<Qt::AspectRatioMode>(mode))); }
+rust::String gen_d_image_handler_image_format(DImageHandler *self) { return to_rust_string(self->imageFormat()); }
+QSize * gen_d_image_handler_image_size(DImageHandler *self) { return new QSize(self->imageSize()); }
+rust::Vec<rust::String> gen_d_image_handler_find_all_meta_data(DImageHandler *self) { return to_rust_string_pairs(self->findAllMetaData()); }
+void gen_d_image_handler_clear_cache(DImageHandler *self) { self->clearCache(); }
+bool gen_d_image_handler_save_image(DImageHandler *self, rust::Str fileName, rust::Str format) { return self->saveImage(from_rust_str(fileName), from_rust_str(format)); }
+bool gen_d_image_handler_save_image_2(DImageHandler *self, QImage * image, rust::Str fileName, rust::Str format) { return self->saveImage(*image, from_rust_str(fileName), from_rust_str(format)); }
+bool gen_d_image_handler_rotate_image(DImageHandler *self, QImage * image, int32_t angle) { return self->rotateImage(*image, angle); }
+bool gen_d_image_handler_rotate_image_file(DImageHandler *self, rust::Str fileName, int32_t angle) { return self->rotateImageFile(from_rust_str(fileName), angle); }
+bool gen_d_image_handler_is_readable(DImageHandler *self) { return self->isReadable(); }
+bool gen_d_image_handler_is_writeable(DImageHandler *self) { return self->isWriteable(); }
+bool gen_d_image_handler_is_rotatable(DImageHandler *self) { return self->isRotatable(); }
+rust::String gen_d_image_handler_last_error(DImageHandler *self) { return to_rust_string(self->lastError()); }
+rust::Vec<rust::String> gen_d_image_handler_support_formats() { return to_rust_string_vec(DImageHandler::supportFormats()); }
+rust::String gen_d_image_handler_detect_image_format(rust::Str fileName) { return to_rust_string(DImageHandler::detectImageFormat(from_rust_str(fileName))); }
+QImage * gen_d_image_handler_old_color_filter(QImage * img) { return new QImage(DImageHandler::oldColorFilter(*img)); }
+QImage * gen_d_image_handler_warm_color_filter(QImage * img, int32_t intensity) { return new QImage(DImageHandler::warmColorFilter(*img, intensity)); }
+QImage * gen_d_image_handler_cool_color_filter(QImage * img, int32_t intensity) { return new QImage(DImageHandler::coolColorFilter(*img, intensity)); }
+QImage * gen_d_image_handler_gray_scale_color_filter(QImage * img) { return new QImage(DImageHandler::grayScaleColorFilter(*img)); }
+QImage * gen_d_image_handler_anti_color_filter(QImage * img) { return new QImage(DImageHandler::antiColorFilter(*img)); }
+QImage * gen_d_image_handler_metal_color_filter(QImage * img) { return new QImage(DImageHandler::metalColorFilter(*img)); }
+QImage * gen_d_image_handler_bilateral_filter(QImage * img, double spatialDecay, double photometricStandardDeviation) { return new QImage(DImageHandler::bilateralFilter(*img, spatialDecay, photometricStandardDeviation)); }
+QImage * gen_d_image_handler_contour_extraction(QImage * img) { return new QImage(DImageHandler::contourExtraction(*img)); }
+QImage * gen_d_image_handler_binaryzation(QImage * img) { return new QImage(DImageHandler::binaryzation(*img)); }
+QImage * gen_d_image_handler_gray_scale(QImage * img) { return new QImage(DImageHandler::grayScale(*img)); }
+QImage * gen_d_image_handler_laplace_sharpen(QImage * img) { return new QImage(DImageHandler::laplaceSharpen(*img)); }
+QImage * gen_d_image_handler_sobel_edge_detector(QImage * img) { return new QImage(DImageHandler::sobelEdgeDetector(*img)); }
+QImage * gen_d_image_handler_change_light_and_contrast(QImage * img, int32_t light, int32_t contrast) { return new QImage(DImageHandler::changeLightAndContrast(*img, light, contrast)); }
+QImage * gen_d_image_handler_change_brightness(QImage * img, int32_t brightness) { return new QImage(DImageHandler::changeBrightness(*img, brightness)); }
+QImage * gen_d_image_handler_change_transparency(QImage * img, int32_t transparency) { return new QImage(DImageHandler::changeTransparency(*img, transparency)); }
+QImage * gen_d_image_handler_change_stauration(QImage * img, int32_t saturation) { return new QImage(DImageHandler::changeStauration(*img, saturation)); }
+QImage * gen_d_image_handler_replace_point_color(QImage * img, QColor * oldColor, QColor * newColor) { return new QImage(DImageHandler::replacePointColor(*img, *oldColor, *newColor)); }
+QImage * gen_d_image_handler_flip_horizontal(QImage * img) { return new QImage(DImageHandler::flipHorizontal(*img)); }
+QImage * gen_d_image_handler_flip_vertical(QImage * img) { return new QImage(DImageHandler::flipVertical(*img)); }
 
 } // namespace dtkrs

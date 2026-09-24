@@ -369,6 +369,9 @@ pub mod ffi {
         unsafe fn image_width(image: *mut QImage) -> i32;
         unsafe fn image_height(image: *mut QImage) -> i32;
         unsafe fn image_fill(image: *mut QImage, color: *mut QColor);
+        unsafe fn image_set_text(image: *mut QImage, key: &str, value: &str);
+        unsafe fn image_text(image: *mut QImage, key: &str) -> String;
+        unsafe fn image_save(image: *mut QImage, path: &str) -> bool;
         unsafe fn image_pixel_color(image: *mut QImage, x: i32, y: i32) -> *mut QColor;
         unsafe fn image_delete(image: *mut QImage);
         unsafe fn painter_path_new() -> *mut QPainterPath;

@@ -196,6 +196,7 @@ widget) rather than panicking on Qt's null. This classification is checked by
 | `QFlags` (e.g. `Qt::Alignment`) | `int32_t` + `fromInt`/`toInt` | `i32` |
 | value types (`QColor`, `QFont`, `QPixmap`, `QImage`, `QBrush`, `QPainterPath`, `QKeySequence`, `QUrl`, `QIcon`, `QPalette`, `DPalette`, `QSize`, `QPoint`, `QRect`, `QMargins`, `QVariant`, `QVariantList`, `DDciIcon`) | owning heap pointer | wrapper with `Drop` → shim `*_delete` |
 | `QWidget*` / `QLayout*` / `QBoxLayout*` / `QAction*` / `QAbstractItemModel*` / DTK class pointers | opaque pointer | guarded non-owning QObject view |
+| `QHash<QString, QString>` (out) | owned alternating UTF-8 key/value strings | `BTreeMap<String, String>` (no delimiter or Qt borrow) |
 | other `QList<T>`/`QMap`, `QPrinter*`, … | — | **unmapped → skipped** (GEN_REPORT.md, TODO.md) |
 
 Four bridges, one namespace: bridge #1 (hand, core) and #2-4 (generated
@@ -204,10 +205,10 @@ selected value types cross bridges via `as _` pointer casts. Sound because
 cxx opaque types are zero-sized Rust structs never dereferenced or moved in
 Rust, and each bridge names the same C++ type.
 The audit is recorded in tools/gen.py comments. DCore/DGui generation is
-currently **pilot scope**: only `DStandardPaths`, `DSysInfo` and
-`DGuiApplicationHelper` are scanned (see `GEN_CORE_REPORT.md` /
-`GEN_GUI_REPORT.md`). The DCore classes provide static functions usable
-without QApplication; the DGui class returns
+currently **pilot scope**: `DStandardPaths`, `DSysInfo`,
+`DGuiApplicationHelper` and `DImageHandler` are scanned (see
+`GEN_CORE_REPORT.md` / `GEN_GUI_REPORT.md`). The DCore classes provide static
+functions usable without QApplication; DGui classes return
 guarded QObject views and requires the application's GUI thread. New-domain
 core XDG/DSG and Qt StandardLocation/LocateOption plus GUI ColorType/SizeMode/
 SingleScope inputs use generated Rust enums. Their numeric values come from

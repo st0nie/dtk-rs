@@ -1,8 +1,8 @@
 # DTK6 gui pilot binding coverage report
 
-classes: 1, methods generated: 29, skipped: 9
+classes: 2, methods generated: 66, skipped: 9
 
-Qt ancestry: 0 widgets, 1 QObjects, 0 opaque types
+Qt ancestry: 0 widgets, 2 QObjects, 0 opaque types
 
 ## skip reasons
 - unsupported param type: 5
@@ -20,3 +20,5 @@ Qt ancestry: 0 widgets, 1 QObjects, 0 opaque types
 - `static bool loadTranslator(const QString &fileName, const QList<QString> &transl` ← unsupported param type: const QList<QString> &
 - `static bool loadTranslator(const QList<QLocale> &localeFallback = QList<QLocale>` ← unsupported param type: const QList<QLocale> &
 - `static inline bool isCompactMode()` ← unsupported return type: inline bool
+
+## DImageHandler — 37 methods generated, 0 skipped

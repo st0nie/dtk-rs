@@ -25,6 +25,43 @@ fn opt_ptr(w: Option<&QWidget>) -> *mut ffi::QWidget {
     w.map_or(std::ptr::null_mut(), QWidget::live_ptr)
 }
 
+/// Reconstitute an owned Qt QHash<QString, QString> result encoded as adjacent
+/// UTF-8 key/value strings; no delimiter or borrowed Qt storage is involved.
+pub(crate) fn string_map_from_pairs(
+    values: Vec<String>,
+) -> std::collections::BTreeMap<String, String> {
+    let mut pairs = values.into_iter();
+    let mut map = std::collections::BTreeMap::new();
+    while let Some(key) = pairs.next() {
+        let value = pairs.next().expect("C++ map returned odd key/value count");
+        map.insert(key, value);
+    }
+    map
+}
+
+#[cfg(test)]
+mod string_map_tests {
+    use super::string_map_from_pairs;
+
+    #[test]
+    fn binary_safe_owned_pairs() {
+        let map = string_map_from_pairs(vec![
+            "键|名\0尾".to_owned(),
+            "值\0中文".to_owned(),
+            "empty".to_owned(),
+            String::new(),
+        ]);
+        assert_eq!(map.get("键|名\0尾").map(String::as_str), Some("值\0中文"));
+        assert_eq!(map.get("empty").map(String::as_str), Some(""));
+    }
+
+    #[test]
+    #[should_panic(expected = "odd key/value count")]
+    fn rejects_malformed_native_pairs() {
+        string_map_from_pairs(vec!["orphan".to_owned()]);
+    }
+}
+
 /// Qt widgets and event-driven QObjects require the QApplication's own GUI
 /// thread, not merely a process-global QApplication created elsewhere.
 pub(crate) fn require_application() {
@@ -1322,6 +1359,16 @@ impl QImage {
     }
     pub fn fill(&mut self, color: &QColor) {
         unsafe { ffi::image_fill(self.ptr, color.ptr) }
+    }
+    pub fn set_text(&mut self, key: &str, value: &str) {
+        unsafe { ffi::image_set_text(self.ptr, key, value) }
+    }
+    pub fn text(&self, key: &str) -> String {
+        unsafe { ffi::image_text(self.ptr, key) }
+    }
+    /// Save using Qt's encoder inferred from the file extension.
+    pub fn save(&self, path: &str) -> bool {
+        unsafe { ffi::image_save(self.ptr, path) }
     }
     /// Pixel color; x/y must be in bounds (Qt warns on invalid coordinates).
     pub fn pixel_color(&self, x: i32, y: i32) -> QColor {

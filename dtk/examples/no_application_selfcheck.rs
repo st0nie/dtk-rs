@@ -1,5 +1,6 @@
 //! Constructing Qt widgets before QApplication must fail in Rust, not crash Qt.
 //! QT_QPA_PLATFORM=offscreen cargo run --example no_application_selfcheck
+use dtk::gui::DImageHandler;
 use dtk::widgets::{DListView, DMessageManager};
 use dtk::{
     Clipboard, DApplication, QPixmap, QTableWidget, QTimer, QVariant, QVariantList, QWidget,
@@ -15,6 +16,7 @@ fn main() {
     assert!(QVariantList::new().is_empty());
     expect_panic("create DApplication", || QWidget::new(None));
     expect_panic("create DApplication", DListView::new);
+    expect_panic("create DApplication", DImageHandler::new);
     expect_panic("create DApplication", DMessageManager::instance);
     expect_panic("create DApplication", || QTableWidget::new(0, 0));
     expect_panic("create DApplication", Clipboard::text);
@@ -40,6 +42,7 @@ fn main() {
         // permission for a worker to allocate a QWidget or QObject there.
         expect_panic("GUI thread", || QWidget::new(None));
         expect_panic("GUI thread", DListView::new);
+        expect_panic("GUI thread", DImageHandler::new);
         expect_panic("GUI thread", || QTimer::single_shot(0, || {}));
     })
     .join()

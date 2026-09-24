@@ -2,6 +2,7 @@
 #pragma once
 #include "dtk_shim.h"
 #include <dguiapplicationhelper.h>
+#include <dimagehandler.h>
 #include <DDciIcon>
 #include <DPalette>
 
@@ -30,6 +31,7 @@ using ::QAction;
 using ::QBoxLayout;
 using ::QLayout;
 using Dtk::Gui::DGuiApplicationHelper;
+using Dtk::Gui::DImageHandler;
 int32_t gen_enum_d_gui_application_helper_color_type_unknown_type();
 int32_t gen_enum_d_gui_application_helper_color_type_light_type();
 int32_t gen_enum_d_gui_application_helper_color_type_dark_type();
@@ -68,5 +70,44 @@ void gen_d_gui_application_helper_open_url(rust::Str url);
 int32_t gen_d_gui_application_helper_size_mode(DGuiApplicationHelper *self);
 void gen_d_gui_application_helper_set_size_mode(DGuiApplicationHelper *self, int32_t mode);
 void gen_d_gui_application_helper_reset_size_mode(DGuiApplicationHelper *self);
+DImageHandler *gen_d_image_handler_new();
+QObject *gen_d_image_handler_as_qobject(DImageHandler *self);
+void gen_d_image_handler_set_file_name(DImageHandler *self, rust::Str fileName);
+rust::String gen_d_image_handler_file_name(DImageHandler *self);
+QImage * gen_d_image_handler_read_image(DImageHandler *self);
+QImage * gen_d_image_handler_thumbnail(DImageHandler *self, QSize * size, int32_t mode);
+rust::String gen_d_image_handler_image_format(DImageHandler *self);
+QSize * gen_d_image_handler_image_size(DImageHandler *self);
+rust::Vec<rust::String> gen_d_image_handler_find_all_meta_data(DImageHandler *self);
+void gen_d_image_handler_clear_cache(DImageHandler *self);
+bool gen_d_image_handler_save_image(DImageHandler *self, rust::Str fileName, rust::Str format);
+bool gen_d_image_handler_save_image_2(DImageHandler *self, QImage * image, rust::Str fileName, rust::Str format);
+bool gen_d_image_handler_rotate_image(DImageHandler *self, QImage * image, int32_t angle);
+bool gen_d_image_handler_rotate_image_file(DImageHandler *self, rust::Str fileName, int32_t angle);
+bool gen_d_image_handler_is_readable(DImageHandler *self);
+bool gen_d_image_handler_is_writeable(DImageHandler *self);
+bool gen_d_image_handler_is_rotatable(DImageHandler *self);
+rust::String gen_d_image_handler_last_error(DImageHandler *self);
+rust::Vec<rust::String> gen_d_image_handler_support_formats();
+rust::String gen_d_image_handler_detect_image_format(rust::Str fileName);
+QImage * gen_d_image_handler_old_color_filter(QImage * img);
+QImage * gen_d_image_handler_warm_color_filter(QImage * img, int32_t intensity);
+QImage * gen_d_image_handler_cool_color_filter(QImage * img, int32_t intensity);
+QImage * gen_d_image_handler_gray_scale_color_filter(QImage * img);
+QImage * gen_d_image_handler_anti_color_filter(QImage * img);
+QImage * gen_d_image_handler_metal_color_filter(QImage * img);
+QImage * gen_d_image_handler_bilateral_filter(QImage * img, double spatialDecay, double photometricStandardDeviation);
+QImage * gen_d_image_handler_contour_extraction(QImage * img);
+QImage * gen_d_image_handler_binaryzation(QImage * img);
+QImage * gen_d_image_handler_gray_scale(QImage * img);
+QImage * gen_d_image_handler_laplace_sharpen(QImage * img);
+QImage * gen_d_image_handler_sobel_edge_detector(QImage * img);
+QImage * gen_d_image_handler_change_light_and_contrast(QImage * img, int32_t light, int32_t contrast);
+QImage * gen_d_image_handler_change_brightness(QImage * img, int32_t brightness);
+QImage * gen_d_image_handler_change_transparency(QImage * img, int32_t transparency);
+QImage * gen_d_image_handler_change_stauration(QImage * img, int32_t saturation);
+QImage * gen_d_image_handler_replace_point_color(QImage * img, QColor * oldColor, QColor * newColor);
+QImage * gen_d_image_handler_flip_horizontal(QImage * img);
+QImage * gen_d_image_handler_flip_vertical(QImage * img);
 
 } // namespace dtkrs

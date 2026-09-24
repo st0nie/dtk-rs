@@ -52,6 +52,13 @@ Known gaps in dtk-rs, roughly in priority order.
       safety; Qt may destroy the native object *during* an FFI call.
 - [ ] Make QApplication creation/destruction a genuine singleton RAII contract,
       including cleanup of unparented objects and event-loop shutdown semantics.
+      Offscreen `.pi/app-drop-probe` demonstrated that after dropping Rust
+      `DApplication`, a 60-second QTimer still holds its Rust callback and
+      `QWidget::new()` still succeeds: native QApplication remains allocated.
+      Synchronously deleting QApplication from `Drop` is **not** safe if an
+      app owner is moved into a click/signal callback and dropped during its
+      C++ event frame. Design scoped/non-reentrant shutdown plus invalidation
+      of QApplication-dependent QObject views and deferred-deletion draining.
 
 ## Qt/DTK feature coverage (see GEN_REPORT.md for per-method detail)
 
@@ -82,8 +89,11 @@ Known gaps in dtk-rs, roughly in priority order.
 - [x] Reject DListView item mutation when a model has zero columns. Native
       addItems returned true/incremented rows while `(row,0)` remained invalid;
       generated shims now return false (`model_selfcheck`).
-- [ ] Other Qt containers `QList<T>`/`QVector<T>`/`QMap` remain unsupported
-      (e.g. `DDrawerGroup::addWidget`, `DSimpleListView` item lists). Map only
+- [ ] Other Qt containers `QList<T>`/`QVector<T>`/general `QMap` remain unsupported
+      (e.g. `DDrawerGroup::addWidget`, `DSimpleListView` item lists). The
+      `QHash<QString,QString>` return of `DImageHandler::findAllMetaData` is
+      now an owned `BTreeMap`, but its native contents depend on an optional
+      FreeImage backend and may be empty for PNG text. Map other containers only
       when element ownership and QVariant semantics remain intact.
       (`QStringList` maps to `Vec<String>`; `QVariantList` is an owned Qt value.)
 - [x] `QLayout*` params use guarded `QLayout` base views; Qt adopts inserted
@@ -98,13 +108,16 @@ Known gaps in dtk-rs, roughly in priority order.
 - [ ] Qt classes beyond `QWidget`/`QAbstractButton`/`QLayout`/`QBoxLayout`/
       `QAction`/`QAbstractItemModel`: `QPrinter*`, ... Declare each in both
       bridges and preserve QObject/ownership semantics (QT_PTRS).
-- [x] Multi-line method signatures: fixed — gen.py joins continuation lines,
-      strips `inline`/`Q_SLOT` prefixes, and skips ctor init lists / inline bodies.
-      Parse failures down from 86 to ~4 (remainder are genuinely unbindable).
+- [x] Multi-line and templated-return signatures: gen.py joins continuations,
+      strips `inline`/`Q_SLOT`, and skips ctor init lists/inline bodies. The
+      current Widget and pilot reports have zero signature-parse failures;
+      remaining skips are explicit unmapped parameter/return types.
 - [ ] Non-exported nested classes (`DPrinter` inside dprintpreviewwidget.h etc.):
       parser registers their enums but can't bind the classes themselves.
-- [ ] `Q_ENUM`-exposed enum *values*: we map enums to bare i32 today and hand-maintain
-      `dtk::qt` constants. gen.py could scrape enum bodies and emit Rust consts automatically.
+- [ ] Most Widget `Q_ENUM` values still map to bare `i32` with hand-maintained
+      `dtk::qt` constants; new DCore/DGui pilots extract selected enum member
+      names and ask compiled C++ for native values. Extend typed enum coverage
+      without accepting invalid/sentinel discriminants as safe Rust inputs.
 - [ ] Remaining painting/model APIs skipped: `QPainter*`/`QStyle*`/
       `QStyleOption*` and `QModelIndex` params require scope-aware borrowing
       or an appropriate Rust-defined model subclass. `QVariant` and
@@ -127,16 +140,18 @@ Known gaps in dtk-rs, roughly in priority order.
 - [x] Add generator-backed DCore/DGui pilot modules with separate bridges,
       shims and scoped coverage reports: `DStandardPaths` (13 methods) and
       `DSysInfo` (28 methods) work without QApplication;
-      `DGuiApplicationHelper` (29 mapped methods) is guarded and requires the
-      GUI app thread (`core_paths_selfcheck`,
-      `gui_helper_selfcheck`). Core XDG/DSG and Qt StandardLocation/LocateOption,
+      `DGuiApplicationHelper` (29 mapped methods) and `DImageHandler` (37 mapped
+      methods) are guarded and require the GUI app thread (`core_paths_selfcheck`,
+      `gui_helper_selfcheck`, `gui_image_selfcheck`). Core XDG/DSG and Qt StandardLocation/LocateOption,
       plus GUI ColorType/SizeMode/SingleScope inputs use Rust enums whose
       values are read from generated C++ functions. `DPalette` is a value-type
       wrapper, copied on return, deleted on Drop; non-const `DPalette&` inputs
       require `&mut DPalette`. Remaining raw integer enum inputs (`set_mode`,
       `set_attribute`) require `unsafe` pending validation.
-- [ ] Expand DGui bindings beyond `DGuiApplicationHelper`/`DPalette`
-      (`/usr/include/dtk6/DGui`): DCI icons, platform themes, image handlers, etc.
+- [ ] Expand DGui bindings beyond `DGuiApplicationHelper`/`DImageHandler`/
+      `DPalette` (`/usr/include/dtk6/DGui`): DCI icons, platform themes,
+      desktop services etc. `DImageHandler::rotateImage(QImage&)` uses `&mut`
+      to preserve the C++ non-const reference requirement.
 - [ ] Expand DCore bindings beyond `DStandardPaths`/`DSysInfo` (`/usr/include/dtk6/DCore`):
       DConfig, DSettings, DLog, file watchers etc. QObject wrappers need
       QCoreApplication-aware constructors and thread affinity, not the Widget

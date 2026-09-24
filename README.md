@@ -63,7 +63,7 @@ callback discards pending invocations; see `signal_reentrancy_selfcheck`.
 `unregister_callback` for a GUI connection must be called on its GUI thread;
 a worker call returns `false` without touching Qt's relay map.
 
-Generated Widget classes live under `dtk::widgets` (DComboBox, DSpinner, DDialog…). `dtk::core::{DStandardPaths, DSysInfo}` and `dtk::gui::DGuiApplicationHelper` are **pilot classes only**; they do not imply that all DCore/DGui types are bound. Core path locations/options and GUI palette/size modes use generated Rust enums with their discriminants read from the compiled native headers; remaining raw `i32` enum inputs (e.g. `set_mode`, `set_attribute`) require `unsafe` pending a typed/synchronization audit.
+Generated Widget classes live under `dtk::widgets` (DComboBox, DSpinner, DDialog…). `dtk::core::{DStandardPaths, DSysInfo}` and `dtk::gui::{DGuiApplicationHelper, DImageHandler}` are **pilot classes only**; they do not imply that all DCore/DGui types are bound. Core path locations/options and GUI palette/size modes use generated Rust enums with their discriminants read from the compiled native headers; remaining raw `i32` enum inputs (e.g. `set_mode`, `set_attribute`) require `unsafe` pending a typed/synchronization audit. `DImageHandler::find_all_meta_data()` returns an owned `BTreeMap<String, String>`; native DTK may return an empty map when its optional FreeImage backend is absent, even if Qt's QImage retains PNG text.
 
 ## Examples
 
@@ -87,7 +87,8 @@ All examples live in [`dtk/examples/`](dtk/examples/) and build with `cargo buil
 | [`model_selfcheck.rs`](dtk/examples/model_selfcheck.rs) | Guarded QAbstractItemModel, DListView, QVariant data and parent ownership | `QT_QPA_PLATFORM=offscreen cargo run --example model_selfcheck` |
 | [`no_application_selfcheck.rs`](dtk/examples/no_application_selfcheck.rs) | Reject GUI object creation before DApplication or on a worker thread; keep QtCore values usable | `QT_QPA_PLATFORM=offscreen cargo run --example no_application_selfcheck` |
 | [`core_paths_selfcheck.rs`](dtk/examples/core_paths_selfcheck.rs) | DCore path lookup and system info without QApplication | `cargo run --example core_paths_selfcheck` |
-| [`gui_helper_selfcheck.rs`](dtk/examples/gui_helper_selfcheck.rs) | DGui image/color adjustments and checked singleton | `QT_QPA_PLATFORM=offscreen cargo run --example gui_helper_selfcheck` |
+| [`gui_helper_selfcheck.rs`](dtk/examples/gui_helper_selfcheck.rs) | DGui image/color adjustments, DPalette ownership and checked singleton | `QT_QPA_PLATFORM=offscreen cargo run --example gui_helper_selfcheck` |
+| [`gui_image_selfcheck.rs`](dtk/examples/gui_image_selfcheck.rs) | DImageHandler QImage transforms, rotation, saved-image text and optional native metadata | `QT_QPA_PLATFORM=offscreen cargo run --example gui_image_selfcheck` |
 
 Headless smoke tests (CI-friendly, no display needed):
 

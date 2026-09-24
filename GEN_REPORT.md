@@ -6,8 +6,7 @@ Qt ancestry: 85 widgets, 26 QObjects, 35 opaque types
 
 ## skip reasons
 - unsupported param type: 145
-- unsupported return type: 53
-- signature parse failed: 4
+- unsupported return type: 57
 
 ## DAboutDialog — 19 methods generated, 0 skipped
 
@@ -285,13 +284,13 @@ Qt ancestry: 85 widgets, 26 QObjects, 35 opaque types
 - `void updateSettings(const QByteArray &translateContext, DTK_CORE_NAMESPACE::DSet` ← unsupported param type: DTK_CORE_NAMESPACE::DSettings *
 
 ## DSettingsWidgetFactory — 0 methods generated, 7 skipped
-- `QPair<QWidget*, QWidget*> createItem(QPointer<DTK_CORE_NAMESPACE::DSettingsOptio` ← signature parse failed
-- `QPair<QWidget*, QWidget*> createItem(const QByteArray &translateContext, QPointe` ← signature parse failed
-- `static QPair<QWidget*, QWidget*> createStandardItem(const QByteArray &translateC` ← signature parse failed
 - `void registerWidget(const QString &viewType, std::function<WidgetCreateHandler> ` ← unsupported param type: std::function<WidgetCreateHandler>
 - `void registerWidget(const QString &viewType, std::function<ItemCreateHandler> ha` ← unsupported param type: std::function<ItemCreateHandler>
 - `QWidget *createWidget(QPointer<DTK_CORE_NAMESPACE::DSettingsOption> option);` ← unsupported param type: QPointer<DTK_CORE_NAMESPACE::DSettingsOption>
 - `QWidget *createWidget(const QByteArray &translateContext, QPointer<DTK_CORE_NAME` ← unsupported param type: QPointer<DTK_CORE_NAMESPACE::DSettingsOption>
+- `QPair<QWidget*, QWidget*> createItem(QPointer<DTK_CORE_NAMESPACE::DSettingsOptio` ← unsupported return type: QPair<QWidget*, QWidget*>
+- `QPair<QWidget*, QWidget*> createItem(const QByteArray &translateContext, QPointe` ← unsupported return type: QPair<QWidget*, QWidget*>
+- `static QPair<QWidget*, QWidget*> createStandardItem(const QByteArray &translateC` ← unsupported return type: QPair<QWidget*, QWidget*>
 
 ## DShadowLine — 1 methods generated, 0 skipped
 
@@ -342,7 +341,7 @@ Qt ancestry: 85 widgets, 26 QObjects, 35 opaque types
 - `void setAnimationType(QEasingCurve::Type animationType);` ← unsupported param type: QEasingCurve::Type
 
 ## DStyle — 10 methods generated, 37 skipped
-- `static QPair<QIcon::Mode, QIcon::State> toIconModeState(const QStyleOption *opti` ← signature parse failed
+- `static QPair<QIcon::Mode, QIcon::State> toIconModeState(const QStyleOption *opti` ← unsupported return type: QPair<QIcon::Mode, QIcon::State>
 - `static DDciIcon::Mode toDciIconMode(const QStyleOption *option);` ← unsupported return type: DDciIcon::Mode
 - `static DStyle::StyleState getState(const QStyleOption *option);` ← unsupported param type: const QStyleOption *
 - `static void setRedPointVisible(QObject *object, bool visible);` ← unsupported param type: QObject *

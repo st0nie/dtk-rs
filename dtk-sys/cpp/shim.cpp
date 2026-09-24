@@ -169,6 +169,16 @@ QStringList to_qstringlist(rust::Vec<rust::String> v) {
     return out;
 }
 
+rust::Vec<rust::String> to_rust_string_pairs(const QHash<QString, QString> &map) {
+    rust::Vec<rust::String> out;
+    out.reserve(static_cast<size_t>(map.size()) * 2);
+    for (auto it = map.cbegin(); it != map.cend(); ++it) {
+        out.push_back(to_rust_string(it.key()));
+        out.push_back(to_rust_string(it.value()));
+    }
+    return out;
+}
+
 // ---- DtkPaintWidget: user-drawn widget; paint + all input events forward to Rust ----
 // Tab label drawing like deepin-terminal's TermTabStyle: centered text, elided to
 // width-30 so the label never slides under the close button (no fade shadow).
@@ -844,6 +854,15 @@ bool image_is_null(QImage *image) { return image->isNull(); }
 int32_t image_width(QImage *image) { return image->width(); }
 int32_t image_height(QImage *image) { return image->height(); }
 void image_fill(QImage *image, QColor *color) { image->fill(*color); }
+void image_set_text(QImage *image, rust::Str key, rust::Str value) {
+    image->setText(from_rust_str(key), from_rust_str(value));
+}
+rust::String image_text(QImage *image, rust::Str key) {
+    return to_rust_string(image->text(from_rust_str(key)));
+}
+bool image_save(QImage *image, rust::Str path) {
+    return image->save(from_rust_str(path));
+}
 QColor *image_pixel_color(QImage *image, int32_t x, int32_t y) {
     return new QColor(image->pixelColor(x, y));
 }

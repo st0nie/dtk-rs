@@ -5,7 +5,7 @@ import re
 import unittest
 from pathlib import Path
 
-from tools.gen import HAND_BOUND, HDR_DIR, REPO, classify_class, enum_members, parse_header, Ctx
+from tools.gen import HAND_BOUND, HDR_DIR, REPO, METHOD_RE, classify_class, enum_members, parse_header, Ctx
 
 
 class QtAncestryTests(unittest.TestCase):
@@ -39,6 +39,9 @@ class QtAncestryTests(unittest.TestCase):
         self.assertIn("pub fn generate_palette(base: &mut DPalette, type_: GuiColorType)", gui)
         self.assertIn("value_wrapper!(DPalette, ffi::DPalette, dpalette_delete);", (root / "dtk/src/lib.rs").read_text())
         self.assertIn("pub fn set_single_instance(key: &str, singleScope: GuiSingleScope)", gui)
+        self.assertIn("pub fn gray_scale_color_filter(img: &QImage) -> QImage", gui)
+        self.assertIn("pub fn rotate_image(&self, image: &mut QImage, angle: i32) -> bool", gui)
+        self.assertIn("gen_d_image_handler_as_qobject", gui)
         self.assertIn("using Dtk::Core::DStandardPaths;", (root / "dtk-sys/include/dtk_core_shim.h").read_text())
         self.assertIn("using Dtk::Gui::DGuiApplicationHelper;", (root / "dtk-sys/include/dtk_gui_shim.h").read_text())
         for report in ("GEN_CORE_REPORT.md", "GEN_GUI_REPORT.md"):
@@ -202,6 +205,16 @@ class QtAncestryTests(unittest.TestCase):
         self.assertNotIn("unsupported param type: const QImage &", report)
         self.assertNotIn("unsupported return type: QImage", report)
         self.assertNotIn("unsupported return type: const WaterMarkData &", report)
+
+    def test_qhash_string_map_getter_is_owned(self):
+        signature = "QHash<QString, QString> findAllMetaData();"
+        self.assertIsNotNone(METHOD_RE.match(signature))
+        root = Path(REPO)
+        gui = (root / "dtk/src/gui.rs").read_text()
+        self.assertIn("pub fn find_all_meta_data(&self) -> std::collections::BTreeMap<String, String>", gui)
+        self.assertIn("crate::string_map_from_pairs(", gui)
+        self.assertIn("to_rust_string_pairs(self->findAllMetaData())", (root / "dtk-sys/cpp/dtk_gui_shim.cpp").read_text())
+        self.assertNotIn("findAllMetaData", (root / "GEN_GUI_REPORT.md").read_text())
 
     def test_qt_graphics_and_url_value_mapping(self):
         generated = Path(REPO, "dtk/src/widgets.rs").read_text()

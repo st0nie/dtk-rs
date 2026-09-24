@@ -13,6 +13,7 @@
 #include <QWidget>
 #include <QAbstractButton>
 #include <QStringList>
+#include <QHash>
 #include <QLayout>
 #include <QBoxLayout>
 #include <QAbstractItemModel>
@@ -146,6 +147,8 @@ rust::String to_rust_string(const QString &s);
 QString from_rust_str(rust::Str s);
 rust::Vec<rust::String> to_rust_string_vec(const QStringList &qsl);
 QStringList to_qstringlist(rust::Vec<rust::String> v);
+// Own both halves of each pair (no QObject/value references escape C++).
+rust::Vec<rust::String> to_rust_string_pairs(const QHash<QString, QString> &map);
 
 // ---- DApplication ----
 // Raw argv bytes + entry lengths (including argv[0]); make_argv owns the writable strings.
@@ -381,6 +384,9 @@ bool image_is_null(QImage *image);
 int32_t image_width(QImage *image);
 int32_t image_height(QImage *image);
 void image_fill(QImage *image, QColor *color);
+void image_set_text(QImage *image, rust::Str key, rust::Str value);
+rust::String image_text(QImage *image, rust::Str key);
+bool image_save(QImage *image, rust::Str path);
 QColor *image_pixel_color(QImage *image, int32_t x, int32_t y);
 void image_delete(QImage *image);
 QPainterPath *painter_path_new();

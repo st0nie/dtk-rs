@@ -267,3 +267,201 @@ impl DGuiApplicationHelper {
         unsafe { genffi::gen_d_gui_application_helper_reset_size_mode(self.live_ptr()) }
     }
 }
+
+object_wrapper!(
+    DImageHandler,
+    genffi::DImageHandler,
+    genffi::gen_d_image_handler_as_qobject
+);
+impl DImageHandler {
+    pub fn new() -> Owned<Self> {
+        crate::require_application();
+        Owned::new(Self::from_raw(unsafe { genffi::gen_d_image_handler_new() }))
+    }
+    pub fn set_file_name(&self, fileName: &str) {
+        unsafe { genffi::gen_d_image_handler_set_file_name(self.live_ptr(), fileName) }
+    }
+    pub fn file_name(&self) -> String {
+        unsafe { genffi::gen_d_image_handler_file_name(self.live_ptr()) }
+    }
+    pub fn read_image(&self) -> QImage {
+        QImage::from_raw(unsafe { genffi::gen_d_image_handler_read_image(self.live_ptr()) } as _)
+    }
+    /// # Safety
+    /// Integer enum/flags arguments must be valid values of the
+    /// corresponding native Qt/DTK type.
+    pub unsafe fn thumbnail(&self, size: &QSize, mode: i32) -> QImage {
+        QImage::from_raw(unsafe {
+            genffi::gen_d_image_handler_thumbnail(self.live_ptr(), size.ptr as _, mode)
+        } as _)
+    }
+    pub fn image_format(&self) -> String {
+        unsafe { genffi::gen_d_image_handler_image_format(self.live_ptr()) }
+    }
+    pub fn image_size(&self) -> QSize {
+        QSize::from_raw(unsafe { genffi::gen_d_image_handler_image_size(self.live_ptr()) } as _)
+    }
+    pub fn find_all_meta_data(&self) -> std::collections::BTreeMap<String, String> {
+        crate::string_map_from_pairs(unsafe {
+            genffi::gen_d_image_handler_find_all_meta_data(self.live_ptr())
+        })
+    }
+    pub fn clear_cache(&self) {
+        unsafe { genffi::gen_d_image_handler_clear_cache(self.live_ptr()) }
+    }
+    pub fn save_image(&self, fileName: &str, format: &str) -> bool {
+        unsafe { genffi::gen_d_image_handler_save_image(self.live_ptr(), fileName, format) }
+    }
+    pub fn save_image_2(&self, image: &QImage, fileName: &str, format: &str) -> bool {
+        unsafe {
+            genffi::gen_d_image_handler_save_image_2(
+                self.live_ptr(),
+                image.ptr as _,
+                fileName,
+                format,
+            )
+        }
+    }
+    pub fn rotate_image(&self, image: &mut QImage, angle: i32) -> bool {
+        unsafe { genffi::gen_d_image_handler_rotate_image(self.live_ptr(), image.ptr as _, angle) }
+    }
+    pub fn rotate_image_file(&self, fileName: &str, angle: i32) -> bool {
+        unsafe { genffi::gen_d_image_handler_rotate_image_file(self.live_ptr(), fileName, angle) }
+    }
+    pub fn is_readable(&self) -> bool {
+        unsafe { genffi::gen_d_image_handler_is_readable(self.live_ptr()) }
+    }
+    pub fn is_writeable(&self) -> bool {
+        unsafe { genffi::gen_d_image_handler_is_writeable(self.live_ptr()) }
+    }
+    pub fn is_rotatable(&self) -> bool {
+        unsafe { genffi::gen_d_image_handler_is_rotatable(self.live_ptr()) }
+    }
+    pub fn last_error(&self) -> String {
+        unsafe { genffi::gen_d_image_handler_last_error(self.live_ptr()) }
+    }
+    pub fn support_formats() -> Vec<String> {
+        crate::require_application();
+        unsafe { genffi::gen_d_image_handler_support_formats() }
+    }
+    pub fn detect_image_format(fileName: &str) -> String {
+        crate::require_application();
+        unsafe { genffi::gen_d_image_handler_detect_image_format(fileName) }
+    }
+    pub fn old_color_filter(img: &QImage) -> QImage {
+        crate::require_application();
+        QImage::from_raw(unsafe { genffi::gen_d_image_handler_old_color_filter(img.ptr as _) } as _)
+    }
+    pub fn warm_color_filter(img: &QImage, intensity: i32) -> QImage {
+        crate::require_application();
+        QImage::from_raw(unsafe {
+            genffi::gen_d_image_handler_warm_color_filter(img.ptr as _, intensity)
+        } as _)
+    }
+    pub fn cool_color_filter(img: &QImage, intensity: i32) -> QImage {
+        crate::require_application();
+        QImage::from_raw(unsafe {
+            genffi::gen_d_image_handler_cool_color_filter(img.ptr as _, intensity)
+        } as _)
+    }
+    pub fn gray_scale_color_filter(img: &QImage) -> QImage {
+        crate::require_application();
+        QImage::from_raw(unsafe {
+            genffi::gen_d_image_handler_gray_scale_color_filter(img.ptr as _)
+        } as _)
+    }
+    pub fn anti_color_filter(img: &QImage) -> QImage {
+        crate::require_application();
+        QImage::from_raw(
+            unsafe { genffi::gen_d_image_handler_anti_color_filter(img.ptr as _) } as _,
+        )
+    }
+    pub fn metal_color_filter(img: &QImage) -> QImage {
+        crate::require_application();
+        QImage::from_raw(
+            unsafe { genffi::gen_d_image_handler_metal_color_filter(img.ptr as _) } as _,
+        )
+    }
+    pub fn bilateral_filter(
+        img: &QImage,
+        spatialDecay: f64,
+        photometricStandardDeviation: f64,
+    ) -> QImage {
+        crate::require_application();
+        QImage::from_raw(unsafe {
+            genffi::gen_d_image_handler_bilateral_filter(
+                img.ptr as _,
+                spatialDecay,
+                photometricStandardDeviation,
+            )
+        } as _)
+    }
+    pub fn contour_extraction(img: &QImage) -> QImage {
+        crate::require_application();
+        QImage::from_raw(
+            unsafe { genffi::gen_d_image_handler_contour_extraction(img.ptr as _) } as _,
+        )
+    }
+    pub fn binaryzation(img: &QImage) -> QImage {
+        crate::require_application();
+        QImage::from_raw(unsafe { genffi::gen_d_image_handler_binaryzation(img.ptr as _) } as _)
+    }
+    pub fn gray_scale(img: &QImage) -> QImage {
+        crate::require_application();
+        QImage::from_raw(unsafe { genffi::gen_d_image_handler_gray_scale(img.ptr as _) } as _)
+    }
+    pub fn laplace_sharpen(img: &QImage) -> QImage {
+        crate::require_application();
+        QImage::from_raw(unsafe { genffi::gen_d_image_handler_laplace_sharpen(img.ptr as _) } as _)
+    }
+    pub fn sobel_edge_detector(img: &QImage) -> QImage {
+        crate::require_application();
+        QImage::from_raw(
+            unsafe { genffi::gen_d_image_handler_sobel_edge_detector(img.ptr as _) } as _,
+        )
+    }
+    pub fn change_light_and_contrast(img: &QImage, light: i32, contrast: i32) -> QImage {
+        crate::require_application();
+        QImage::from_raw(unsafe {
+            genffi::gen_d_image_handler_change_light_and_contrast(img.ptr as _, light, contrast)
+        } as _)
+    }
+    pub fn change_brightness(img: &QImage, brightness: i32) -> QImage {
+        crate::require_application();
+        QImage::from_raw(unsafe {
+            genffi::gen_d_image_handler_change_brightness(img.ptr as _, brightness)
+        } as _)
+    }
+    pub fn change_transparency(img: &QImage, transparency: i32) -> QImage {
+        crate::require_application();
+        QImage::from_raw(unsafe {
+            genffi::gen_d_image_handler_change_transparency(img.ptr as _, transparency)
+        } as _)
+    }
+    pub fn change_stauration(img: &QImage, saturation: i32) -> QImage {
+        crate::require_application();
+        QImage::from_raw(unsafe {
+            genffi::gen_d_image_handler_change_stauration(img.ptr as _, saturation)
+        } as _)
+    }
+    pub fn replace_point_color(img: &QImage, oldColor: &QColor, newColor: &QColor) -> QImage {
+        crate::require_application();
+        QImage::from_raw(unsafe {
+            genffi::gen_d_image_handler_replace_point_color(
+                img.ptr as _,
+                oldColor.ptr as _,
+                newColor.ptr as _,
+            )
+        } as _)
+    }
+    pub fn flip_horizontal(img: &QImage) -> QImage {
+        crate::require_application();
+        QImage::from_raw(unsafe { genffi::gen_d_image_handler_flip_horizontal(img.ptr as _) } as _)
+    }
+    pub fn flip_vertical(img: &QImage) -> QImage {
+        crate::require_application();
+        QImage::from_raw(unsafe { genffi::gen_d_image_handler_flip_vertical(img.ptr as _) } as _)
+    }
+}
+
+crate::impl_default_owned!(DImageHandler);

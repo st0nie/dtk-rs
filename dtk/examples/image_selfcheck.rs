@@ -10,6 +10,8 @@ fn main() {
     assert_eq!((pixels.width(), pixels.height()), (2, 3));
     let color = QColor::rgba(34, 87, 205, 128);
     pixels.fill(&color);
+    pixels.set_text("Comment", "Rust|中文\0tail");
+    assert_eq!(pixels.text("Comment"), "Rust|中文\0tail");
     assert_eq!(pixels.pixel_color(1, 2).rgba_u32(), color.rgba_u32());
     assert!(QImage::from_file("/this/file/does/not/exist.png").is_null());
 

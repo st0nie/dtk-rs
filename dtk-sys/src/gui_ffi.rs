@@ -32,6 +32,7 @@ pub mod genffi {
         type DDciIcon;
         type DPalette;
         type DGuiApplicationHelper;
+        type DImageHandler;
         fn gen_enum_d_gui_application_helper_color_type_unknown_type() -> i32;
         fn gen_enum_d_gui_application_helper_color_type_light_type() -> i32;
         fn gen_enum_d_gui_application_helper_color_type_dark_type() -> i32;
@@ -122,5 +123,92 @@ pub mod genffi {
             mode: i32,
         );
         unsafe fn gen_d_gui_application_helper_reset_size_mode(self_: *mut DGuiApplicationHelper);
+        unsafe fn gen_d_image_handler_new() -> *mut DImageHandler;
+        unsafe fn gen_d_image_handler_as_qobject(self_: *mut DImageHandler) -> *mut QObject;
+        unsafe fn gen_d_image_handler_set_file_name(self_: *mut DImageHandler, fileName: &str);
+        unsafe fn gen_d_image_handler_file_name(self_: *mut DImageHandler) -> String;
+        unsafe fn gen_d_image_handler_read_image(self_: *mut DImageHandler) -> *mut QImage;
+        unsafe fn gen_d_image_handler_thumbnail(
+            self_: *mut DImageHandler,
+            size: *mut QSize,
+            mode: i32,
+        ) -> *mut QImage;
+        unsafe fn gen_d_image_handler_image_format(self_: *mut DImageHandler) -> String;
+        unsafe fn gen_d_image_handler_image_size(self_: *mut DImageHandler) -> *mut QSize;
+        unsafe fn gen_d_image_handler_find_all_meta_data(self_: *mut DImageHandler) -> Vec<String>;
+        unsafe fn gen_d_image_handler_clear_cache(self_: *mut DImageHandler);
+        unsafe fn gen_d_image_handler_save_image(
+            self_: *mut DImageHandler,
+            fileName: &str,
+            format: &str,
+        ) -> bool;
+        unsafe fn gen_d_image_handler_save_image_2(
+            self_: *mut DImageHandler,
+            image: *mut QImage,
+            fileName: &str,
+            format: &str,
+        ) -> bool;
+        unsafe fn gen_d_image_handler_rotate_image(
+            self_: *mut DImageHandler,
+            image: *mut QImage,
+            angle: i32,
+        ) -> bool;
+        unsafe fn gen_d_image_handler_rotate_image_file(
+            self_: *mut DImageHandler,
+            fileName: &str,
+            angle: i32,
+        ) -> bool;
+        unsafe fn gen_d_image_handler_is_readable(self_: *mut DImageHandler) -> bool;
+        unsafe fn gen_d_image_handler_is_writeable(self_: *mut DImageHandler) -> bool;
+        unsafe fn gen_d_image_handler_is_rotatable(self_: *mut DImageHandler) -> bool;
+        unsafe fn gen_d_image_handler_last_error(self_: *mut DImageHandler) -> String;
+        unsafe fn gen_d_image_handler_support_formats() -> Vec<String>;
+        unsafe fn gen_d_image_handler_detect_image_format(fileName: &str) -> String;
+        unsafe fn gen_d_image_handler_old_color_filter(img: *mut QImage) -> *mut QImage;
+        unsafe fn gen_d_image_handler_warm_color_filter(
+            img: *mut QImage,
+            intensity: i32,
+        ) -> *mut QImage;
+        unsafe fn gen_d_image_handler_cool_color_filter(
+            img: *mut QImage,
+            intensity: i32,
+        ) -> *mut QImage;
+        unsafe fn gen_d_image_handler_gray_scale_color_filter(img: *mut QImage) -> *mut QImage;
+        unsafe fn gen_d_image_handler_anti_color_filter(img: *mut QImage) -> *mut QImage;
+        unsafe fn gen_d_image_handler_metal_color_filter(img: *mut QImage) -> *mut QImage;
+        unsafe fn gen_d_image_handler_bilateral_filter(
+            img: *mut QImage,
+            spatialDecay: f64,
+            photometricStandardDeviation: f64,
+        ) -> *mut QImage;
+        unsafe fn gen_d_image_handler_contour_extraction(img: *mut QImage) -> *mut QImage;
+        unsafe fn gen_d_image_handler_binaryzation(img: *mut QImage) -> *mut QImage;
+        unsafe fn gen_d_image_handler_gray_scale(img: *mut QImage) -> *mut QImage;
+        unsafe fn gen_d_image_handler_laplace_sharpen(img: *mut QImage) -> *mut QImage;
+        unsafe fn gen_d_image_handler_sobel_edge_detector(img: *mut QImage) -> *mut QImage;
+        unsafe fn gen_d_image_handler_change_light_and_contrast(
+            img: *mut QImage,
+            light: i32,
+            contrast: i32,
+        ) -> *mut QImage;
+        unsafe fn gen_d_image_handler_change_brightness(
+            img: *mut QImage,
+            brightness: i32,
+        ) -> *mut QImage;
+        unsafe fn gen_d_image_handler_change_transparency(
+            img: *mut QImage,
+            transparency: i32,
+        ) -> *mut QImage;
+        unsafe fn gen_d_image_handler_change_stauration(
+            img: *mut QImage,
+            saturation: i32,
+        ) -> *mut QImage;
+        unsafe fn gen_d_image_handler_replace_point_color(
+            img: *mut QImage,
+            oldColor: *mut QColor,
+            newColor: *mut QColor,
+        ) -> *mut QImage;
+        unsafe fn gen_d_image_handler_flip_horizontal(img: *mut QImage) -> *mut QImage;
+        unsafe fn gen_d_image_handler_flip_vertical(img: *mut QImage) -> *mut QImage;
     }
 }

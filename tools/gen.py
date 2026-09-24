@@ -115,7 +115,7 @@ CPP_OF_RUST = {"()": "void", "bool": "bool", "i32": "int32_t", "i16": "int16_t",
 CLASS_RE = re.compile(r"^class\s+(?:(?:LIBDTK(?:WIDGET|GUI|CORE)SHARED_EXPORT|D_DECL_DEPRECATED)\s+)*(\w+)\s*(?::\s*(.+?))?\s*$")
 METHOD_RE = re.compile(
     r"^\s*(?:virtual\s+|inline\s+|Q_SLOT\s+|Q_INVOKABLE\s+|D_DECL_DEPRECATED\s+|explicit\s+)*"
-    r"(static\s+)?([\w:<>&*~ ]+?)\s*(~?\w+)\s*\((.*)\)\s*(const)?\s*(?:override\s*)?(?:=\s*\w+\s*)?;?\s*(?://.*)?$"
+    r"(static\s+)?([\w:<>,&*~ ]+?)\s*(~?\w+)\s*\((.*)\)\s*(const)?\s*(?:override\s*)?(?:=\s*\w+\s*)?;?\s*(?://.*)?$"
 )
 
 
@@ -211,6 +211,8 @@ class Ctx:
         t = cpp.strip()
         t = re.sub(r"\s+", " ", t)
         t = re.sub(r"\bconst\s+", "", t).replace("&", "").strip()
+        if is_return and re.fullmatch(r"QHash\s*<\s*QString\s*,\s*QString\s*>", t):
+            return ("Vec<String>", "rust::Vec<rust::String>", "strmap", None)
         if "<" in t:
             return None
         ptr = t.endswith("*")
@@ -555,8 +557,11 @@ def main():
         "/usr/include/dtk6/DCore/dsysinfo.h",
     ]
     emit(collect_models(core_headers), domain="core")
-    gui_headers = ["/usr/include/dtk6/DGui/dguiapplicationhelper.h"]
-    emit(collect_models(gui_headers, included={"DGuiApplicationHelper"}), domain="gui")
+    gui_headers = [
+        "/usr/include/dtk6/DGui/dguiapplicationhelper.h",
+        "/usr/include/dtk6/DGui/dimagehandler.h",
+    ]
+    emit(collect_models(gui_headers, included={"DGuiApplicationHelper", "DImageHandler"}), domain="gui")
 
 
 def emit(classes, domain="widget"):
@@ -695,6 +700,8 @@ def emit(classes, domain="widget"):
                 call = f"to_rust_string({call})"
             elif ret_kind == "strlist":
                 call = f"to_rust_string_vec({call})"
+            elif ret_kind == "strmap":
+                call = f"to_rust_string_pairs({call})"
             elif ret_kind == "qba":
                 call = f"to_rust_string(QString({call}))"
             elif ret_kind in ("val", "valcopy"):
@@ -812,6 +819,9 @@ def emit(classes, domain="widget"):
             elif ret_kind == "val":
                 ret_decl = f" -> {ret_cls}"
                 expr = f"{ret_cls}::from_raw(unsafe {{ genffi::{fn_name}({calls}) }} as _)"  # see qtptr audit comment above
+            elif ret_kind == "strmap":
+                ret_decl = " -> std::collections::BTreeMap<String, String>"
+                expr = f"crate::string_map_from_pairs(unsafe {{ genffi::{fn_name}({calls}) }})"
             elif ret_kind == "valcopy":
                 ret_decl = f" -> OwnedOpaque<{ret_cls}>"
                 expr = (f"{{ let ptr = unsafe {{ genffi::{fn_name}({calls}) }}; "
