@@ -98,15 +98,20 @@ using DSuggestButton = Dtk::Widget::DSuggestButton;
 using DPushButton = Dtk::Widget::DPushButton;
 using QMessageBox = ::QMessageBox;
 
-// Qt invalidates QPointer before emitting destroyed(QObject*); unlike a raw
-// handle, it can be inspected after a parent has destroyed the object.
-struct QObjectGuard {
-    explicit QObjectGuard(QObject *object) : watched(object) {}
+// Qt invalidates QPointer before emitting destroyed(QObject*). A constructed
+// object's initial owner must relinquish deletion permanently once Qt parents
+// it, even if a later takeXxx() transfers it to a *new* Rust owner.
+// No Q_OBJECT macro needed: the eventFilter only observes ParentChange.
+struct QObjectGuard : QObject {
+    explicit QObjectGuard(QObject *object);
+    bool eventFilter(QObject *object, QEvent *event) override;
     QPointer<QObject> watched;
+    bool was_parented;
 };
 std::unique_ptr<QObjectGuard> guard_object(QObject *object);
 std::unique_ptr<QObjectGuard> guard_widget(QWidget *widget);
 bool guard_alive(const QObjectGuard &guard);
+bool guard_was_parented(const QObjectGuard &guard);
 
 // ---- QAction / QMenu (DMenu = QMenu typedef in DTK6) ----
 QAction *action_new(rust::Str text, QObject *parent);
@@ -198,6 +203,9 @@ void widget_set_font(QWidget *w, QFont *font);
 QPalette *widget_palette(QWidget *w); // heap copy, owned by the caller
 void widget_set_palette(QWidget *w, QPalette *pal);
 void object_delete_later(QObject *o);
+// True if Qt itself already owns this object via QObject::parent(); used to
+// decide whether an otherwise-unowned Rust handle should ask Qt to delete it.
+bool object_has_parent(QObject *o);
 
 // ---- DMainWindow ----
 DMainWindow *mainwindow_new();

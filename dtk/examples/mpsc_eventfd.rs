@@ -1,5 +1,6 @@
-//! The canonical dtk-rs threading pattern: background worker → GUI thread
-//! via `std::sync::mpsc` + `eventfd` + `QSocketNotifier`.
+//! Low-level example of background worker → GUI thread using explicit
+//! `std::sync::mpsc` + `eventfd` + `QSocketNotifier`. For ordinary use, prefer
+//! `dtk::GuiSender<T>` so applications do not need fd or wakeup management.
 //!
 //! Run:  cargo run --example mpsc_eventfd
 //! Headless self-check:  QT_QPA_PLATFORM=offscreen ./target/debug/examples/mpsc_eventfd --smoke
@@ -211,7 +212,6 @@ fn main() {
         spawn_worker();
     }
 
-    std::mem::forget(btn); // Rc<DSuggestButton>: leak() is on the inner wrapper, forget the Rc
     let code = app.exec();
     cancel.store(true, Ordering::SeqCst); // let a running worker exit on its own
     unsafe { close(fd) };
@@ -226,7 +226,7 @@ fn poke(fd: i32) {
 const EFD_NONBLOCK: i32 = 0o4000;
 const EFD_CLOEXEC: i32 = 0o2000000;
 
-// no libc dependency in this crate; declare the syscalls directly
+// Demonstrate the raw Linux syscalls; the safe GuiSender uses libc internally.
 unsafe extern "C" {
     fn eventfd(initval: u32, flags: i32) -> i32;
     fn read(fd: i32, buf: *mut u8, n: usize) -> isize;

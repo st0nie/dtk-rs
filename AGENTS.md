@@ -31,16 +31,16 @@ QT_QPA_PLATFORM=offscreen ./target/debug/examples/demo --smoke   # headless smok
 python3 tools/gen.py && cargo build            # regenerate bindings
 ```
 
-Run `python3 -m unittest tools.test_gen`, `cargo test --workspace --all-targets`, and offscreen examples `demo --smoke`, `mpsc_eventfd --smoke`, `paint_widget --smoke`, `dialog_selfcheck`, `lifetime_selfcheck`, `threading_selfcheck`, `opaque_lifetime_selfcheck`, `layout_selfcheck`, `variant_selfcheck`, `action_selfcheck`, `model_selfcheck`, `no_application_selfcheck`, plus `cargo run -p dtk-sys --example guard_selfcheck` offscreen. Keep generator output reproducible.
+Run `python3 -m unittest tools.test_gen`, `cargo test --workspace --all-targets`, and offscreen examples `demo --smoke`, `mpsc_eventfd --smoke`, `paint_widget --smoke`, `dialog_selfcheck`, `lifetime_selfcheck`, `threading_selfcheck`, `opaque_lifetime_selfcheck`, `layout_selfcheck`, `variant_selfcheck`, `action_selfcheck`, `model_selfcheck`, `no_application_selfcheck`, `owned_selfcheck`, `ownership_transfer_selfcheck`, plus `cargo run -p dtk-sys --example guard_selfcheck` offscreen. Keep generator output reproducible.
 
 ## Hard rules
 
 - Requires Linux with Qt6 + DTK6 dev packages (pkg-config must find `Qt6Widgets`, `dtk6widget`, etc.). Not cross-platform.
 - Rust edition 2024. `unsafe` blocks need `unsafe extern` etc. — edition 2024 lint strictness applies. Create `DApplication` before any GUI QObject/QWidget; constructors check this before Qt allocation.
-- QObject/widget views are non-owning `Clone` handles with a shared Qt `QPointer` liveness guard, `!Send` and GUI-thread-only. Native Qt parent deletion invalidates them; top-level objects are **not** owned by QApplication. Opaque borrowed returns, reentrant destruction and top-level RAII ownership remain incomplete, so do not claim the entire public API is memory-safe (see TODO.md).
+- QObject/widget constructors return `Owned<T>`; their dereferenced `Clone` views share a Qt `QPointer` liveness guard, are `!Send`, GUI-thread-only. Native Qt parent deletion invalidates them. `Owned<T>` queues deferred deletion on drop only if Qt never adopted the object: the guard records `ParentChange`, so an original owner cannot delete after Qt reparents and later transfers the object. `deleteLater` needs an active event loop. Do not infer ownership from a `take*` name: local `DListView::takeHeaderWidget` returns a borrowed, still-parented widget that native code deletes next event turn; `QMainWindow::takeCentralWidget` transfers ownership. Opaque borrowed returns, reentrant destruction, post-loop cleanup and `DApplication` RAII remain incomplete, so do not claim the entire public API memory-safe (see TODO.md).
 - Value-type wrappers (QColor, QFont, QVariant, ...) free via shim `*_delete` in `Drop`. Generated non-QObject `new()` returns `OwnedOpaque<T>` with a generated C++ deleter; pointer getters remain borrowed and must never be deleted by Rust.
 - Two cxx bridges; generated QObject/QWidget base pointers are adjusted by C++ `static_cast` before `as _` casts across bridges (sound per audit in tools/gen.py). Never guess QWidget ancestry by name.
-- New DTK method → usually regenerate with gen.py, not handwritten. If param types are unmapped (QList, QVariantList, QPrinter*, ...), they land in GEN_REPORT.md skipped — see TODO.md for plan.
+- New DTK method → usually regenerate with gen.py, not handwritten. If param types are unmapped (other QList types, QPrinter*, ...), they land in GEN_REPORT.md skipped — see TODO.md for plan.
 - Signals: use `connect_signal*` / typed helpers; Qt object destruction releases callbacks automatically; `dtk::unregister_callback(id)` disconnects early.
 - `.codegraph/`, `target/`, `tools/__pycache__/` are gitignored scratch — don't commit.
 

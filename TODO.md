@@ -12,23 +12,35 @@ Known gaps in dtk-rs, roughly in priority order.
       Generated methods, widget operations and signal traits check liveness
       before entering FFI; C++ static_cast adjusts generated base pointers.
       `lifetime_selfcheck` rejects use after parent destruction.
-- [ ] Finish the remaining lifetime/FFI audit: `DApplication` is not RAII,
-      non-QObject borrowed returns still have no liveness guard, and native Qt
-      calls may reentrantly delete objects *after* a guard check. A public
-      method must not become sound solely because QPointer was checked earlier.
+- [x] Constructor results for generated and hand-written QObject/QWidget classes
+      now use `Owned<T>`; `owned_selfcheck` verifies deferred deletion for objects
+      never adopted by Qt and preservation of those parented later. Original
+      owner relinquishes deletion permanently after `ParentChange`;
+      `ownership_transfer_selfcheck` verifies ownership returned by
+      `QMainWindow::takeCentralWidget` survives dropping the old owner.
+- [ ] Finish the remaining lifetime/FFI audit: `DApplication` is not RAII;
+      `deleteLater()` cannot guarantee deletion after the event loop stops,
+      non-QObject borrowed returns have no liveness guard, and native Qt calls
+      may reentrantly delete objects *after* a guard check. A public method
+      must not become sound solely because QPointer was checked earlier.
 - [x] Split 18 generated non-QObject constructors (including `DPrinter`,
       `DStyleOptionButton`, `DFileIconProvider`) into `OwnedOpaque<T>` with a
       generated C++ deleter in `Drop`. Getter results such as `globalProvider()`
       remain borrowed and are never deleted by Rust; the owning wrappers are not
       `Copy` and cannot be moved out of their `Deref` view.
-- [ ] Define and enforce ownership transfer for top-level widgets, layouts,
-      delegates and generated pointer returns; unparented top-level QObject/
-      QWidget allocations are **not** freed by QApplication automatically.
+- [ ] Audit all native pointer-return ownership and handoff APIs individually;
+      never infer from method names. Local DTK6 `DListView::takeHeaderWidget()`
+      returns a still-parented widget *scheduled for native deletion*, so it
+      remains a borrowed `Option<QWidget>`, not `Owned<QWidget>`. Only the
+      verified `QMainWindow::takeCentralWidget` returns `Owned<QWidget>`.
       `QTableWidgetItem*` was removed from the safe API: `TableCell` re-resolves
       (row,col) on every call, but a full item identity/lifetime design is still
       needed for pointer-oriented Qt model APIs.
-- [ ] Restrict event-scoped `Painter`/`ModelIndex` views to the callback lifetime;
-      audit borrowed handles and reentrant deletion before claiming Rust safety.
+- [x] `PaintWidgetEvent::Paint` now borrows `Painter` for the paint callback
+      lifetime; a compile-fail doc test rejects storing it in `'static` state.
+      `PaintDelegate` already borrows `&Painter`/`&ModelIndex`.
+- [ ] Audit other borrowed handles and reentrant deletion before claiming Rust
+      safety; Qt may destroy the native object *during* an FFI call.
 - [ ] Make QApplication creation/destruction a genuine singleton RAII contract,
       including cleanup of unparented objects and event-loop shutdown semantics.
 

@@ -24,6 +24,8 @@ pub mod ffi {
         unsafe fn guard_widget(widget: *mut QWidget) -> UniquePtr<QObjectGuard>;
         /// QPointer clears on Qt destruction, even when Rust still holds its guard.
         unsafe fn guard_alive(guard: &QObjectGuard) -> bool;
+        /// True once Qt has parented the object, even if it was later detached.
+        unsafe fn guard_was_parented(guard: &QObjectGuard) -> bool;
         type QAbstractButton;
         type QLayout;
         type QBoxLayout;
@@ -138,6 +140,7 @@ pub mod ffi {
         unsafe fn widget_palette(w: *mut QWidget) -> *mut QPalette;
         unsafe fn widget_set_palette(w: *mut QWidget, pal: *mut QPalette);
         unsafe fn object_delete_later(o: *mut QObject);
+        unsafe fn object_has_parent(o: *mut QObject) -> bool;
 
         // DMainWindow
         unsafe fn mainwindow_new() -> *mut DMainWindow;
@@ -549,6 +552,12 @@ impl ObjectGuard {
         self.inner
             .as_ref()
             .is_some_and(|guard| unsafe { ffi::guard_alive(guard) })
+    }
+
+    pub fn was_parented(&self) -> bool {
+        self.inner
+            .as_ref()
+            .is_some_and(|guard| unsafe { ffi::guard_was_parented(guard) })
     }
 }
 

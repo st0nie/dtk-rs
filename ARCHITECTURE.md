@@ -113,39 +113,46 @@ pub mod genffi {
 ```
 
 ```rust
-// dtk/src/widgets.rs — safe wrapper
-widget_wrapper!(DComboBox, genffi::DComboBox);
+// dtk/src/widgets.rs — safe wrapper (simplified for this walkthrough)
+widget_wrapper!(DComboBox, genffi::DComboBox,
+                genffi::gen_d_combo_box_as_qobject,
+                genffi::gen_d_combo_box_as_widget);
 impl DComboBox {
-    pub fn new() -> Self {
-        Self::from_raw(unsafe { genffi::gen_d_combo_box_new() })
+    pub fn new() -> Owned<Self> {
+        crate::require_application();
+        Owned::new(Self::from_raw(unsafe { genffi::gen_d_combo_box_new() }))
     }
     pub fn show_popup(&self) {
-        unsafe { genffi::gen_d_combo_box_show_popup(self.ptr) }
+        unsafe { genffi::gen_d_combo_box_show_popup(self.live_ptr()) }
     }
 }
-impl Default for DComboBox { fn default() -> Self { Self::new() } }
+impl Default for Owned<DComboBox> { fn default() -> Self { DComboBox::new() } }
 ```
 
 `widget_wrapper!` (in `dtk/src/lib.rs`) expands to the struct plus all common
 QWidget operations:
 
 ```rust
+#[derive(Clone)]
 pub struct DComboBox {
-    pub(crate) ptr: *mut genffi::DComboBox,   // non-owning raw pointer
-    _not_send: PhantomData<*mut ()>,           // !Send/!Sync — GUI thread only
+    pub(crate) ptr: *mut genffi::DComboBox, // non-owning checked view
+    guard: Rc<ObjectGuard>,                 // shared liveness + parent history
+    _not_send: PhantomData<*mut ()>,        // !Send/!Sync — GUI thread only
+    // cached QObject and QWidget base pointers (C++ static_cast at construction)
 }
 impl DComboBox {
     pub(crate) fn from_raw(ptr: *mut genffi::DComboBox) -> Self { ... }
-    pub fn as_widget(&self) -> QWidget { ... }   // base-class view, for layouts
-    pub fn show(&self)        { unsafe { ffi::widget_show(self.ptr.cast()) } }
-    pub fn resize(&self, ...) { ... }
+    pub(crate) fn live_ptr(&self) -> *mut genffi::DComboBox { ... }
+    pub fn as_widget(&self) -> QWidget { ... } // guarded base-class view
+    pub fn show(&self) { unsafe { ffi::widget_show(self.widget_ptr()) } }
     // ... every common QWidget op, from hand-written bridge #1
 }
-impl Signal0 for DComboBox { ... }   // connect any arg-less signal
-impl SignalI32 for DComboBox { ... } // connect any (int) signal
+unsafe impl Signal0 for DComboBox { ... }
+unsafe impl SignalI32 for DComboBox { ... }
 ```
 
-Note: **no `Drop` on widgets** — see Lifetime below.
+`DComboBox` itself has no `Drop`; the unique `Owned<DComboBox>` constructor
+result queues Qt deletion on drop only if it has never been adopted by Qt.
 
 ### 4. Call chain at runtime
 
@@ -156,7 +163,7 @@ let combo = DComboBox::new();
 //     → new DComboBox                real DTK object
 
 combo.show();
-// → ffi::widget_show(self.ptr.cast())   hand bridge #1 (base-class op)
+// → ffi::widget_show(self.widget_ptr())   hand bridge #1 (cached base)
 //   → w->show()
 
 combo.show_popup();
@@ -261,22 +268,30 @@ wraps them as `Painter` (draw_text/draw_pixmap/fill_rect/…) and `ModelIndex`
 
 Three wrapper cases, deliberately different:
 
-1. **Widget/object wrappers** (`DComboBox`, `DLabel`, layouts, …): non-owning
-   `Clone` views sharing a `QPointer<QObject>` guard, **no `Drop` on Qt objects**.
+1. **Widget/object constructors** (`DComboBox`, `DLabel`, layouts, …) return
+   `Owned<T>`; `T` is a non-owning `Clone` view with a `QPointer<QObject>` guard.
    Generated DTK methods and hand-written widget operations check the guard
    before crossing FFI; C++ `static_cast` adjusts QObject/QWidget base pointers
    for generated subclasses once at wrapper construction and caches both base
-   pointers. This avoids an extra upcast FFI call on every common QWidget op. Qt deletes children when their parent is deleted,
-   **not** unparented top-level windows when `QApplication` exits. Use
-   `delete_later()` explicitly for unparented objects. Constructors require an
-   existing `DApplication` before allocating GUI QObjects; `QVariant` and
-   `QVariantList` remain usable as QtCore values without it.
-   `QTimer`, `QSocketNotifier`, and `PaintDelegate` require an owning QObject parent.
+   pointers. This avoids an extra upcast FFI call on every common QWidget op.
+   Qt deletes children with their parent, **not** unparented top-level windows
+   when `QApplication` exits. `Owned<T>::drop` queues `deleteLater()` only if
+   Qt **never adopted** the QObject; the guard tracks `ParentChange` events so
+   an original constructor owner cannot delete an object after Qt parents it
+   and an audited `take` method returns a new owner. Deletion requires an event
+   loop to run; `Drop` after loop shutdown does not deterministically free it.
+   `QMainWindow::takeCentralWidget()` transfers ownership; local DTK6
+   `DListView::takeHeaderWidget()` does **not**: it returns a still-parented
+   widget scheduled for deletion by native code on the next event turn. Never
+   infer return ownership from a method name in the generator. Constructors
+   require an existing `DApplication` before allocating GUI QObjects; `QVariant`
+   and `QVariantList` remain usable as QtCore values without it. `QTimer`,
+   `QSocketNotifier`, and `PaintDelegate` require an owning QObject parent.
    Parent deletion clears the guard and a later method call panics rather than
-   dereferencing the dead pointer; `lifetime_selfcheck` exercises QWidget,
-   generated widget and QObject handles. This alone does not prove every C++
-   method safe against destruction *during* a reentrant call, nor provide RAII
-   for top-level QObject ownership.
+   dereferencing the dead pointer; `lifetime_selfcheck`, `owned_selfcheck`, and
+   `ownership_transfer_selfcheck` exercise these cases. This alone does not
+   prove every C++ method safe against destruction *during* a reentrant call,
+   nor provide guaranteed shutdown cleanup.
 2. **Non-QObject generated constructors** (`DPrinter`, `DStyleOptionButton`,
    `DFileIconProvider`, etc.): return `OwnedOpaque<T>`, which uniquely owns the
    allocation and calls a generated `gen_*_delete` in `Drop`. Getter results
@@ -289,8 +304,10 @@ Three wrapper cases, deliberately different:
 
 Object and value wrappers carry `PhantomData<*mut ()>` → `!Send`/`!Sync`;
 `OwnedOpaque<T>` inherits its non-Send semantics from its inner view.
-`Painter`/`ModelIndex` are temporary raw callback views, not storable references;
-Qt widgets must only be touched from the GUI thread. Callbacks are
+`Painter`/`ModelIndex` are temporary raw callback views. `PaintWidgetEvent::Paint`
+borrows its `Painter` for the callback lifetime (compile-fail test prevents
+storing it); `PaintDelegate` passes borrowed `&Painter`/`&ModelIndex`. Qt widgets
+must only be touched from the GUI thread. Callbacks are
 `'static` — share state into them with `Rc`/`RefCell`/`Cell` (never
 `Arc<Mutex>`: everything runs on one thread anyway).
 
@@ -348,8 +365,8 @@ python3 tools/gen.py && cargo build
 
 Adding a new DTK method usually means extending the generator's type map and
 regenerating. The current 228 skipped methods, raw non-QObject borrowed
-pointers and unfinished top-level ownership mean this is not yet an exhaustive,
-memory-safe Qt/DTK binding. CXX-Qt's
+pointers, deferred-deletion shutdown semantics, and reentrant native calls
+mean this is not yet an exhaustive, memory-safe Qt/DTK binding. CXX-Qt's
 `extern "C++Qt"` can import C++ QObject methods and typed signals; integration
 for existing DTK object types is a candidate for the next API layer. A local
 DSwitchButton probe confirms CXX-Qt's typed `checkedChanged(bool)` connection

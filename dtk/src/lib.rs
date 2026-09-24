@@ -1,8 +1,14 @@
 //! Safe Rust bindings for DTK6 (dtkwidget).
 //!
-//! Lifetime: Qt parents own their children; Rust object wrappers are non-owning
-//! views and must not be used after the underlying QObject is destroyed. Unparented
-//! objects need an explicit `delete_later()` (or a suitable Qt owner).
+//! Lifetime: Qt parents own their children; every `T::new()`/similar constructor
+//! returns `Owned<T>`, which queues Qt deletion on drop *unless*
+//! it has since gained a Qt parent (added to a layout, set as a central widget,
+//! passed as another constructor's parent, ...) — checked at drop time, so it
+//! tracks parenting performed anywhere in the object's life. `Owned<T>` derefs
+//! to the plain, `Clone`-able, non-owning view; share that (or an `Rc<Owned<T>>`)
+//! into closures/long-lived structs. Every view (owning or not) still must not
+//! be used after Qt destroys the object; a `QPointer`-backed guard makes that a
+//! panic instead of a dangling dereference.
 //! Qt GUI objects are single-threaded; wrappers are !Send/!Sync.
 
 use dtk_sys::ffi;
@@ -36,8 +42,6 @@ macro_rules! impl_default {
         })*
     };
 }
-pub(crate) use impl_default;
-
 // Generated classes use C++ static_cast for secondary Qt bases; hand-bound
 // Qt classes have QObject/QWidget as their primary (offset-zero) base.
 macro_rules! qt_object_base {
@@ -187,6 +191,118 @@ mod owned_opaque_tests {
     }
 }
 
+/// Implemented by every QObject/QWidget wrapper this crate can put behind
+/// [`Owned<T>`]. `live_qobject()` distinguishes "Qt already destroyed this"
+/// from "still alive", so `Owned::drop` never touches a dangling pointer.
+/// # Safety
+/// A `Some(ptr)` result must be a currently live, correctly base-adjusted
+/// `QObject*` on the calling GUI thread. `was_parented()` must not return false
+/// once Qt adopted the object, even if Qt later returned or detached it:
+/// otherwise an old constructor owner could delete a newly transferred object.
+/// Returning a stale or wrongly adjusted pointer also passes invalid memory
+/// into Qt from `Owned::drop`.
+pub unsafe trait QtLifecycle {
+    fn live_qobject(&self) -> Option<*mut ffi::QObject>;
+    /// Qt has adopted this particular object at least once since this view
+    /// was created. An old owner cannot reclaim it after a later takeXxx().
+    fn was_parented(&self) -> bool;
+}
+
+/// Uniquely governs a freshly constructed Qt QObject/QWidget until Qt itself
+/// takes ownership by giving it a parent — added to a layout that is itself
+/// installed on a widget, set as a central widget, passed as another
+/// object's constructor parent, reparented via `set_parent`, and so on. The
+/// QPointer guard watches Qt ParentChange events: **after the first adoption**
+/// this particular constructor owner permanently relinquishes deletion, even
+/// if Qt later detaches the object. An individually audited `take` method
+/// may return a new owner; other pointer getters stay borrowed.
+///
+/// Dropping an object still alive and *never* parented queues Qt `deleteLater`.
+/// This needs an active event loop to actually delete it; dropping an object
+/// after the event loop stops does not guarantee its destructor runs. We use
+/// deferred deletion rather than synchronous `delete`, which can destroy Qt
+/// objects reentrantly while their event handlers are on the stack.
+///
+/// `Deref`s to the plain, `Clone`-able view: clone that (or call a method
+/// through the deref, which itself resolves via `Clone`) to share the object
+/// into closures, layouts, or long-lived structs. Those clones never delete
+/// anything themselves — only this unique owner does, and only once.
+#[must_use = "dropping this queues deletion if Qt never adopted this object"]
+pub struct Owned<T: QtLifecycle>(T);
+
+impl<T: QtLifecycle> Owned<T> {
+    pub(crate) fn new(inner: T) -> Self {
+        Self(inner)
+    }
+}
+
+impl<T: QtLifecycle> std::ops::Deref for Owned<T> {
+    type Target = T;
+    fn deref(&self) -> &T {
+        &self.0
+    }
+}
+
+impl<T: QtLifecycle + std::fmt::Debug> std::fmt::Debug for Owned<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Debug::fmt(&self.0, f)
+    }
+}
+
+impl<T: QtLifecycle> Drop for Owned<T> {
+    fn drop(&mut self) {
+        if let Some(obj) = self.0.live_qobject() {
+            // SAFETY: `obj` is live per QtLifecycle's contract just above.
+            // Ownership never travels backward: once Qt adopted the object,
+            // only a fresh owner returned by takeXxx() may schedule deletion.
+            if !self.0.was_parented() && !unsafe { ffi::object_has_parent(obj) } {
+                unsafe { ffi::object_delete_later(obj) };
+            }
+        }
+    }
+}
+
+// Every generic `&impl Signal0`/`<L: AsLayout>` call site must keep accepting
+// an `Owned<T>` reference exactly like a plain view (see e.g. `QTimer::new`,
+// `QAction::new`, `layout.add_layout`): delegate straight to the inner view.
+unsafe impl<T: Signal0 + QtLifecycle> Signal0 for Owned<T> {
+    fn qobject_ptr(&self) -> *mut ffi::QObject {
+        self.0.qobject_ptr()
+    }
+}
+unsafe impl<T: SignalI32 + QtLifecycle> SignalI32 for Owned<T> {
+    fn qobject_ptr(&self) -> *mut ffi::QObject {
+        self.0.qobject_ptr()
+    }
+}
+unsafe impl<T: SignalBool + QtLifecycle> SignalBool for Owned<T> {
+    fn qobject_ptr(&self) -> *mut ffi::QObject {
+        self.0.qobject_ptr()
+    }
+}
+unsafe impl<T: SignalI32I32 + QtLifecycle> SignalI32I32 for Owned<T> {
+    fn qobject_ptr(&self) -> *mut ffi::QObject {
+        self.0.qobject_ptr()
+    }
+}
+unsafe impl<T: AsLayout + QtLifecycle> AsLayout for Owned<T> {
+    fn layout_ptr(&self) -> *mut ffi::QLayout {
+        self.0.layout_ptr()
+    }
+}
+
+/// `impl Default` for `Owned<T>` wrappers whose `T::new()` is the default ctor
+macro_rules! impl_default_owned {
+    ($($name:ident),* $(,)?) => {
+        $(impl Default for Owned<$name> {
+            fn default() -> Self {
+                $name::new()
+            }
+        })*
+    };
+}
+pub(crate) use impl_default_owned;
+
 macro_rules! opaque_wrapper_impl {
     ($name:ident, $ffi:ty, $($attrs:tt)*) => {
         /// Non-owning C++ pointer view; QObject methods are added separately
@@ -284,6 +400,14 @@ macro_rules! object_wrapper_impl {
         unsafe impl SignalI32I32 for $name {
             fn qobject_ptr(&self) -> *mut ffi::QObject { self.as_qobject() }
         }
+        unsafe impl QtLifecycle for $name {
+            fn live_qobject(&self) -> Option<*mut ffi::QObject> {
+                self.is_alive().then_some(self.qobject)
+            }
+            fn was_parented(&self) -> bool {
+                self.guard.was_parented()
+            }
+        }
         impl std::fmt::Debug for $name {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 write!(f, concat!(stringify!($name), "({:p})"), self.ptr)
@@ -334,9 +458,12 @@ impl QWidget {
         assert!(self.is_alive(), "QWidget was destroyed by Qt");
         self.ptr
     }
-    pub fn new(parent: Option<&QWidget>) -> Self {
+    /// Plain top-level or child QWidget. Wrap the parent argument in `Some`
+    /// to install it directly as a Qt child; drop the returned `Owned<QWidget>`
+    /// without ever parenting it and Qt deletes it for you.
+    pub fn new(parent: Option<&QWidget>) -> Owned<QWidget> {
         let p = opt_ptr(parent);
-        Self::from_raw(unsafe { ffi::widget_new(p) })
+        Owned::new(Self::from_raw(unsafe { ffi::widget_new(p) }))
     }
     pub fn show(&self) {
         unsafe { ffi::widget_show(self.live_ptr()) }
@@ -442,6 +569,14 @@ unsafe impl SignalBool for QWidget {
         self.live_ptr().cast()
     }
 }
+unsafe impl QtLifecycle for QWidget {
+    fn live_qobject(&self) -> Option<*mut ffi::QObject> {
+        self.is_alive().then(|| self.ptr.cast())
+    }
+    fn was_parented(&self) -> bool {
+        self.guard.was_parented()
+    }
+}
 
 impl std::fmt::Debug for QWidget {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -475,10 +610,24 @@ pub struct MouseEvent {
     pub mods: i32,
 }
 
-/// events delivered to a [`PaintWidget`] handler
-pub enum PaintWidgetEvent {
-    /// painter valid only inside the callback; w/h = widget size
-    Paint(Painter, i32, i32),
+/// Events delivered to a [`PaintWidget`] handler. A painter is borrowed only
+/// for the duration of one paint callback and cannot escape into stored state.
+///
+/// ```compile_fail
+/// use dtk::{PaintWidget, PaintWidgetEvent, Painter};
+/// use std::cell::RefCell;
+/// thread_local! {
+///     static SAVED: RefCell<Option<&'static Painter>> = RefCell::new(None);
+/// }
+/// let _widget = PaintWidget::new(None, |event| {
+///     if let PaintWidgetEvent::Paint(painter, _, _) = event {
+///         SAVED.with(|slot| *slot.borrow_mut() = Some(painter));
+///     }
+/// });
+/// ```
+pub enum PaintWidgetEvent<'paint> {
+    /// Painter valid only inside this callback; w/h = widget size.
+    Paint(&'paint Painter, i32, i32),
     Key(KeyEvent),
     Mouse(MouseEvent),
     Wheel {
@@ -501,13 +650,19 @@ pub enum PaintWidgetEvent {
 
 impl PaintWidget {
     /// handler receives every event; register nothing else
-    pub fn new(parent: Option<&QWidget>, handler: impl FnMut(PaintWidgetEvent) + 'static) -> Self {
+    pub fn new(
+        parent: Option<&QWidget>,
+        handler: impl for<'paint> FnMut(PaintWidgetEvent<'paint>) + 'static,
+    ) -> Owned<PaintWidget> {
         let parent_ptr = opt_ptr(parent);
         let mut handler = handler;
         let id = dtk_sys::register_cb_pw(move |ev| {
             let ev = match ev {
                 dtk_sys::PwEvent::Paint { painter, w, h, .. } => {
-                    PaintWidgetEvent::Paint(Painter { ptr: painter }, w, h)
+                    // QPainter belongs to this stack-scoped C++ paint event;
+                    // never put its pointer in an owned, storable Rust event.
+                    handler(PaintWidgetEvent::Paint(&Painter { ptr: painter }, w, h));
+                    return;
                 }
                 dtk_sys::PwEvent::Key {
                     key,
@@ -546,7 +701,9 @@ impl PaintWidget {
             };
             handler(ev);
         });
-        Self::from_raw(unsafe { ffi::paint_widget_new(id, parent_ptr) })
+        Owned::new(Self::from_raw(unsafe {
+            ffi::paint_widget_new(id, parent_ptr)
+        }))
     }
     /// test/helper: synchronously deliver a key-press (bypasses the OS event source)
     pub fn inject_key(&self, key: i32, mods: i32, text: &str) {
@@ -565,11 +722,11 @@ pub struct ScrollBar {
 }
 
 impl ScrollBar {
-    pub fn new(parent: &QWidget) -> Self {
+    pub fn new(parent: &QWidget) -> Owned<ScrollBar> {
         require_application();
-        Self {
+        Owned::new(Self {
             w: QWidget::from_raw(unsafe { ffi::scrollbar_new(parent.live_ptr()) }),
-        }
+        })
     }
     pub fn as_widget(&self) -> QWidget {
         self.w.clone()
@@ -592,6 +749,14 @@ impl ScrollBar {
     /// valueChanged(int); 0 on failure
     pub fn on_value_changed(&self, f: impl FnMut(i32) + 'static) -> usize {
         self.w.connect_signal_i32("valueChanged(int)", f)
+    }
+}
+unsafe impl QtLifecycle for ScrollBar {
+    fn live_qobject(&self) -> Option<*mut ffi::QObject> {
+        self.w.live_qobject()
+    }
+    fn was_parented(&self) -> bool {
+        self.w.was_parented()
     }
 }
 
@@ -622,9 +787,11 @@ impl Clipboard {
 object_wrapper!(QAction, ffi::QAction);
 
 impl QAction {
-    pub fn new(text: &str, parent: &impl Signal0) -> Self {
+    pub fn new(text: &str, parent: &impl Signal0) -> Owned<QAction> {
         require_application();
-        Self::from_raw(unsafe { ffi::action_new(text, parent.qobject_ptr()) })
+        Owned::new(Self::from_raw(unsafe {
+            ffi::action_new(text, parent.qobject_ptr())
+        }))
     }
     pub fn set_enabled(&self, enabled: bool) {
         unsafe { ffi::action_set_enabled(self.live_ptr(), enabled) }
@@ -657,9 +824,9 @@ impl QAction {
 widget_wrapper!(DMenu, ffi::QMenu);
 
 impl DMenu {
-    pub fn new(parent: &QWidget) -> Self {
+    pub fn new(parent: &QWidget) -> Owned<DMenu> {
         require_application();
-        Self::from_raw(unsafe { ffi::menu_new(parent.live_ptr()) })
+        Owned::new(Self::from_raw(unsafe { ffi::menu_new(parent.live_ptr()) }))
     }
     /// Append an action; its callback is released when the action/menu is destroyed.
     /// Returns an id for [`unregister_callback`] if early cancellation is needed.
@@ -857,19 +1024,21 @@ widget_wrapper!(DMainWindow, ffi::DMainWindow);
 widget_wrapper!(DTitlebar, ffi::DTitlebar);
 
 impl DMainWindow {
-    pub fn new() -> Self {
+    pub fn new() -> Owned<DMainWindow> {
         require_application();
-        Self::from_raw(unsafe { ffi::mainwindow_new() })
+        Owned::new(Self::from_raw(unsafe { ffi::mainwindow_new() }))
     }
     /// with event callbacks: on_close returning false keeps the window open (event ignore)
     pub fn new_with_events(
         on_show: impl FnMut() + 'static,
         on_close: impl FnMut() -> bool + 'static,
-    ) -> Self {
+    ) -> Owned<DMainWindow> {
         require_application();
         let show_id = dtk_sys::register_cb0(on_show);
         let close_id = dtk_sys::register_cb_guard(on_close);
-        Self::from_raw(unsafe { ffi::mainwindow_new_ex(show_id, close_id) })
+        Owned::new(Self::from_raw(unsafe {
+            ffi::mainwindow_new_ex(show_id, close_id)
+        }))
     }
     pub fn titlebar(&self) -> DTitlebar {
         DTitlebar::from_raw(unsafe { ffi::mainwindow_titlebar(self.live_ptr()) })
@@ -883,10 +1052,13 @@ impl DMainWindow {
     pub fn set_enable_blur_window(&self, enable: bool) {
         unsafe { ffi::mainwindow_set_enable_blur(self.live_ptr(), enable) }
     }
-    /// Take ownership from the window; Qt returns None if no central widget is set.
-    pub fn take_central_widget(&self) -> Option<QWidget> {
+    /// Take ownership from the window; Qt returns None if no central widget is
+    /// set. The widget is unparented again, so it either needs a new home
+    /// (`set_central_widget`, `layout.add_widget`, ...) or it gets deleted
+    /// once the returned handle drops without ever being reparented.
+    pub fn take_central_widget(&self) -> Option<Owned<QWidget>> {
         let ptr = unsafe { ffi::mainwindow_take_central_widget(self.live_ptr()) };
-        (!ptr.is_null()).then(|| QWidget::from_raw(ptr))
+        (!ptr.is_null()).then(|| Owned::new(QWidget::from_raw(ptr)))
     }
 }
 
@@ -1374,9 +1546,9 @@ impl QIcon {
 widget_wrapper!(DLabel, ffi::DLabel);
 
 impl DLabel {
-    pub fn new(text: &str) -> Self {
+    pub fn new(text: &str) -> Owned<DLabel> {
         require_application();
-        Self::from_raw(unsafe { ffi::label_new(text) })
+        Owned::new(Self::from_raw(unsafe { ffi::label_new(text) }))
     }
     pub fn set_text(&self, text: &str) {
         unsafe { ffi::label_set_text(self.live_ptr(), text) }
@@ -1399,9 +1571,9 @@ widget_wrapper!(DSuggestButton, ffi::DSuggestButton);
 widget_wrapper!(DPushButton, ffi::DPushButton);
 
 impl DSuggestButton {
-    pub fn new(text: &str) -> Self {
+    pub fn new(text: &str) -> Owned<DSuggestButton> {
         require_application();
-        Self::from_raw(unsafe { ffi::suggest_button_new(text) })
+        Owned::new(Self::from_raw(unsafe { ffi::suggest_button_new(text) }))
     }
     pub fn set_text(&self, text: &str) {
         unsafe { ffi::button_set_text(self.live_ptr().cast(), text) }
@@ -1416,9 +1588,9 @@ impl DSuggestButton {
 }
 
 impl DPushButton {
-    pub fn new(text: &str) -> Self {
+    pub fn new(text: &str) -> Owned<DPushButton> {
         require_application();
-        Self::from_raw(unsafe { ffi::push_button_new(text) })
+        Owned::new(Self::from_raw(unsafe { ffi::push_button_new(text) }))
     }
     pub fn set_text(&self, text: &str) {
         unsafe { ffi::button_set_text(self.live_ptr(), text) }
@@ -1437,9 +1609,9 @@ widget_wrapper!(DMessageBox, ffi::QMessageBox);
 
 impl DMessageBox {
     /// create an empty dialog; set title/text/icon/buttons then exec()
-    pub fn new() -> Self {
+    pub fn new() -> Owned<DMessageBox> {
         require_application();
-        Self::from_raw(unsafe { ffi::qmessagebox_new() })
+        Owned::new(Self::from_raw(unsafe { ffi::qmessagebox_new() }))
     }
     /// create a pre-configured dialog; use qt::msg_icon::* and qt::msg_btn::* constants
     pub fn with(
@@ -1448,9 +1620,11 @@ impl DMessageBox {
         text: &str,
         buttons: i32,
         parent: Option<&QWidget>,
-    ) -> Self {
+    ) -> Owned<DMessageBox> {
         let p = opt_ptr(parent);
-        Self::from_raw(unsafe { ffi::qmessagebox_new_with(icon, title, text, buttons, p) })
+        Owned::new(Self::from_raw(unsafe {
+            ffi::qmessagebox_new_with(icon, title, text, buttons, p)
+        }))
     }
     pub fn set_text(&self, text: &str) {
         unsafe { ffi::qmessagebox_set_text(self.live_ptr(), text) }
@@ -1577,9 +1751,9 @@ macro_rules! layout_wrapper {
                 QLayout::from_guarded(self.live_ptr().cast(), self.guard.clone())
             }
             /// When parent is Some, the layout installs directly on the parent widget.
-            pub fn new(parent: Option<&QWidget>) -> Self {
+            pub fn new(parent: Option<&QWidget>) -> Owned<$name> {
                 require_application();
-                Self::from_raw(unsafe { ffi::$new(opt_ptr(parent)) })
+                Owned::new(Self::from_raw(unsafe { ffi::$new(opt_ptr(parent)) }))
             }
             pub fn add_widget(&self, w: &QWidget) {
                 unsafe { ffi::layout_add_widget(self.live_ptr().cast(), w.live_ptr()) }
@@ -1687,9 +1861,11 @@ object_wrapper!(QStandardItemModel, ffi::QStandardItemModel);
 
 impl QStandardItemModel {
     /// The Qt parent owns this model; pass its view when appropriate.
-    pub fn new(parent: &impl Signal0) -> Self {
+    pub fn new(parent: &impl Signal0) -> Owned<QStandardItemModel> {
         require_application();
-        Self::from_raw(unsafe { ffi::standard_item_model_new(parent.qobject_ptr()) })
+        Owned::new(Self::from_raw(unsafe {
+            ffi::standard_item_model_new(parent.qobject_ptr())
+        }))
     }
     pub fn set_column_count(&self, count: i32) {
         unsafe { ffi::standard_item_model_set_column_count(self.live_ptr(), count) }
@@ -1716,9 +1892,9 @@ impl widgets::DVariantListModel {
 widget_wrapper!(QTableWidget, ffi::QTableWidget);
 
 impl QTableWidget {
-    pub fn new(rows: i32, cols: i32) -> Self {
+    pub fn new(rows: i32, cols: i32) -> Owned<QTableWidget> {
         require_application();
-        Self::from_raw(unsafe { ffi::table_new(rows, cols) })
+        Owned::new(Self::from_raw(unsafe { ffi::table_new(rows, cols) }))
     }
     pub fn set_column_count(&self, cols: i32) {
         unsafe { ffi::table_set_column_count(self.live_ptr(), cols) }
@@ -1812,9 +1988,11 @@ object_wrapper!(QTimer, ffi::QTimer);
 
 impl QTimer {
     /// The parent owns the timer; use the application or any widget as parent.
-    pub fn new(parent: &impl Signal0) -> Self {
+    pub fn new(parent: &impl Signal0) -> Owned<QTimer> {
         require_application();
-        Self::from_raw(unsafe { ffi::timer_new(parent.qobject_ptr()) })
+        Owned::new(Self::from_raw(unsafe {
+            ffi::timer_new(parent.qobject_ptr())
+        }))
     }
     pub fn start(&self, msec: i32) {
         unsafe { ffi::timer_start(self.live_ptr(), msec) }
@@ -1960,7 +2138,7 @@ impl PaintDelegate {
     pub fn new(
         parent: &impl Signal0,
         f: impl FnMut(&Painter, &ModelIndex, i32, i32, i32, i32, i32) + 'static,
-    ) -> Self {
+    ) -> Owned<PaintDelegate> {
         require_application();
         let parent_ptr = parent.qobject_ptr();
         let mut f = f;
@@ -1975,7 +2153,9 @@ impl PaintDelegate {
                 data.state,
             );
         });
-        Self::from_raw(unsafe { ffi::rust_delegate_new(id, parent_ptr) })
+        Owned::new(Self::from_raw(unsafe {
+            ffi::rust_delegate_new(id, parent_ptr)
+        }))
     }
 }
 
@@ -1985,9 +2165,11 @@ object_wrapper!(QSocketNotifier, ffi::QSocketNotifier);
 
 impl QSocketNotifier {
     /// Watch an fd for readability (Read type); the parent owns the notifier.
-    pub fn new(fd: i32, parent: &impl Signal0) -> Self {
+    pub fn new(fd: i32, parent: &impl Signal0) -> Owned<QSocketNotifier> {
         require_application();
-        Self::from_raw(unsafe { ffi::socket_notifier_new(fd, parent.qobject_ptr()) })
+        Owned::new(Self::from_raw(unsafe {
+            ffi::socket_notifier_new(fd, parent.qobject_ptr())
+        }))
     }
     /// Stop firing (e.g. a watched fd hit EOF and stays readable).
     pub fn set_enabled(&self, on: bool) {
@@ -2013,7 +2195,8 @@ impl widgets::DProgressBar {
     }
 }
 
-impl_default!(DMainWindow, QFont, QPalette, DDciIcon, DMessageBox);
+impl_default!(QFont, QPalette, DDciIcon);
+impl_default_owned!(DMainWindow, DMessageBox);
 
 unsafe impl Signal0 for DApplication {
     fn qobject_ptr(&self) -> *mut ffi::QObject {

@@ -44,6 +44,16 @@ public:
 
 namespace dtkrs {
 
+QObjectGuard::QObjectGuard(QObject *object)
+    : watched(object), was_parented(object->parent() != nullptr) {
+    object->installEventFilter(this);
+}
+bool QObjectGuard::eventFilter(QObject *object, QEvent *event) {
+    if (object == watched && event->type() == QEvent::ParentChange && object->parent()) {
+        was_parented = true;
+    }
+    return false; // never change native DTK/Qt event behavior
+}
 std::unique_ptr<QObjectGuard> guard_object(QObject *object) {
     return std::make_unique<QObjectGuard>(object);
 }
@@ -51,6 +61,7 @@ std::unique_ptr<QObjectGuard> guard_widget(QWidget *widget) {
     return guard_object(widget); // C++ adjusts QWidget* to its QObject base
 }
 bool guard_alive(const QObjectGuard &guard) { return !guard.watched.isNull(); }
+bool guard_was_parented(const QObjectGuard &guard) { return guard.was_parented; }
 
 // Release a Rust closure as soon as the QObject that can invoke it is destroyed.
 // No receiver/context is needed: Qt removes the connection with its sender.
@@ -504,6 +515,7 @@ void widget_set_font(QWidget *w, QFont *font) { w->setFont(*font); }
 QPalette *widget_palette(QWidget *w) { return new QPalette(w->palette()); }
 void widget_set_palette(QWidget *w, QPalette *pal) { w->setPalette(*pal); }
 void object_delete_later(QObject *o) { o->deleteLater(); }
+bool object_has_parent(QObject *o) { return o->parent() != nullptr; }
 
 // ---- QProgressBar common ----
 void progressbar_set_value(QWidget *w, int32_t value) {

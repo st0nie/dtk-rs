@@ -77,10 +77,37 @@ class QtAncestryTests(unittest.TestCase):
     def test_qobject_constructor_checks_application_before_native_new(self):
         generated = Path(REPO, "dtk/src/widgets.rs").read_text()
         self.assertIn(
-            "pub fn new() -> Self {\n        crate::require_application();\n        Self::from_raw(unsafe { genffi::gen_d_list_view_new() })",
+            "pub fn new() -> Owned<Self> {\n        crate::require_application();\n        "
+            "Owned::new(Self::from_raw(unsafe { genffi::gen_d_list_view_new() }))",
             generated,
         )
-        self.assertIn("pub fn instance() -> Option<DMessageManager> {\n        crate::require_application();", generated)
+        self.assertIn(
+            "pub fn instance() -> Option<DMessageManager> {\n        crate::require_application();",
+            generated,
+        )
+
+    def test_constructor_owns_but_takes_remain_borrowed(self):
+        generated = Path(REPO, "dtk/src/widgets.rs").read_text()
+        # every widget/object ctor_new type returns the RAII-conditional Owned<Self>,
+        # never a plain, always-non-owning Self (that would silently leak top-level
+        # objects the caller never explicitly deletes or parents).
+        self.assertIn("crate::impl_default_owned!(", generated)
+        self.assertNotIn("crate::impl_default!(", generated)
+        # Do not infer ownership from names: local DTK6 takeHeaderWidget()
+        # returns a still-parented widget native code deletes on the next event.
+        self.assertIn(
+            "pub fn take_header_widget(&self, index: i32) -> Option<QWidget>",
+            generated,
+        )
+        self.assertIn(
+            "pub fn take_footer_widget(&self, index: i32) -> Option<QWidget>",
+            generated,
+        )
+        # a plain (non-"take") pointer getter must stay a borrowed, non-owning view
+        self.assertIn(
+            "pub fn get_header_widget(&self, index: i32) -> Option<QWidget>",
+            generated,
+        )
 
     def test_list_view_without_model_fails_safely(self):
         cpp = Path(REPO, "dtk-sys/cpp/dtk_gen_shim.cpp").read_text()
