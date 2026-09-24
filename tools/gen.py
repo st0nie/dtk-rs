@@ -63,6 +63,7 @@ TYPED_ENUMS = {
         "DGuiApplicationHelper::ColorType": ("GuiColorType", "/usr/include/dtk6/DGui/dguiapplicationhelper.h"),
         "DGuiApplicationHelper::SizeMode": ("GuiSizeMode", "/usr/include/dtk6/DGui/dguiapplicationhelper.h"),
         "DGuiApplicationHelper::SingleScope": ("GuiSingleScope", "/usr/include/dtk6/DGui/dguiapplicationhelper.h"),
+        "DFontManager::SizeType": ("FontSizeType", "/usr/include/dtk6/DGui/dfontmanager.h", ("NSizeTypes",)),
     },
 }
 
@@ -560,8 +561,9 @@ def main():
     gui_headers = [
         "/usr/include/dtk6/DGui/dguiapplicationhelper.h",
         "/usr/include/dtk6/DGui/dimagehandler.h",
+        "/usr/include/dtk6/DGui/dfontmanager.h",
     ]
-    emit(collect_models(gui_headers, included={"DGuiApplicationHelper", "DImageHandler"}), domain="gui")
+    emit(collect_models(gui_headers, included={"DGuiApplicationHelper", "DImageHandler", "DFontManager"}), domain="gui")
 
 
 def emit(classes, domain="widget"):
@@ -621,7 +623,9 @@ def emit(classes, domain="widget"):
         bridge.append(f"        type {name};\n")
 
     domain_enums = {}
-    for cpp, (rust_name, header_path) in TYPED_ENUMS.get(domain, {}).items():
+    for cpp, spec in TYPED_ENUMS.get(domain, {}).items():
+        rust_name, header_path, *ignored = spec
+        ignored_members = set(ignored[0]) if ignored else set()
         if not os.path.isabs(header_path):
             qt_includes = subprocess.check_output(
                 ["pkg-config", "--variable=includedir", "Qt6Core"], text=True
@@ -629,6 +633,9 @@ def emit(classes, domain="widget"):
             header_path = os.path.join(qt_includes, header_path)
         with open(header_path, encoding="utf-8") as source:
             members = enum_members(source.read(), cpp.rsplit("::", 1)[-1])
+        if ignored_members - set(members):
+            raise ValueError(f"enum {cpp}: excluded members missing from native header")
+        members = [name for name in members if name not in ignored_members]
         values = []
         for member in members:
             fn = "gen_enum_" + "_".join(snake(piece) for piece in cpp.split("::")) + "_" + snake(member)

@@ -140,17 +140,20 @@ Known gaps in dtk-rs, roughly in priority order.
 - [x] Add generator-backed DCore/DGui pilot modules with separate bridges,
       shims and scoped coverage reports: `DStandardPaths` (13 methods) and
       `DSysInfo` (28 methods) work without QApplication;
-      `DGuiApplicationHelper` (29 mapped methods) and `DImageHandler` (37 mapped
-      methods) are guarded and require the GUI app thread (`core_paths_selfcheck`,
-      `gui_helper_selfcheck`, `gui_image_selfcheck`). Core XDG/DSG and Qt StandardLocation/LocateOption,
+      `DGuiApplicationHelper` (30 mapped methods), `DImageHandler` (37) and
+      `DFontManager` (20) are guarded and require the GUI app thread
+      (`core_paths_selfcheck`, `gui_helper_selfcheck`, `gui_image_selfcheck`,
+      `gui_font_selfcheck`). `FontSizeType` omits the invalid `NSizeTypes` sentinel.
+      Native DFontManager adds a base-font pixel-size offset to per-size getters,
+      so a setter/getter only roundtrips exactly after `reset_base_font()`. Core XDG/DSG and Qt StandardLocation/LocateOption,
       plus GUI ColorType/SizeMode/SingleScope inputs use Rust enums whose
       values are read from generated C++ functions. `DPalette` is a value-type
       wrapper, copied on return, deleted on Drop; non-const `DPalette&` inputs
       require `&mut DPalette`. Remaining raw integer enum inputs (`set_mode`,
       `set_attribute`) require `unsafe` pending validation.
 - [ ] Expand DGui bindings beyond `DGuiApplicationHelper`/`DImageHandler`/
-      `DPalette` (`/usr/include/dtk6/DGui`): DCI icons, platform themes,
-      desktop services etc. `DImageHandler::rotateImage(QImage&)` uses `&mut`
+      `DFontManager`/`DPalette` (`/usr/include/dtk6/DGui`): DCI icons,
+      platform themes, desktop services etc. `DImageHandler::rotateImage(QImage&)` uses `&mut`
       to preserve the C++ non-const reference requirement.
 - [ ] Expand DCore bindings beyond `DStandardPaths`/`DSysInfo` (`/usr/include/dtk6/DCore`):
       DConfig, DSettings, DLog, file watchers etc. QObject wrappers need

@@ -10,6 +10,17 @@ int32_t gen_enum_d_gui_application_helper_size_mode_compact_mode() { return stat
 int32_t gen_enum_d_gui_application_helper_single_scope_user_scope() { return static_cast<int32_t>(DGuiApplicationHelper::SingleScope::UserScope); }
 int32_t gen_enum_d_gui_application_helper_single_scope_group_scope() { return static_cast<int32_t>(DGuiApplicationHelper::SingleScope::GroupScope); }
 int32_t gen_enum_d_gui_application_helper_single_scope_world_scope() { return static_cast<int32_t>(DGuiApplicationHelper::SingleScope::WorldScope); }
+int32_t gen_enum_d_font_manager_size_type_t1() { return static_cast<int32_t>(DFontManager::SizeType::T1); }
+int32_t gen_enum_d_font_manager_size_type_t2() { return static_cast<int32_t>(DFontManager::SizeType::T2); }
+int32_t gen_enum_d_font_manager_size_type_t3() { return static_cast<int32_t>(DFontManager::SizeType::T3); }
+int32_t gen_enum_d_font_manager_size_type_t4() { return static_cast<int32_t>(DFontManager::SizeType::T4); }
+int32_t gen_enum_d_font_manager_size_type_t5() { return static_cast<int32_t>(DFontManager::SizeType::T5); }
+int32_t gen_enum_d_font_manager_size_type_t6() { return static_cast<int32_t>(DFontManager::SizeType::T6); }
+int32_t gen_enum_d_font_manager_size_type_t7() { return static_cast<int32_t>(DFontManager::SizeType::T7); }
+int32_t gen_enum_d_font_manager_size_type_t8() { return static_cast<int32_t>(DFontManager::SizeType::T8); }
+int32_t gen_enum_d_font_manager_size_type_t9() { return static_cast<int32_t>(DFontManager::SizeType::T9); }
+int32_t gen_enum_d_font_manager_size_type_t10() { return static_cast<int32_t>(DFontManager::SizeType::T10); }
+int32_t gen_enum_d_font_manager_size_type_t11() { return static_cast<int32_t>(DFontManager::SizeType::T11); }
 QObject *gen_d_gui_application_helper_as_qobject(DGuiApplicationHelper *self) { return static_cast<QObject *>(self); }
 DGuiApplicationHelper * gen_d_gui_application_helper_instance() { return const_cast<DGuiApplicationHelper *>(DGuiApplicationHelper::instance()); }
 QColor * gen_d_gui_application_helper_adjust_color(QColor * base, int8_t hueFloat, int8_t saturationFloat, int8_t lightnessFloat, int8_t redFloat, int8_t greenFloat, int8_t blueFloat, int8_t alphaFloat) { return new QColor(DGuiApplicationHelper::adjustColor(*base, hueFloat, saturationFloat, lightnessFloat, redFloat, greenFloat, blueFloat, alphaFloat)); }
@@ -26,6 +37,7 @@ bool gen_d_gui_application_helper_test_attribute(int32_t attribute) { return DGu
 DPalette * gen_d_gui_application_helper_application_palette(DGuiApplicationHelper *self) { return new DPalette(self->applicationPalette()); }
 DPalette * gen_d_gui_application_helper_application_palette_2(DGuiApplicationHelper *self, int32_t paletteType) { return new DPalette(self->applicationPalette(static_cast<DGuiApplicationHelper::ColorType>(paletteType))); }
 void gen_d_gui_application_helper_set_application_palette(DGuiApplicationHelper *self, DPalette * palette) { self->setApplicationPalette(*palette); }
+DFontManager * gen_d_gui_application_helper_font_manager(DGuiApplicationHelper *self) { return const_cast<DFontManager *>(self->fontManager()); }
 int32_t gen_d_gui_application_helper_to_color_type(QColor * color) { return static_cast<int32_t>(DGuiApplicationHelper::toColorType(*color)); }
 int32_t gen_d_gui_application_helper_to_color_type_2(QPalette * palette) { return static_cast<int32_t>(DGuiApplicationHelper::toColorType(*palette)); }
 int32_t gen_d_gui_application_helper_theme_type(DGuiApplicationHelper *self) { return static_cast<int32_t>(self->themeType()); }
@@ -79,5 +91,27 @@ QImage * gen_d_image_handler_change_stauration(QImage * img, int32_t saturation)
 QImage * gen_d_image_handler_replace_point_color(QImage * img, QColor * oldColor, QColor * newColor) { return new QImage(DImageHandler::replacePointColor(*img, *oldColor, *newColor)); }
 QImage * gen_d_image_handler_flip_horizontal(QImage * img) { return new QImage(DImageHandler::flipHorizontal(*img)); }
 QImage * gen_d_image_handler_flip_vertical(QImage * img) { return new QImage(DImageHandler::flipVertical(*img)); }
+DFontManager *gen_d_font_manager_new() { return new DFontManager; }
+QObject *gen_d_font_manager_as_qobject(DFontManager *self) { return static_cast<QObject *>(self); }
+int32_t gen_d_font_manager_font_pixel_size(DFontManager *self, int32_t type_) { return self->fontPixelSize(static_cast<DFontManager::SizeType>(type_)); }
+void gen_d_font_manager_set_font_pixel_size(DFontManager *self, int32_t type_, int32_t size) { self->setFontPixelSize(static_cast<DFontManager::SizeType>(type_), size); }
+int32_t gen_d_font_manager_font_pixel_size_2(QFont * font) { return DFontManager::fontPixelSize(*font); }
+QFont * gen_d_font_manager_get(int32_t pixelSize, QFont * base) { return new QFont(DFontManager::get(pixelSize, *base)); }
+QFont * gen_d_font_manager_get_2(DFontManager *self, int32_t type_, QFont * base) { return new QFont(self->get(static_cast<DFontManager::SizeType>(type_), *base)); }
+QFont * gen_d_font_manager_get_3(DFontManager *self, int32_t type_) { return new QFont(self->get(static_cast<DFontManager::SizeType>(type_))); }
+QFont * gen_d_font_manager_base_font(DFontManager *self) { return new QFont(self->baseFont()); }
+void gen_d_font_manager_set_base_font(DFontManager *self, QFont * font) { self->setBaseFont(*font); }
+void gen_d_font_manager_reset_base_font(DFontManager *self) { self->resetBaseFont(); }
+QFont * gen_d_font_manager_t1(DFontManager *self) { return new QFont(self->t1()); }
+QFont * gen_d_font_manager_t2(DFontManager *self) { return new QFont(self->t2()); }
+QFont * gen_d_font_manager_t3(DFontManager *self) { return new QFont(self->t3()); }
+QFont * gen_d_font_manager_t4(DFontManager *self) { return new QFont(self->t4()); }
+QFont * gen_d_font_manager_t5(DFontManager *self) { return new QFont(self->t5()); }
+QFont * gen_d_font_manager_t6(DFontManager *self) { return new QFont(self->t6()); }
+QFont * gen_d_font_manager_t7(DFontManager *self) { return new QFont(self->t7()); }
+QFont * gen_d_font_manager_t8(DFontManager *self) { return new QFont(self->t8()); }
+QFont * gen_d_font_manager_t9(DFontManager *self) { return new QFont(self->t9()); }
+QFont * gen_d_font_manager_t10(DFontManager *self) { return new QFont(self->t10()); }
+QFont * gen_d_font_manager_t11(DFontManager *self) { return new QFont(self->t11()); }
 
 } // namespace dtkrs

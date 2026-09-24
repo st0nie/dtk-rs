@@ -61,6 +61,37 @@ impl GuiSingleScope {
         }
     }
 }
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum FontSizeType {
+    T1,
+    T2,
+    T3,
+    T4,
+    T5,
+    T6,
+    T7,
+    T8,
+    T9,
+    T10,
+    T11,
+}
+impl FontSizeType {
+    fn native_value(self) -> i32 {
+        match self {
+            Self::T1 => genffi::gen_enum_d_font_manager_size_type_t1(),
+            Self::T2 => genffi::gen_enum_d_font_manager_size_type_t2(),
+            Self::T3 => genffi::gen_enum_d_font_manager_size_type_t3(),
+            Self::T4 => genffi::gen_enum_d_font_manager_size_type_t4(),
+            Self::T5 => genffi::gen_enum_d_font_manager_size_type_t5(),
+            Self::T6 => genffi::gen_enum_d_font_manager_size_type_t6(),
+            Self::T7 => genffi::gen_enum_d_font_manager_size_type_t7(),
+            Self::T8 => genffi::gen_enum_d_font_manager_size_type_t8(),
+            Self::T9 => genffi::gen_enum_d_font_manager_size_type_t9(),
+            Self::T10 => genffi::gen_enum_d_font_manager_size_type_t10(),
+            Self::T11 => genffi::gen_enum_d_font_manager_size_type_t11(),
+        }
+    }
+}
 object_wrapper!(
     DGuiApplicationHelper,
     genffi::DGuiApplicationHelper,
@@ -204,6 +235,12 @@ impl DGuiApplicationHelper {
                 self.live_ptr(),
                 palette.ptr as _,
             )
+        }
+    }
+    pub fn font_manager(&self) -> Option<DFontManager> {
+        {
+            let ptr = unsafe { genffi::gen_d_gui_application_helper_font_manager(self.live_ptr()) };
+            (!ptr.is_null()).then(|| DFontManager::from_raw(ptr))
         }
     }
     pub fn to_color_type(color: &QColor) -> i32 {
@@ -464,4 +501,88 @@ impl DImageHandler {
     }
 }
 
-crate::impl_default_owned!(DImageHandler);
+object_wrapper!(
+    DFontManager,
+    genffi::DFontManager,
+    genffi::gen_d_font_manager_as_qobject
+);
+impl DFontManager {
+    pub fn new() -> Owned<Self> {
+        crate::require_application();
+        Owned::new(Self::from_raw(unsafe { genffi::gen_d_font_manager_new() }))
+    }
+    pub fn font_pixel_size(&self, type_: FontSizeType) -> i32 {
+        unsafe { genffi::gen_d_font_manager_font_pixel_size(self.live_ptr(), type_.native_value()) }
+    }
+    pub fn set_font_pixel_size(&self, type_: FontSizeType, size: i32) {
+        unsafe {
+            genffi::gen_d_font_manager_set_font_pixel_size(
+                self.live_ptr(),
+                type_.native_value(),
+                size,
+            )
+        }
+    }
+    pub fn font_pixel_size_2(font: &QFont) -> i32 {
+        crate::require_application();
+        unsafe { genffi::gen_d_font_manager_font_pixel_size_2(font.ptr as _) }
+    }
+    pub fn get(pixelSize: i32, base: &QFont) -> QFont {
+        crate::require_application();
+        QFont::from_raw(unsafe { genffi::gen_d_font_manager_get(pixelSize, base.ptr as _) } as _)
+    }
+    pub fn get_2(&self, type_: FontSizeType, base: &QFont) -> QFont {
+        QFont::from_raw(unsafe {
+            genffi::gen_d_font_manager_get_2(self.live_ptr(), type_.native_value(), base.ptr as _)
+        } as _)
+    }
+    pub fn get_3(&self, type_: FontSizeType) -> QFont {
+        QFont::from_raw(unsafe {
+            genffi::gen_d_font_manager_get_3(self.live_ptr(), type_.native_value())
+        } as _)
+    }
+    pub fn base_font(&self) -> QFont {
+        QFont::from_raw(unsafe { genffi::gen_d_font_manager_base_font(self.live_ptr()) } as _)
+    }
+    pub fn set_base_font(&self, font: &QFont) {
+        unsafe { genffi::gen_d_font_manager_set_base_font(self.live_ptr(), font.ptr as _) }
+    }
+    pub fn reset_base_font(&self) {
+        unsafe { genffi::gen_d_font_manager_reset_base_font(self.live_ptr()) }
+    }
+    pub fn t1(&self) -> QFont {
+        QFont::from_raw(unsafe { genffi::gen_d_font_manager_t1(self.live_ptr()) } as _)
+    }
+    pub fn t2(&self) -> QFont {
+        QFont::from_raw(unsafe { genffi::gen_d_font_manager_t2(self.live_ptr()) } as _)
+    }
+    pub fn t3(&self) -> QFont {
+        QFont::from_raw(unsafe { genffi::gen_d_font_manager_t3(self.live_ptr()) } as _)
+    }
+    pub fn t4(&self) -> QFont {
+        QFont::from_raw(unsafe { genffi::gen_d_font_manager_t4(self.live_ptr()) } as _)
+    }
+    pub fn t5(&self) -> QFont {
+        QFont::from_raw(unsafe { genffi::gen_d_font_manager_t5(self.live_ptr()) } as _)
+    }
+    pub fn t6(&self) -> QFont {
+        QFont::from_raw(unsafe { genffi::gen_d_font_manager_t6(self.live_ptr()) } as _)
+    }
+    pub fn t7(&self) -> QFont {
+        QFont::from_raw(unsafe { genffi::gen_d_font_manager_t7(self.live_ptr()) } as _)
+    }
+    pub fn t8(&self) -> QFont {
+        QFont::from_raw(unsafe { genffi::gen_d_font_manager_t8(self.live_ptr()) } as _)
+    }
+    pub fn t9(&self) -> QFont {
+        QFont::from_raw(unsafe { genffi::gen_d_font_manager_t9(self.live_ptr()) } as _)
+    }
+    pub fn t10(&self) -> QFont {
+        QFont::from_raw(unsafe { genffi::gen_d_font_manager_t10(self.live_ptr()) } as _)
+    }
+    pub fn t11(&self) -> QFont {
+        QFont::from_raw(unsafe { genffi::gen_d_font_manager_t11(self.live_ptr()) } as _)
+    }
+}
+
+crate::impl_default_owned!(DImageHandler, DFontManager);

@@ -206,7 +206,7 @@ cxx opaque types are zero-sized Rust structs never dereferenced or moved in
 Rust, and each bridge names the same C++ type.
 The audit is recorded in tools/gen.py comments. DCore/DGui generation is
 currently **pilot scope**: `DStandardPaths`, `DSysInfo`,
-`DGuiApplicationHelper` and `DImageHandler` are scanned (see
+`DGuiApplicationHelper`, `DImageHandler` and `DFontManager` are scanned (see
 `GEN_CORE_REPORT.md` / `GEN_GUI_REPORT.md`). The DCore classes provide static
 functions usable without QApplication; DGui classes return
 guarded QObject views and requires the application's GUI thread. New-domain

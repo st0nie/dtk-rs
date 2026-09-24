@@ -42,6 +42,12 @@ class QtAncestryTests(unittest.TestCase):
         self.assertIn("pub fn gray_scale_color_filter(img: &QImage) -> QImage", gui)
         self.assertIn("pub fn rotate_image(&self, image: &mut QImage, angle: i32) -> bool", gui)
         self.assertIn("gen_d_image_handler_as_qobject", gui)
+        self.assertIn("pub enum FontSizeType", gui)
+        self.assertNotIn("NSizeTypes,", gui)  # sentinel is not a valid input
+        self.assertIn("pub fn font_manager(&self) -> Option<DFontManager>", gui)
+        self.assertIn("pub fn font_pixel_size(&self, type_: FontSizeType) -> i32", gui)
+        self.assertIn("pub fn set_font_pixel_size(&self, type_: FontSizeType, size: i32)", gui)
+        self.assertIn("pub fn t6(&self) -> QFont", gui)
         self.assertIn("using Dtk::Core::DStandardPaths;", (root / "dtk-sys/include/dtk_core_shim.h").read_text())
         self.assertIn("using Dtk::Gui::DGuiApplicationHelper;", (root / "dtk-sys/include/dtk_gui_shim.h").read_text())
         for report in ("GEN_CORE_REPORT.md", "GEN_GUI_REPORT.md"):

@@ -33,6 +33,7 @@ pub mod genffi {
         type DPalette;
         type DGuiApplicationHelper;
         type DImageHandler;
+        type DFontManager;
         fn gen_enum_d_gui_application_helper_color_type_unknown_type() -> i32;
         fn gen_enum_d_gui_application_helper_color_type_light_type() -> i32;
         fn gen_enum_d_gui_application_helper_color_type_dark_type() -> i32;
@@ -41,6 +42,17 @@ pub mod genffi {
         fn gen_enum_d_gui_application_helper_single_scope_user_scope() -> i32;
         fn gen_enum_d_gui_application_helper_single_scope_group_scope() -> i32;
         fn gen_enum_d_gui_application_helper_single_scope_world_scope() -> i32;
+        fn gen_enum_d_font_manager_size_type_t1() -> i32;
+        fn gen_enum_d_font_manager_size_type_t2() -> i32;
+        fn gen_enum_d_font_manager_size_type_t3() -> i32;
+        fn gen_enum_d_font_manager_size_type_t4() -> i32;
+        fn gen_enum_d_font_manager_size_type_t5() -> i32;
+        fn gen_enum_d_font_manager_size_type_t6() -> i32;
+        fn gen_enum_d_font_manager_size_type_t7() -> i32;
+        fn gen_enum_d_font_manager_size_type_t8() -> i32;
+        fn gen_enum_d_font_manager_size_type_t9() -> i32;
+        fn gen_enum_d_font_manager_size_type_t10() -> i32;
+        fn gen_enum_d_font_manager_size_type_t11() -> i32;
 
         unsafe fn gen_d_gui_application_helper_as_qobject(
             self_: *mut DGuiApplicationHelper,
@@ -93,6 +105,9 @@ pub mod genffi {
             self_: *mut DGuiApplicationHelper,
             palette: *mut DPalette,
         );
+        unsafe fn gen_d_gui_application_helper_font_manager(
+            self_: *mut DGuiApplicationHelper,
+        ) -> *mut DFontManager;
         unsafe fn gen_d_gui_application_helper_to_color_type(color: *mut QColor) -> i32;
         unsafe fn gen_d_gui_application_helper_to_color_type_2(palette: *mut QPalette) -> i32;
         unsafe fn gen_d_gui_application_helper_theme_type(self_: *mut DGuiApplicationHelper)
@@ -210,5 +225,35 @@ pub mod genffi {
         ) -> *mut QImage;
         unsafe fn gen_d_image_handler_flip_horizontal(img: *mut QImage) -> *mut QImage;
         unsafe fn gen_d_image_handler_flip_vertical(img: *mut QImage) -> *mut QImage;
+        unsafe fn gen_d_font_manager_new() -> *mut DFontManager;
+        unsafe fn gen_d_font_manager_as_qobject(self_: *mut DFontManager) -> *mut QObject;
+        unsafe fn gen_d_font_manager_font_pixel_size(self_: *mut DFontManager, type_: i32) -> i32;
+        unsafe fn gen_d_font_manager_set_font_pixel_size(
+            self_: *mut DFontManager,
+            type_: i32,
+            size: i32,
+        );
+        unsafe fn gen_d_font_manager_font_pixel_size_2(font: *mut QFont) -> i32;
+        unsafe fn gen_d_font_manager_get(pixelSize: i32, base: *mut QFont) -> *mut QFont;
+        unsafe fn gen_d_font_manager_get_2(
+            self_: *mut DFontManager,
+            type_: i32,
+            base: *mut QFont,
+        ) -> *mut QFont;
+        unsafe fn gen_d_font_manager_get_3(self_: *mut DFontManager, type_: i32) -> *mut QFont;
+        unsafe fn gen_d_font_manager_base_font(self_: *mut DFontManager) -> *mut QFont;
+        unsafe fn gen_d_font_manager_set_base_font(self_: *mut DFontManager, font: *mut QFont);
+        unsafe fn gen_d_font_manager_reset_base_font(self_: *mut DFontManager);
+        unsafe fn gen_d_font_manager_t1(self_: *mut DFontManager) -> *mut QFont;
+        unsafe fn gen_d_font_manager_t2(self_: *mut DFontManager) -> *mut QFont;
+        unsafe fn gen_d_font_manager_t3(self_: *mut DFontManager) -> *mut QFont;
+        unsafe fn gen_d_font_manager_t4(self_: *mut DFontManager) -> *mut QFont;
+        unsafe fn gen_d_font_manager_t5(self_: *mut DFontManager) -> *mut QFont;
+        unsafe fn gen_d_font_manager_t6(self_: *mut DFontManager) -> *mut QFont;
+        unsafe fn gen_d_font_manager_t7(self_: *mut DFontManager) -> *mut QFont;
+        unsafe fn gen_d_font_manager_t8(self_: *mut DFontManager) -> *mut QFont;
+        unsafe fn gen_d_font_manager_t9(self_: *mut DFontManager) -> *mut QFont;
+        unsafe fn gen_d_font_manager_t10(self_: *mut DFontManager) -> *mut QFont;
+        unsafe fn gen_d_font_manager_t11(self_: *mut DFontManager) -> *mut QFont;
     }
 }
