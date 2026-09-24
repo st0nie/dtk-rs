@@ -1,5 +1,6 @@
 //! Constructing Qt widgets before QApplication must fail in Rust, not crash Qt.
 //! QT_QPA_PLATFORM=offscreen cargo run --example no_application_selfcheck
+use dtk::core::DConfig;
 use dtk::gui::{DFontManager, DImageHandler};
 use dtk::widgets::{DListView, DMessageManager};
 use dtk::{
@@ -18,6 +19,9 @@ fn main() {
     expect_panic("create DApplication", DListView::new);
     expect_panic("create DApplication", DImageHandler::new);
     expect_panic("create DApplication", DFontManager::new);
+    expect_panic("create DApplication", || {
+        DConfig::create_generic("missing", "")
+    });
     expect_panic("create DApplication", DMessageManager::instance);
     expect_panic("create DApplication", || QTableWidget::new(0, 0));
     expect_panic("create DApplication", Clipboard::text);
@@ -45,6 +49,7 @@ fn main() {
         expect_panic("GUI thread", DListView::new);
         expect_panic("GUI thread", DImageHandler::new);
         expect_panic("GUI thread", DFontManager::new);
+        expect_panic("GUI thread", || DConfig::create_generic("missing", ""));
         expect_panic("GUI thread", || QTimer::single_shot(0, || {}));
     })
     .join()

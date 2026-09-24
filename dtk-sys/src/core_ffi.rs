@@ -33,6 +33,7 @@ pub mod genffi {
         type DPalette;
         type DStandardPaths;
         type DSysInfo;
+        type DConfig;
         fn gen_enum_d_standard_paths_x_d_g_data_home() -> i32;
         fn gen_enum_d_standard_paths_x_d_g_config_home() -> i32;
         fn gen_enum_d_standard_paths_x_d_g_cache_home() -> i32;
@@ -118,5 +119,21 @@ pub mod genffi {
         unsafe fn gen_d_sys_info_system_disk_size() -> i64;
         unsafe fn gen_d_sys_info_uptime() -> i64;
         unsafe fn gen_d_sys_info_arch() -> i32;
+        unsafe fn gen_d_config_as_qobject(self_: *mut DConfig) -> *mut QObject;
+        unsafe fn gen_d_config_set_app_id(appId: &str);
+        unsafe fn gen_d_config_backend_name(self_: *mut DConfig) -> String;
+        unsafe fn gen_d_config_key_list(self_: *mut DConfig) -> Vec<String>;
+        unsafe fn gen_d_config_is_valid(self_: *mut DConfig) -> bool;
+        unsafe fn gen_d_config_is_default_value(self_: *mut DConfig, key: &str) -> bool;
+        unsafe fn gen_d_config_value(
+            self_: *mut DConfig,
+            key: &str,
+            fallback: *mut QVariant,
+        ) -> *mut QVariant;
+        unsafe fn gen_d_config_set_value(self_: *mut DConfig, key: &str, value: *mut QVariant);
+        unsafe fn gen_d_config_reset(self_: *mut DConfig, key: &str);
+        unsafe fn gen_d_config_is_read_only(self_: *mut DConfig, key: &str) -> bool;
+        unsafe fn gen_d_config_name(self_: *mut DConfig) -> String;
+        unsafe fn gen_d_config_subpath(self_: *mut DConfig) -> String;
     }
 }

@@ -315,3 +315,45 @@ impl DSysInfo {
         unsafe { genffi::gen_d_sys_info_arch() }
     }
 }
+
+object_wrapper!(DConfig, genffi::DConfig, genffi::gen_d_config_as_qobject);
+impl DConfig {
+    /// # Safety
+    /// Must run before any QCoreApplication is created, without a
+    /// concurrent Qt application construction on another thread.
+    pub unsafe fn set_app_id(appId: &str) {
+        unsafe { genffi::gen_d_config_set_app_id(appId) }
+    }
+    pub fn backend_name(&self) -> String {
+        unsafe { genffi::gen_d_config_backend_name(self.live_ptr()) }
+    }
+    pub fn key_list(&self) -> Vec<String> {
+        unsafe { genffi::gen_d_config_key_list(self.live_ptr()) }
+    }
+    pub fn is_valid(&self) -> bool {
+        unsafe { genffi::gen_d_config_is_valid(self.live_ptr()) }
+    }
+    pub fn is_default_value(&self, key: &str) -> bool {
+        unsafe { genffi::gen_d_config_is_default_value(self.live_ptr(), key) }
+    }
+    pub fn value(&self, key: &str, fallback: &QVariant) -> QVariant {
+        QVariant::from_raw(unsafe {
+            genffi::gen_d_config_value(self.live_ptr(), key, fallback.ptr as _)
+        } as _)
+    }
+    pub fn set_value(&self, key: &str, value: &QVariant) {
+        unsafe { genffi::gen_d_config_set_value(self.live_ptr(), key, value.ptr as _) }
+    }
+    pub fn reset(&self, key: &str) {
+        unsafe { genffi::gen_d_config_reset(self.live_ptr(), key) }
+    }
+    pub fn is_read_only(&self, key: &str) -> bool {
+        unsafe { genffi::gen_d_config_is_read_only(self.live_ptr(), key) }
+    }
+    pub fn name(&self) -> String {
+        unsafe { genffi::gen_d_config_name(self.live_ptr()) }
+    }
+    pub fn subpath(&self) -> String {
+        unsafe { genffi::gen_d_config_subpath(self.live_ptr()) }
+    }
+}

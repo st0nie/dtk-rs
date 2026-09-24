@@ -40,6 +40,7 @@
 #include <QMargins>
 #include <DDciIcon>
 #include <DPalette>
+#include <dconfig.h>
 #include <QPoint>
 #include <QRect>
 #include <QSize>
@@ -93,6 +94,7 @@ using ::QVariant;
 using ::QVariantList;
 using Dtk::Gui::DDciIcon;
 using Dtk::Gui::DPalette;
+using Dtk::Core::DConfig;
 using ::QPoint;
 using ::QRect;
 using ::QSize;
@@ -162,6 +164,12 @@ void application_set_quit_on_last_window_closed(bool quit);
 void application_set_application_display_name(rust::Str name);
 bool application_load_translator(DApplication *app);
 bool application_has_arg(rust::Str arg);
+
+// DConfig::create/createGeneric explicitly transfer returned QObjects to the
+// caller (linuxdeepin.github.io/dtkcore/classDtk_1_1Core_1_1DConfig.html).
+// Null is possible; neither factory sets a QObject parent here.
+DConfig *core_config_create_generic(rust::Str name, rust::Str subpath);
+DConfig *core_config_create(rust::Str app_id, rust::Str name, rust::Str subpath);
 
 // ---- QWidget common (applies to all widgets) ----
 void widget_show(QWidget *w);

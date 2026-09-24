@@ -75,5 +75,17 @@ int64_t gen_d_sys_info_memory_total_size() { return DSysInfo::memoryTotalSize();
 int64_t gen_d_sys_info_system_disk_size() { return DSysInfo::systemDiskSize(); }
 int64_t gen_d_sys_info_uptime() { return DSysInfo::uptime(); }
 int32_t gen_d_sys_info_arch() { return static_cast<int32_t>(DSysInfo::arch()); }
+QObject *gen_d_config_as_qobject(DConfig *self) { return static_cast<QObject *>(self); }
+void gen_d_config_set_app_id(rust::Str appId) { DConfig::setAppId(from_rust_str(appId)); }
+rust::String gen_d_config_backend_name(DConfig *self) { return to_rust_string(self->backendName()); }
+rust::Vec<rust::String> gen_d_config_key_list(DConfig *self) { return to_rust_string_vec(self->keyList()); }
+bool gen_d_config_is_valid(DConfig *self) { return self->isValid(); }
+bool gen_d_config_is_default_value(DConfig *self, rust::Str key) { return self->isDefaultValue(from_rust_str(key)); }
+QVariant * gen_d_config_value(DConfig *self, rust::Str key, QVariant * fallback) { return new QVariant(self->value(from_rust_str(key), *fallback)); }
+void gen_d_config_set_value(DConfig *self, rust::Str key, QVariant * value) { self->setValue(from_rust_str(key), *value); }
+void gen_d_config_reset(DConfig *self, rust::Str key) { self->reset(from_rust_str(key)); }
+bool gen_d_config_is_read_only(DConfig *self, rust::Str key) { return self->isReadOnly(from_rust_str(key)); }
+rust::String gen_d_config_name(DConfig *self) { return to_rust_string(self->name()); }
+rust::String gen_d_config_subpath(DConfig *self) { return to_rust_string(self->subpath()); }
 
 } // namespace dtkrs

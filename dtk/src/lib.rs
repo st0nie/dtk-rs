@@ -2391,3 +2391,27 @@ impl widgets::DComboBox {
 pub mod core;
 pub mod gui;
 pub mod widgets;
+
+impl core::DConfig {
+    // Both native factories explicitly transfer their returned QObject to
+    // callers, regardless of whether the configuration metadata is valid.
+    fn from_created(ptr: *mut ffi::DConfig) -> Option<Owned<Self>> {
+        (!ptr.is_null()).then(|| Owned::new(Self::from_raw(ptr as _)))
+    }
+
+    /// Create an app-independent configuration. Null is None; check
+    /// `is_valid()` separately for missing config metadata.
+    /// An existing GUI application is required until DCore has a separately
+    /// scoped QCoreApplication lifecycle.
+    pub fn create_generic(name: &str, subpath: &str) -> Option<Owned<Self>> {
+        require_application();
+        Self::from_created(unsafe { ffi::core_config_create_generic(name, subpath) })
+    }
+
+    /// Create an application-specific configuration with the given app ID.
+    /// Native DCore transfers ownership even when `is_valid()` is false.
+    pub fn create_for_app(app_id: &str, name: &str, subpath: &str) -> Option<Owned<Self>> {
+        require_application();
+        Self::from_created(unsafe { ffi::core_config_create(app_id, name, subpath) })
+    }
+}

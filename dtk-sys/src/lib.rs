@@ -62,6 +62,7 @@ pub mod ffi {
         type QStyledItemDelegate;
 
         type DApplication;
+        type DConfig;
         type DMainWindow;
         type DTitlebar;
         type DLabel;
@@ -91,6 +92,8 @@ pub mod ffi {
         unsafe fn application_set_application_display_name(name: &str);
         unsafe fn application_load_translator(app: *mut DApplication) -> bool;
         unsafe fn application_has_arg(arg: &str) -> bool;
+        unsafe fn core_config_create_generic(name: &str, subpath: &str) -> *mut DConfig;
+        unsafe fn core_config_create(app_id: &str, name: &str, subpath: &str) -> *mut DConfig;
 
         // QWidget common
         unsafe fn widget_show(w: *mut QWidget);

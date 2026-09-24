@@ -366,6 +366,14 @@ bool application_has_arg(rust::Str arg) {
     return QCoreApplication::arguments().contains(from_rust_str(arg));
 }
 
+DConfig *core_config_create_generic(rust::Str name, rust::Str subpath) {
+    return DConfig::createGeneric(from_rust_str(name), from_rust_str(subpath), nullptr);
+}
+DConfig *core_config_create(rust::Str app_id, rust::Str name, rust::Str subpath) {
+    return DConfig::create(from_rust_str(app_id), from_rust_str(name),
+                           from_rust_str(subpath), nullptr);
+}
+
 // ---- QAction / QMenu ----
 QAction *action_new(rust::Str text, QObject *parent) {
     return new QAction(from_rust_str(text), parent);

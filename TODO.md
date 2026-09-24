@@ -139,8 +139,11 @@ Known gaps in dtk-rs, roughly in priority order.
 
 - [x] Add generator-backed DCore/DGui pilot modules with separate bridges,
       shims and scoped coverage reports: `DStandardPaths` (13 methods) and
-      `DSysInfo` (28 methods) work without QApplication;
-      `DGuiApplicationHelper` (30 mapped methods), `DImageHandler` (37) and
+      `DSysInfo` (28 methods) work without QApplication. DConfig has 11 mapped
+      methods; its manually audited, caller-owned create/createGeneric factories
+      currently require a GUI app. `setAppId` is unsafe and must precede any
+      QCoreApplication. `DGuiApplicationHelper` (30 mapped methods),
+      `DImageHandler` (37) and
       `DFontManager` (20) are guarded and require the GUI app thread
       (`core_paths_selfcheck`, `gui_helper_selfcheck`, `gui_image_selfcheck`,
       `gui_font_selfcheck`). `FontSizeType` omits the invalid `NSizeTypes` sentinel.
@@ -155,10 +158,12 @@ Known gaps in dtk-rs, roughly in priority order.
       `DFontManager`/`DPalette` (`/usr/include/dtk6/DGui`): DCI icons,
       platform themes, desktop services etc. `DImageHandler::rotateImage(QImage&)` uses `&mut`
       to preserve the C++ non-const reference requirement.
-- [ ] Expand DCore bindings beyond `DStandardPaths`/`DSysInfo` (`/usr/include/dtk6/DCore`):
-      DConfig, DSettings, DLog, file watchers etc. QObject wrappers need
-      QCoreApplication-aware constructors and thread affinity, not the Widget
-      module's GUI-application requirement.
+- [ ] Expand DCore bindings beyond `DStandardPaths`/`DSysInfo`/`DConfig`
+      (`/usr/include/dtk6/DCore`): DSettings, DLog, file watchers etc.
+      DConfig currently has no safe QCoreApplication-only constructor: owned
+      QObject factories require GUI DApplication. Complete a scoped QtCore
+      lifecycle before removing this restriction. `DConfig::globalThread()`
+      is a native-owned borrowed QThread that must never be deleted by Rust.
 
 ## Hygiene
 

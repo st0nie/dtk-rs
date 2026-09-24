@@ -556,8 +556,9 @@ def main():
     core_headers = [
         "/usr/include/dtk6/DCore/dstandardpaths.h",
         "/usr/include/dtk6/DCore/dsysinfo.h",
+        "/usr/include/dtk6/DCore/dconfig.h",
     ]
-    emit(collect_models(core_headers), domain="core")
+    emit(collect_models(core_headers, included={"DStandardPaths", "DSysInfo", "DConfig"}), domain="core")
     gui_headers = [
         "/usr/include/dtk6/DGui/dguiapplicationhelper.h",
         "/usr/include/dtk6/DGui/dimagehandler.h",
@@ -837,8 +838,12 @@ def emit(classes, domain="widget"):
             else:
                 ret_decl = "" if ret_rs == "()" else f" -> {ret_rs}"
                 expr = f"unsafe {{ genffi::{fn_name}({calls}) }}"
+            # Native DConfig::setAppId MUST run before QCoreApplication exists.
+            # Requiring an existing GUI app here would invert that contract.
+            pre_app_call = domain == "core" and name == "DConfig" and meth == "setAppId"
             precheck = ("        crate::require_application();\n"
-                        if is_static and c["kind"] in ("widget", "object") else "")
+                        if is_static and c["kind"] in ("widget", "object") and not pre_app_call
+                        else "")
             # A non-QObject pointer has no QPointer guard or Rust lifetime.
             # Its native ownership may be borrowed OR transferred, depending
             # on the specific DTK method; don't infer from spelling. Neither
@@ -862,7 +867,12 @@ def emit(classes, domain="widget"):
                     safety = "    /// # Safety\n"
                 safety += ("    /// Integer enum/flags arguments must be valid values of the\n"
                            "    /// corresponding native Qt/DTK type.\n")
-            marker = "unsafe " if unguarded_return or domain_enum_args else ""
+            if pre_app_call:
+                if not safety:
+                    safety = "    /// # Safety\n"
+                safety += ("    /// Must run before any QCoreApplication is created, without a\n"
+                           "    /// concurrent Qt application construction on another thread.\n")
+            marker = "unsafe " if unguarded_return or domain_enum_args or pre_app_call else ""
             wrapper.append(f"{safety}    pub {marker}fn {mname}({sig}){ret_decl} {{\n{precheck}        {expr}\n    }}\n")
         wrapper.append("}\n\n")
         total_skip_n = len(c["skipped"])

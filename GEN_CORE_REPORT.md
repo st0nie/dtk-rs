@@ -1,12 +1,12 @@
 # DTK6 core pilot binding coverage report
 
-classes: 2, methods generated: 41, skipped: 8
+classes: 3, methods generated: 52, skipped: 13
 
-Qt ancestry: 0 widgets, 0 QObjects, 2 opaque types
+Qt ancestry: 0 widgets, 1 QObjects, 2 opaque types
 
 ## skip reasons
-- unsupported param type: 5
-- unsupported return type: 3
+- unsupported param type: 9
+- unsupported return type: 4
 
 > Pilot scope: only the listed classes/headers were scanned; this is NOT library-wide coverage.
 
@@ -21,3 +21,10 @@ Qt ancestry: 0 widgets, 0 QObjects, 2 opaque types
 - `static QPair<QString, QString> distributionOrgWebsite(OrgType type = Distributio` ← unsupported return type: QPair<QString, QString>
 - `static QDateTime bootTime();` ← unsupported return type: QDateTime
 - `static QDateTime shutdownTime();` ← unsupported return type: QDateTime
+
+## DConfig — 11 methods generated, 5 skipped
+- `static DConfig *create(const QString &appId, const QString &name, const QString ` ← unsupported param type: QObject *
+- `static DConfig *create(DConfigBackend *backend, const QString &appId, const QStr` ← unsupported param type: DConfigBackend *
+- `static DConfig *createGeneric(const QString &name, const QString &subpath = QStr` ← unsupported param type: QObject *
+- `static DConfig *createGeneric(DConfigBackend *backend, const QString &name, cons` ← unsupported param type: DConfigBackend *
+- `static QThread *globalThread();` ← unsupported return type: QThread *

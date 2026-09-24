@@ -205,10 +205,13 @@ selected value types cross bridges via `as _` pointer casts. Sound because
 cxx opaque types are zero-sized Rust structs never dereferenced or moved in
 Rust, and each bridge names the same C++ type.
 The audit is recorded in tools/gen.py comments. DCore/DGui generation is
-currently **pilot scope**: `DStandardPaths`, `DSysInfo`,
+currently **pilot scope**: `DStandardPaths`, `DSysInfo`, `DConfig`,
 `DGuiApplicationHelper`, `DImageHandler` and `DFontManager` are scanned (see
-`GEN_CORE_REPORT.md` / `GEN_GUI_REPORT.md`). The DCore classes provide static
-functions usable without QApplication; DGui classes return
+`GEN_CORE_REPORT.md` / `GEN_GUI_REPORT.md`). DStandardPaths and DSysInfo
+provide static functions usable without QApplication. DConfig has an audited
+`create`/`createGeneric` ownership transfer, exposed as hand-written
+`Option<Owned<DConfig>>` factories only after GUI DApplication creation; native
+`setAppId` must instead be invoked before QCoreApplication. DGui classes return
 guarded QObject views and requires the application's GUI thread. New-domain
 core XDG/DSG and Qt StandardLocation/LocateOption plus GUI ColorType/SizeMode/
 SingleScope inputs use generated Rust enums. Their numeric values come from
