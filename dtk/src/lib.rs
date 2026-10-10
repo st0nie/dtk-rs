@@ -16,6 +16,8 @@ use dtk_sys::ffi;
 use std::marker::PhantomData;
 use std::rc::Rc;
 
+mod application;
+pub use application::QCoreApplication;
 pub mod threading;
 pub use threading::GuiSender;
 
@@ -71,6 +73,22 @@ pub(crate) fn require_application() {
     );
 }
 
+/// QtCore objects may use a headless scoped QCoreApplication or the GUI app,
+/// but still require that runtime's owning thread and a non-closing scope.
+pub(crate) fn require_core_application() {
+    assert!(
+        unsafe { ffi::application_is_core() },
+        "create QCoreApplication or DApplication before constructing QtCore objects and use its owning Qt thread"
+    );
+}
+
+fn require_main_application_thread() {
+    assert!(
+        unsafe { ffi::application_is_main_thread() },
+        "Qt applications must be constructed on the process main thread"
+    );
+}
+
 /// `impl Default` for wrappers whose `new()` is the default ctor
 macro_rules! impl_default {
     ($($name:ident),* $(,)?) => {
@@ -99,7 +117,7 @@ macro_rules! qt_widget_base {
 
 macro_rules! widget_wrapper {
     ($name:ident, $ffi:ty $(, $object_cast:path, $widget_cast:path)?) => {
-        object_wrapper_impl!($name, $ffi, widget $(, $object_cast)? ; $($widget_cast)?);
+        object_wrapper_impl!($name, $ffi, widget, $crate::require_application $(, $object_cast)? ; $($widget_cast)?);
         impl $name {
             pub(crate) fn widget_ptr(&self) -> *mut ffi::QWidget {
                 self.live_ptr();
@@ -235,7 +253,7 @@ mod owned_opaque_tests {
 /// from "still alive", so `Owned::drop` never touches a dangling pointer.
 /// # Safety
 /// A `Some(ptr)` result must be a currently live, correctly base-adjusted
-/// `QObject*` on the calling GUI thread. `was_parented()` must not return false
+/// `QObject*` on its owning Qt thread. `was_parented()` must not return false
 /// once Qt adopted the object, even if Qt later returned or detached it:
 /// otherwise an old constructor owner could delete a newly transferred object.
 /// Returning a stale or wrongly adjusted pointer also passes invalid memory
@@ -271,6 +289,11 @@ pub struct Owned<T: QtLifecycle>(T);
 
 impl<T: QtLifecycle> Owned<T> {
     pub(crate) fn new(inner: T) -> Self {
+        if let Some(object) = inner.live_qobject() {
+            // Only verified constructor/transfer owners enter the scoped
+            // runtime's cleanup registry. Borrowed getters must not enter it.
+            unsafe { ffi::core_runtime_track_object(object) };
+        }
         Self(inner)
     }
 }
@@ -379,7 +402,7 @@ macro_rules! opaque_wrapper {
 }
 
 macro_rules! object_wrapper_impl {
-    ($name:ident, $ffi:ty, $kind:ident $(, $object_cast:path)? ; $($widget_cast:path)?) => {
+    ($name:ident, $ffi:ty, $kind:ident, $runtime_check:path $(, $object_cast:path)? ; $($widget_cast:path)?) => {
         /// Non-owning checked view; the Qt parent or explicit delete_later
         /// manages the QObject, while clones share the same QPointer guard.
         #[derive(Clone)]
@@ -393,7 +416,7 @@ macro_rules! object_wrapper_impl {
         impl $name {
             #[allow(dead_code)]
             pub(crate) fn from_raw(ptr: *mut $ffi) -> Self {
-                $crate::require_application();
+                $runtime_check();
                 assert!(!ptr.is_null());
                 let qobject = qt_object_base!(ptr $(, $object_cast)?);
                 let widget = qt_widget_base!($kind, ptr $(, $widget_cast)?);
@@ -452,7 +475,14 @@ macro_rules! object_wrapper_impl {
 
 macro_rules! object_wrapper {
     ($name:ident, $ffi:ty $(, $object_cast:path)?) => {
-        object_wrapper_impl!($name, $ffi, object $(, $object_cast)? ;);
+        object_wrapper_impl!($name, $ffi, object, $crate::require_application $(, $object_cast)? ;);
+    };
+}
+
+// These explicitly audited QObject classes need only QtCore, not QtWidgets.
+macro_rules! core_object_wrapper {
+    ($name:ident, $ffi:ty $(, $object_cast:path)?) => {
+        object_wrapper_impl!($name, $ffi, object, $crate::require_core_application $(, $object_cast)? ;);
     };
 }
 
@@ -991,6 +1021,7 @@ fn env_args_raw() -> (Vec<u8>, Vec<usize>) {
 
 impl DApplication {
     pub fn new(name: &str) -> Self {
+        require_main_application_thread();
         let (bytes, lengths) = env_args_raw();
         let ptr = unsafe { ffi::application_new(name, bytes, lengths) };
         assert!(
@@ -1004,6 +1035,7 @@ impl DApplication {
     }
     /// with quit guard: QEvent::Quit asks the guard; false swallows the event (Rust retries itself)
     pub fn new_with_quit_guard(name: &str, guard: impl FnMut() -> bool + 'static) -> Self {
+        require_main_application_thread();
         let id = dtk_sys::register_cb_guard(guard);
         let (bytes, lengths) = env_args_raw();
         let ptr = unsafe { ffi::application_new_ex(name, bytes, lengths, id) };
@@ -2137,12 +2169,13 @@ impl QTableWidget {
 
 // ---- QTimer ----
 
-object_wrapper!(QTimer, ffi::QTimer);
+core_object_wrapper!(QTimer, ffi::QTimer);
 
 impl QTimer {
-    /// The parent owns the timer; use the application or any widget as parent.
+    /// The parent owns the timer; use the scoped QtCore app, GUI app or a
+    /// guarded QObject/widget as parent.
     pub fn new(parent: &impl Signal0) -> Owned<QTimer> {
-        require_application();
+        require_core_application();
         Owned::new(Self::from_raw(unsafe {
             ffi::timer_new(parent.qobject_ptr())
         }))
@@ -2160,7 +2193,7 @@ impl QTimer {
     /// One-shot timer; its closure is released after firing (even on panic),
     /// or when Qt cancels it because the application is destroyed.
     pub fn single_shot(msec: i32, f: impl FnOnce() + 'static) {
-        require_application();
+        require_core_application();
         let id = dtk_sys::register_cb_once(f);
         unsafe { ffi::timer_single_shot(msec, id) }
     }
@@ -2314,12 +2347,12 @@ impl PaintDelegate {
 
 // ---- QSocketNotifier ----
 
-object_wrapper!(QSocketNotifier, ffi::QSocketNotifier);
+core_object_wrapper!(QSocketNotifier, ffi::QSocketNotifier);
 
 impl QSocketNotifier {
     /// Watch an fd for readability (Read type); the parent owns the notifier.
     pub fn new(fd: i32, parent: &impl Signal0) -> Owned<QSocketNotifier> {
-        require_application();
+        require_core_application();
         Owned::new(Self::from_raw(unsafe {
             ffi::socket_notifier_new(fd, parent.qobject_ptr())
         }))
@@ -2401,17 +2434,18 @@ impl core::DConfig {
 
     /// Create an app-independent configuration. Null is None; check
     /// `is_valid()` separately for missing config metadata.
-    /// An existing GUI application is required until DCore has a separately
-    /// scoped QCoreApplication lifecycle.
+    /// Requires a scoped QCoreApplication or a GUI DApplication on its owning
+    /// thread. A headless scope invalidates this object on scope exit even if
+    /// its Rust owner or view escapes.
     pub fn create_generic(name: &str, subpath: &str) -> Option<Owned<Self>> {
-        require_application();
+        require_core_application();
         Self::from_created(unsafe { ffi::core_config_create_generic(name, subpath) })
     }
 
     /// Create an application-specific configuration with the given app ID.
     /// Native DCore transfers ownership even when `is_valid()` is false.
     pub fn create_for_app(app_id: &str, name: &str, subpath: &str) -> Option<Owned<Self>> {
-        require_application();
+        require_core_application();
         Self::from_created(unsafe { ffi::core_config_create(app_id, name, subpath) })
     }
 }

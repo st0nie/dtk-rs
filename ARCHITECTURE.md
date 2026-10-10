@@ -210,7 +210,8 @@ currently **pilot scope**: `DStandardPaths`, `DSysInfo`, `DConfig`,
 `GEN_CORE_REPORT.md` / `GEN_GUI_REPORT.md`). DStandardPaths and DSysInfo
 provide static functions usable without QApplication. DConfig has an audited
 `create`/`createGeneric` ownership transfer, exposed as hand-written
-`Option<Owned<DConfig>>` factories only after GUI DApplication creation; native
+`Option<Owned<DConfig>>` factories on either a scoped QCoreApplication or
+GUI DApplication's owning thread; native
 `setAppId` must instead be invoked before QCoreApplication. DGui classes return
 guarded QObject views and requires the application's GUI thread. New-domain
 core XDG/DSG and Qt StandardLocation/LocateOption plus GUI ColorType/SizeMode/
@@ -287,6 +288,33 @@ wraps them as `Painter` (draw_text/draw_pixmap/fill_rect/…) and `ModelIndex`
 
 ## Lifetime & memory
 
+### Scoped headless application
+
+`QCoreApplication::with` (hand-written `dtk/src/application.rs`) borrows a
+scope token from a private native `CoreRuntime` owner. The token has no
+constructor/Clone and cannot be captured by a `'static` callback. Native
+application deletion therefore occurs only after the outer user closure and
+any Qt `exec`/signal frames have returned, including Rust panic unwinding.
+All application constructors require Linux's process main thread; nested
+application creation and reentrant `exec` are rejected.
+
+`Owned::new` registers only verified constructor/transfer QObjects with the
+active headless runtime. It stores QPointers, **without assigning QObject
+parents** or assuming ownership of arbitrary pointer getters. On scope exit,
+`CoreRuntime` first rejects new constructors and guarded-object access, then
+deletes the registered objects and finally QCoreApplication's own children
+(including unfired one-shot timers). Headless guards share the scope's closing
+state; GUI guards have no scope state or extra runtime lookup per operation.
+Guards outliving the scope become dead;
+`Owned::drop` for those handles is a no-op. Cleanup requires no event-loop
+turn and also works if `exec` never ran. Each scope owns its writable argv.
+`DConfig`, `QTimer` and `QSocketNotifier` use QtCore thread checks;
+`GuiSender` can also target the borrowed Core token for headless worker messages.
+DWidget/DGui remain GUI-only.
+
+This does **not** retrofit RAII to `DApplication`: its current GUI lifetime,
+top-level widget cleanup and native reentrant method safety remain open.
+
 Three wrapper cases, deliberately different:
 
 1. **Widget/object constructors** (`DComboBox`, `DLabel`, layouts, …) return
@@ -300,7 +328,9 @@ Three wrapper cases, deliberately different:
    Qt **never adopted** the QObject; the guard tracks `ParentChange` events so
    an original constructor owner cannot delete an object after Qt parents it
    and an audited `take` method returns a new owner. Deletion requires an event
-   loop to run; `Drop` after loop shutdown does not deterministically free it.
+   loop to run in the GUI runtime; `Drop` after GUI loop shutdown does not
+   deterministically free it. A managed headless Core scope also deletes its
+   constructed objects at the outer scope boundary, without another loop turn.
    `QMainWindow::takeCentralWidget()` transfers ownership; local DTK6
    `DListView::takeHeaderWidget()` does **not**: it returns a still-parented
    widget scheduled for deletion by native code on the next event turn. Never
@@ -364,7 +394,7 @@ older manual fd pattern for other external event sources.
 1. locates Qt6 **moc** (`/usr/lib/qt6/libexec/moc` → fallbacks), runs it on
    `include/relay.h` (the only header with `Q_OBJECT`);
 2. `cxx_build::bridges` for the hand, Widget, DCore and DGui bridges;
-3. compiles `shim.cpp` + `relay.cpp` + the three generated shim .cpp files + moc output with
+3. compiles `shim.cpp` + `core_application.cpp` + `relay.cpp` + the three generated shim .cpp files + moc output with
    `-std=c++17 -fPIC` (Qt6 requires PIC);
 4. `pkg-config` probes `Qt6Widgets/Gui/Core` + `dtk6widget/gui/core` for
    include paths, defines, and link flags;
@@ -376,6 +406,8 @@ older manual fd pattern for other external event sources.
 |---|---|
 | `dtk-sys/src/lib.rs` (bridge #1, callback registry) | hand |
 | `dtk-sys/cpp/shim.cpp`, `include/dtk_shim.h` | hand |
+| `dtk-sys/cpp/core_application.cpp`, `include/core_application.h` | hand |
+| `dtk/src/application.rs` (scoped headless runtime) | hand |
 | `dtk-sys/cpp/relay.cpp`, `include/relay.h` | hand |
 | `dtk-sys/build.rs` | hand |
 | `dtk/src/lib.rs` (core classes, macros, signals, qt constants) | hand |
@@ -387,7 +419,7 @@ older manual fd pattern for other external event sources.
 Regenerate after DTK upgrades or when adding coverage:
 
 ```sh
-python3 tools/gen.py && cargo build
+uv run --no-project python tools/gen.py && cargo build
 ```
 
 Adding a new DTK method usually means extending the generator's type map and

@@ -28,6 +28,7 @@
 
 use dtk::widgets::DProgressBar;
 use dtk::*;
+use libc::{EFD_CLOEXEC, EFD_NONBLOCK, close, eventfd, read, write};
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 use std::sync::Arc;
@@ -89,7 +90,7 @@ fn main() {
                 // drain the eventfd counter first, or the level-triggered
                 // notifier refires forever
                 let mut n: u64 = 0;
-                while unsafe { read(fd, &mut n as *mut u64 as *mut u8, 8) } == 8 {}
+                while unsafe { read(fd, (&mut n as *mut u64).cast(), 8) } == 8 {}
                 // then drain every queued message (multiple sends per wakeup possible)
                 while let Ok(msg) = rx.try_recv() {
                     match msg {
@@ -220,16 +221,5 @@ fn main() {
 
 fn poke(fd: i32) {
     let one: u64 = 1;
-    unsafe { write(fd, &one as *const u64 as *const u8, 8) };
-}
-
-const EFD_NONBLOCK: i32 = 0o4000;
-const EFD_CLOEXEC: i32 = 0o2000000;
-
-// Demonstrate the raw Linux syscalls; the safe GuiSender uses libc internally.
-unsafe extern "C" {
-    fn eventfd(initval: u32, flags: i32) -> i32;
-    fn read(fd: i32, buf: *mut u8, n: usize) -> isize;
-    fn write(fd: i32, buf: *const u8, n: usize) -> isize;
-    fn close(fd: i32) -> i32;
+    unsafe { write(fd, (&one as *const u64).cast(), 8) };
 }

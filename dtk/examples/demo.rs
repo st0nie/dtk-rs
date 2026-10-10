@@ -94,7 +94,7 @@ fn main() {
 
         // self-pipe to test QSocketNotifier
         let mut fds = [0i32; 2];
-        assert_eq!(unsafe { libc_pipe(fds.as_mut_ptr()) }, 0);
+        assert_eq!(unsafe { libc::pipe(fds.as_mut_ptr()) }, 0);
         pipe_w = fds[1];
         let notifier = QSocketNotifier::new(fds[0], &win);
         {
@@ -102,7 +102,7 @@ fn main() {
             let fd_r = fds[0];
             notifier.on_activated(move || {
                 let mut buf = [0u8; 8];
-                unsafe { libc_read(fd_r, buf.as_mut_ptr(), 8) }; // drain, or level-trigger refires forever
+                unsafe { libc::read(fd_r, buf.as_mut_ptr().cast(), buf.len()) }; // drain, or level-trigger refires forever
                 notified.set(true);
                 println!("notified");
             });
@@ -116,7 +116,7 @@ fn main() {
     if smoke {
         QTimer::single_shot(100, move || btn.click());
         QTimer::single_shot(150, move || unsafe {
-            libc_write(pipe_w, b"x".as_ptr() as _, 1);
+            libc::write(pipe_w, b"x".as_ptr().cast(), 1);
         });
         QTimer::single_shot(500, move || {
             assert!(
@@ -131,20 +131,4 @@ fn main() {
     }
 
     std::process::exit(app.exec());
-}
-
-// no libc crate; declare the syscalls directly
-unsafe extern "C" {
-    fn pipe(fds: *mut i32) -> i32;
-    fn write(fd: i32, buf: *const u8, n: usize) -> isize;
-    fn read(fd: i32, buf: *mut u8, n: usize) -> isize;
-}
-unsafe fn libc_pipe(fds: *mut i32) -> i32 {
-    unsafe { pipe(fds) }
-}
-unsafe fn libc_write(fd: i32, buf: *const u8, n: usize) -> isize {
-    unsafe { write(fd, buf, n) }
-}
-unsafe fn libc_read(fd: i32, buf: *mut u8, n: usize) -> isize {
-    unsafe { read(fd, buf, n) }
 }

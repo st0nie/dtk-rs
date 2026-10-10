@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <memory>
 #include <rust/cxx.h>
+#include "core_application.h"
 
 #include <QObject>
 #include <QPointer>
@@ -122,6 +123,7 @@ struct QObjectGuard : QObject {
     explicit QObjectGuard(QObject *object);
     bool eventFilter(QObject *object, QEvent *event) override;
     QPointer<QObject> watched;
+    std::shared_ptr<const CoreRuntimeState> runtime_state;
     bool was_parented;
 };
 std::unique_ptr<QObjectGuard> guard_object(QObject *object);

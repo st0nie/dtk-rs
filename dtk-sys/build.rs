@@ -27,6 +27,7 @@ fn main() {
     ]);
     build
         .file("cpp/shim.cpp")
+        .file("cpp/core_application.cpp")
         .file("cpp/relay.cpp")
         .file("cpp/dtk_gen_shim.cpp")
         .file("cpp/dtk_core_shim.cpp")
@@ -62,6 +63,8 @@ fn main() {
     println!("cargo:rerun-if-changed=src/lib.rs");
     println!("cargo:rerun-if-changed=src/gen_ffi.rs");
     println!("cargo:rerun-if-changed=cpp/shim.cpp");
+    println!("cargo:rerun-if-changed=cpp/core_application.cpp");
+    println!("cargo:rerun-if-changed=include/core_application.h");
     println!("cargo:rerun-if-changed=cpp/relay.cpp");
     println!("cargo:rerun-if-changed=cpp/dtk_gen_shim.cpp");
     println!("cargo:rerun-if-changed=include/dtk_shim.h");

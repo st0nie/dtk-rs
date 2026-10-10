@@ -23,8 +23,15 @@ Known gaps in dtk-rs, roughly in priority order.
       owner relinquishes deletion permanently after `ParentChange`;
       `ownership_transfer_selfcheck` verifies ownership returned by
       `QMainWindow::takeCentralWidget` survives dropping the old owner.
-- [ ] Finish the remaining lifetime/FFI audit: `DApplication` is not RAII;
-      `deleteLater()` cannot guarantee deletion after the event loop stops,
+- [x] Scoped headless QCoreApplication runtime: `with` lends a token that cannot
+      enter static callbacks or escape the scope (compile-fail doc tests).
+      Scope cleanup releases pending timers/callbacks, destroys registered
+      constructor-owned DConfig objects without reparenting, and invalidates
+      escaped guards. Tests cover panic/no-exec, repeated/nested scopes,
+      wrong-thread/teardown reentry and headless worker-message delivery
+      (`core_application_selfcheck`). GUI DApplication RAII is still incomplete.
+- [ ] Finish the remaining lifetime/FFI audit: GUI `DApplication` is not RAII;
+      `deleteLater()` cannot guarantee deletion after the GUI event loop stops,
       non-QObject borrowed returns have no liveness guard, and native Qt calls
       may reentrantly delete objects *after* a guard check. A public method
       must not become sound solely because QPointer was checked earlier.
@@ -141,7 +148,7 @@ Known gaps in dtk-rs, roughly in priority order.
       shims and scoped coverage reports: `DStandardPaths` (13 methods) and
       `DSysInfo` (28 methods) work without QApplication. DConfig has 11 mapped
       methods; its manually audited, caller-owned create/createGeneric factories
-      currently require a GUI app. `setAppId` is unsafe and must precede any
+      run on either scoped QCoreApplication or GUI DApplication's owning thread. `setAppId` is unsafe and must precede any
       QCoreApplication. `DGuiApplicationHelper` (30 mapped methods),
       `DImageHandler` (37) and
       `DFontManager` (20) are guarded and require the GUI app thread
@@ -160,10 +167,10 @@ Known gaps in dtk-rs, roughly in priority order.
       to preserve the C++ non-const reference requirement.
 - [ ] Expand DCore bindings beyond `DStandardPaths`/`DSysInfo`/`DConfig`
       (`/usr/include/dtk6/DCore`): DSettings, DLog, file watchers etc.
-      DConfig currently has no safe QCoreApplication-only constructor: owned
-      QObject factories require GUI DApplication. Complete a scoped QtCore
-      lifecycle before removing this restriction. `DConfig::globalThread()`
-      is a native-owned borrowed QThread that must never be deleted by Rust.
+      DConfig, QTimer and QSocketNotifier support scoped, headless QCoreApplication; other
+      QtCore QObject classes still need individual lifecycle/thread audits.
+      `DConfig::globalThread()` is a native-owned borrowed QThread that must
+      never be deleted by Rust.
 
 ## Hygiene
 

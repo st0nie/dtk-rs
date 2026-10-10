@@ -1,5 +1,6 @@
-//! Typed worker-to-GUI delivery. Qt objects remain on the GUI thread; workers
-//! send only `Send` values. Linux eventfd is an implementation detail, not an
+//! Typed worker-to-Qt delivery. Qt objects remain on their owning thread;
+//! workers send only `Send` values. Supports both the GUI application and a
+//! scoped headless `QCoreApplication` owner. Linux eventfd is an implementation detail, not an
 //! application-level fd or a polling timer.
 use crate::{QSocketNotifier, Signal0};
 use std::io;
@@ -98,7 +99,8 @@ impl<T: Send + 'static> Clone for GuiSender<T> {
 
 impl<T: Send + 'static> GuiSender<T> {
     /// Create on the Qt object's thread. `on_message` runs there, never on a worker.
-    /// The notifier and receiver live until `owner` is destroyed.
+    /// The notifier and receiver live until `owner` is destroyed. A scoped
+    /// `QCoreApplication` may be the owner for headless service delivery.
     pub fn new(owner: &impl Signal0, mut on_message: impl FnMut(T) + 'static) -> io::Result<Self> {
         let fd = unsafe { libc::eventfd(0, libc::EFD_NONBLOCK | libc::EFD_CLOEXEC) };
         if fd < 0 {

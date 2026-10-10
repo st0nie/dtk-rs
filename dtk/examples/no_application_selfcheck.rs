@@ -4,7 +4,8 @@ use dtk::core::DConfig;
 use dtk::gui::{DFontManager, DImageHandler};
 use dtk::widgets::{DListView, DMessageManager};
 use dtk::{
-    Clipboard, DApplication, QPixmap, QTableWidget, QTimer, QVariant, QVariantList, QWidget,
+    Clipboard, DApplication, QCoreApplication, QPixmap, QTableWidget, QTimer, QVariant,
+    QVariantList, QWidget,
 };
 #[path = "support/expected_panic.rs"]
 mod expected_panic;
@@ -19,7 +20,7 @@ fn main() {
     expect_panic("create DApplication", DListView::new);
     expect_panic("create DApplication", DImageHandler::new);
     expect_panic("create DApplication", DFontManager::new);
-    expect_panic("create DApplication", || {
+    expect_panic("create QCoreApplication", || {
         DConfig::create_generic("missing", "")
     });
     expect_panic("create DApplication", DMessageManager::instance);
@@ -28,7 +29,7 @@ fn main() {
     expect_panic("create DApplication", || QPixmap::new(""));
     let capture = Rc::new(());
     let weak = Rc::downgrade(&capture);
-    expect_panic("create DApplication", || {
+    expect_panic("create QCoreApplication", || {
         QTimer::single_shot(0, move || {
             let _ = &capture;
         })
@@ -38,7 +39,12 @@ fn main() {
         "rejected timer must drop its callback"
     );
 
+    // A finished headless scope releases Qt's singleton before GUI startup.
+    QCoreApplication::with("headless-before-gui", |_| {});
     let app = DApplication::new("dtk-no-application-selfcheck");
+    expect_panic("only one Qt application", || {
+        QCoreApplication::with("nested-core", |_| {})
+    });
     DApplication::set_quit_on_last_window_closed(false);
     let widget = QWidget::new(None);
     assert!(widget.is_alive());
@@ -49,8 +55,10 @@ fn main() {
         expect_panic("GUI thread", DListView::new);
         expect_panic("GUI thread", DImageHandler::new);
         expect_panic("GUI thread", DFontManager::new);
-        expect_panic("GUI thread", || DConfig::create_generic("missing", ""));
-        expect_panic("GUI thread", || QTimer::single_shot(0, || {}));
+        expect_panic("owning Qt thread", || {
+            DConfig::create_generic("missing", "")
+        });
+        expect_panic("owning Qt thread", || QTimer::single_shot(0, || {}));
     })
     .join()
     .unwrap();

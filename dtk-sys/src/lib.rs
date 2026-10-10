@@ -9,7 +9,7 @@ pub mod gen_ffi;
 pub mod gui_ffi;
 
 // All raw FFI functions share one safety contract: pointers must be live Qt/DTK
-// objects with the stated dynamic type, accessed on their owning GUI thread.
+// objects with the stated dynamic type, accessed on their owning Qt thread.
 // The painter callback is an ABI boundary with fixed fields, not a Rust API.
 #[allow(clippy::missing_safety_doc, clippy::too_many_arguments)]
 #[cxx::bridge(namespace = "dtkrs")]
@@ -20,7 +20,7 @@ pub mod ffi {
         type QObject;
         type QWidget;
         type QObjectGuard;
-        /// Construct a Qt guarded pointer from a *live*, GUI-thread QObject.
+        /// Construct a Qt guarded pointer from a *live*, owning-thread QObject.
         unsafe fn guard_object(object: *mut QObject) -> UniquePtr<QObjectGuard>;
         /// Same for QWidget; C++ performs the correct base-class pointer adjustment.
         unsafe fn guard_widget(widget: *mut QWidget) -> UniquePtr<QObjectGuard>;
@@ -71,6 +71,20 @@ pub mod ffi {
         type QMessageBox;
         type QMenu;
         type QAction;
+
+        // Scoped QCoreApplication (owner never exposed to 'static callbacks)
+        type CoreRuntime;
+        unsafe fn core_runtime_new(
+            name: &str,
+            argv: Vec<u8>,
+            lengths: Vec<usize>,
+        ) -> UniquePtr<CoreRuntime>;
+        unsafe fn core_runtime_application(runtime: &CoreRuntime) -> *mut QObject;
+        unsafe fn core_runtime_can_exec(runtime: &CoreRuntime) -> bool;
+        unsafe fn core_runtime_exec(runtime: *mut CoreRuntime) -> i32;
+        unsafe fn core_runtime_track_object(object: *mut QObject);
+        unsafe fn application_is_main_thread() -> bool;
+        unsafe fn application_is_core() -> bool;
 
         // DApplication
         // Raw argv bytes + lengths (incl. argv[0]); Qt stores writable char* entries.
@@ -565,7 +579,7 @@ pub struct ObjectGuard {
 
 impl ObjectGuard {
     /// # Safety
-    /// `object` must be a live QObject on the current GUI thread. Its
+    /// `object` must be a live QObject on its owning Qt thread. Its
     /// `QPointer` is invalidated by Qt before emitting `destroyed(QObject*)`.
     pub unsafe fn from_object(object: *mut ffi::QObject) -> Self {
         assert!(!object.is_null());
@@ -672,7 +686,7 @@ thread_local! {
     // so unregistering an unknown/already-fired id cannot grow an unbounded tombstone set.
     static IN_FLIGHT: RefCell<HashMap<usize, bool>> = RefCell::new(HashMap::new());
     // Only these ids have a C++ DtkRelay to disconnect. Thread-local so a
-    // foreign-thread unregister never touches Qt's GUI-thread-only QHash.
+    // foreign-thread unregister never touches Qt's owning-thread-only QHash.
     static RELAY_IDS: RefCell<HashSet<usize>> = RefCell::new(HashSet::new());
 }
 
@@ -680,7 +694,7 @@ thread_local! {
 ///
 /// # Safety
 /// The relay must have been created for `id` on the current Qt object's
-/// thread by `ffi::relay_connect*`. Do not call from a worker thread.
+/// application thread by `ffi::relay_connect*`. Do not call from a worker.
 pub unsafe fn register_qt_relay(id: usize) {
     if CALLBACKS.with(|c| c.borrow().contains_key(&id))
         || IN_FLIGHT.with(|active| active.borrow().contains_key(&id))
@@ -779,8 +793,8 @@ fn dtk_cb_dispose(id: usize) {
 }
 
 /// Remove a callback and disconnect its Qt-side relay. Returns false for an
-/// unknown, disposed or foreign-thread id. A worker call with a GUI-owned id
-/// does not touch Qt; disconnect that callback on its owning GUI thread.
+/// unknown, disposed or foreign-thread id. A worker call with a Qt-owned id
+/// does not touch Qt; disconnect that callback on its owning app thread.
 /// Safe to call from inside the callback itself.
 pub fn unregister_cb(id: usize) -> bool {
     let removed = remove_callback(id);

@@ -46,7 +46,8 @@ public:
 namespace dtkrs {
 
 QObjectGuard::QObjectGuard(QObject *object)
-    : watched(object), was_parented(object->parent() != nullptr) {
+    : watched(object), runtime_state(core_runtime_guard_state()),
+      was_parented(object->parent() != nullptr) {
     object->installEventFilter(this);
 }
 bool QObjectGuard::eventFilter(QObject *object, QEvent *event) {
@@ -61,7 +62,9 @@ std::unique_ptr<QObjectGuard> guard_object(QObject *object) {
 std::unique_ptr<QObjectGuard> guard_widget(QWidget *widget) {
     return guard_object(widget); // C++ adjusts QWidget* to its QObject base
 }
-bool guard_alive(const QObjectGuard &guard) { return !guard.watched.isNull(); }
+bool guard_alive(const QObjectGuard &guard) {
+    return (!guard.runtime_state || !guard.runtime_state->closing) && !guard.watched.isNull();
+}
 bool guard_was_parented(const QObjectGuard &guard) { return guard.was_parented; }
 
 // Release a Rust closure as soon as the QObject that can invoke it is destroyed.
@@ -330,8 +333,8 @@ static std::pair<int &, char **> make_argv(rust::Str name, rust::Vec<uint8_t> by
 
 DApplication *application_new(rust::Str name, rust::Vec<uint8_t> bytes,
                               rust::Vec<size_t> lengths) {
-    if (QCoreApplication::instance())
-        return nullptr; // Qt permits only one QApplication per process at a time
+    if (!application_can_construct())
+        return nullptr; // Main thread, singleton, and not inside Core teardown
     auto [argc, argv] = make_argv(name, std::move(bytes), std::move(lengths));
     auto *app = new DApplication(argc, argv);
     app->setApplicationName(from_rust_str(name));
@@ -339,15 +342,16 @@ DApplication *application_new(rust::Str name, rust::Vec<uint8_t> bytes,
 }
 
 bool application_is_gui() {
-    auto *app = qobject_cast<QApplication *>(QCoreApplication::instance());
-    return app && QThread::currentThread() == app->thread();
+    // application_is_core rejects workers before they can race native teardown.
+    return application_is_core()
+        && qobject_cast<QApplication *>(QCoreApplication::instance()) != nullptr;
 }
 int32_t application_exec(DApplication *app) { return app->exec(); }
 void application_quit() { QCoreApplication::quit(); }
 
 DApplication *application_new_ex(rust::Str name, rust::Vec<uint8_t> bytes,
                                  rust::Vec<size_t> lengths, size_t quit_guard_id) {
-    if (QCoreApplication::instance())
+    if (!application_can_construct())
         return nullptr;
     auto [argc, argv] = make_argv(name, std::move(bytes), std::move(lengths));
     auto *app = new DtkAppEx(argc, argv, quit_guard_id);

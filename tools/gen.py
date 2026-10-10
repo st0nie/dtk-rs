@@ -550,9 +550,8 @@ def main():
         if f.endswith(".h") and not f.endswith("_p.h") and f != "dwidgetstype.h"
     )
     emit(collect_models(widget_headers, HAND_BOUND))
-    # First DCore module is deliberately limited to a static QtCore utility:
-    # QObject construction there needs a QCoreApplication/thread-affinity model,
-    # not the Widgets-only require_application() of the existing wrappers.
+    # DCore QObject wrappers require the owning QCoreApplication thread;
+    # they do not inherit the Widget/DGui QApplication requirement.
     core_headers = [
         "/usr/include/dtk6/DCore/dstandardpaths.h",
         "/usr/include/dtk6/DCore/dsysinfo.h",
@@ -753,6 +752,9 @@ def emit(classes, domain="widget"):
         name, sname = c["name"], snake(c["name"])
         owns_opaque = c["kind"] == "opaque" and c["ctor_new"]
         mac = {"widget": "widget_wrapper", "object": "object_wrapper", "opaque": "opaque_wrapper"}[c["kind"]]
+        if domain == "core" and c["kind"] == "object":
+            mac = "core_object_wrapper"
+        runtime_check = "require_core_application" if domain == "core" else "require_application"
         casts = (f", genffi::gen_{sname}_as_qobject" if c["kind"] in ("widget", "object") else "")
         if c["kind"] == "widget":
             casts += f", genffi::gen_{sname}_as_widget"
@@ -763,7 +765,7 @@ def emit(classes, domain="widget"):
                            f"        OwnedOpaque::from_owned(Self::from_raw(ptr), "
                            f"|value| unsafe {{ genffi::gen_{sname}_delete(value.ptr) }})\n    }}\n")
         elif c["ctor_new"]:
-            wrapper.append(f"    pub fn new() -> Owned<Self> {{\n        crate::require_application();\n        "
+            wrapper.append(f"    pub fn new() -> Owned<Self> {{\n        crate::{runtime_check}();\n        "
                            f"Owned::new(Self::from_raw(unsafe {{ genffi::gen_{sname}_new() }}))\n    }}\n")
         used = {}
         # widget_wrapper macro already provides these; skip to avoid duplicate definitions
@@ -841,7 +843,7 @@ def emit(classes, domain="widget"):
             # Native DConfig::setAppId MUST run before QCoreApplication exists.
             # Requiring an existing GUI app here would invert that contract.
             pre_app_call = domain == "core" and name == "DConfig" and meth == "setAppId"
-            precheck = ("        crate::require_application();\n"
+            precheck = (f"        crate::{runtime_check}();\n"
                         if is_static and c["kind"] in ("widget", "object") and not pre_app_call
                         else "")
             # A non-QObject pointer has no QPointer guard or Rust lifetime.

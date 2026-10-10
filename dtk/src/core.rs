@@ -316,7 +316,7 @@ impl DSysInfo {
     }
 }
 
-object_wrapper!(DConfig, genffi::DConfig, genffi::gen_d_config_as_qobject);
+core_object_wrapper!(DConfig, genffi::DConfig, genffi::gen_d_config_as_qobject);
 impl DConfig {
     /// # Safety
     /// Must run before any QCoreApplication is created, without a
