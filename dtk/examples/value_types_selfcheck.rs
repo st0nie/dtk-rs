@@ -18,30 +18,31 @@ fn main() {
     let shortcut = QKeySequence::from_portable_text("Ctrl+Shift+K");
     assert_eq!(shortcut.to_string(), "Ctrl+Shift+K");
 
-    let app = DApplication::new("dtk-value-types-selfcheck");
-    DApplication::set_quit_on_last_window_closed(false);
-    let format = DCrumbTextFormat::new();
-    format.set_background(&brush);
-    let effect = DGraphicsClipEffect::new();
-    effect.set_clip_path(&path);
-    let file_edit = DFileChooserEdit::new();
-    file_edit.set_directory_url(&url);
-    let key_edit = DKeySequenceEdit::new();
-    assert!(key_edit.set_key_sequence(&shortcut));
-    drop((color, brush, path, url, shortcut));
+    DApplication::with("dtk-value-types-selfcheck", |app| {
+        DApplication::set_quit_on_last_window_closed(false);
+        let format = DCrumbTextFormat::new();
+        format.set_background(&brush);
+        let effect = DGraphicsClipEffect::new();
+        effect.set_clip_path(&path);
+        let file_edit = DFileChooserEdit::new();
+        file_edit.set_directory_url(&url);
+        let key_edit = DKeySequenceEdit::new();
+        assert!(key_edit.set_key_sequence(&shortcut));
+        drop((color, brush, path, url, shortcut));
 
-    assert_eq!(
-        format.background().color().rgba_u32(),
-        QColor::rgb(30, 80, 150).rgba_u32()
-    );
-    assert!(!effect.clip_path().is_empty());
-    assert_eq!(file_edit.directory_url().to_string(), "file:///tmp");
-    assert_eq!(key_edit.key_sequence().to_string(), "Ctrl+Shift+K");
+        assert_eq!(
+            format.background().color().rgba_u32(),
+            QColor::rgb(30, 80, 150).rgba_u32()
+        );
+        assert!(!effect.clip_path().is_empty());
+        assert_eq!(file_edit.directory_url().to_string(), "file:///tmp");
+        assert_eq!(key_edit.key_sequence().to_string(), "Ctrl+Shift+K");
 
-    effect.delete_later();
-    file_edit.delete_later();
-    key_edit.delete_later();
-    QTimer::single_shot(10, DApplication::quit);
-    assert_eq!(app.exec(), 0);
-    println!("value types selfcheck ok");
+        effect.delete_later();
+        file_edit.delete_later();
+        key_edit.delete_later();
+        QTimer::single_shot(10, DApplication::quit);
+        assert_eq!(app.exec(), 0);
+        println!("value types selfcheck ok");
+    });
 }

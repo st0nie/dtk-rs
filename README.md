@@ -38,16 +38,65 @@ cargo add dtk --git https://github.com/st0nie/dtk-rs.git
 ```rust
 use dtk::*;
 
-let app = DApplication::new("my-app");
-let win = DMainWindow::new();
-win.titlebar().set_title("Hello");
-let btn = DSuggestButton::new("Click me");
-btn.on_clicked(|| println!("clicked"));
-btn.show();
-win.resize(400, 300);
-win.show();
-std::process::exit(app.exec());
+let code = DApplication::with("my-app", |app| {
+    let win = DMainWindow::new();
+    win.titlebar().set_title("Hello");
+    let btn = DSuggestButton::new("Click me");
+    btn.on_clicked(|| println!("clicked"));
+    btn.show();
+    win.resize(400, 300);
+    win.show();
+    app.exec()
+}); // windows, pending timers, connections and callbacks are cleaned up here
+std::process::exit(code);
 ```
+
+### Scoped GUI lifetime
+
+`DApplication::with(name, |app| ...)` replaces the old owning-looking `new` API.
+The borrowed token cannot escape, be cloned into an owner, or enter a `'static`
+callback. `DApplication::with_quit_guard(name, guard, |app| ...)` replaces
+`new_with_quit_guard`; a false guard still vetoes Qt's quit event. Use static
+`DApplication::quit` from callbacks, not an owning application handle.
+
+Scope exit (normal return, no `exec`, or panic unwinding) first blocks
+application-dependent object access/construction, nested application scopes,
+and callback registration/dispatch, then joins DTK's native configuration
+worker and synchronously deletes GUI top-level windows, constructed QObjects
+and application children. It frees pending timers,
+connections and Rust captures without another event-loop turn. `exec()` exit
+alone leaves the scope live. Returned widget/object views and owners become
+invalid at the outer boundary; later access panics, and their `Drop` is a no-op.
+Borrowed DTK singletons are **not** assumed to be ours to delete: even those
+that native code keeps alive lose their old guards and binding-owned relays.
+Non-QObject singleton borrows (e.g. `DFontSizeManager`, `DFileIconProvider`)
+also expire at the scope boundary; their unsafe native-lifetime contracts
+within an open scope are unchanged. Independent owned opaque values/copies
+remain owned by Rust and are not confused with application-owned QObjects.
+Independent hand-written Qt values (`QVariant`, `QColor`, `QFont`, `QImage`, …)
+may still be constructed/accessed during capture cleanup: they do not reenter
+an application or register callbacks. Generated opaque methods/constructors
+conservatively reject closing-scope access.
+A later scope creates fresh guards and cannot revive an earlier handle.
+
+Only one GUI or headless application can exist at a time, on Linux's process
+main thread. Scopes may be created again sequentially. DTK's native-owned
+configuration QThread finishes accepted work through a FIFO worker-affinity
+stop marker, then is joined before application deletion (Qt6 requires its
+event/notify frames to return). Direct quit must not strand accepted config
+updates. The native singleton is not deleted; it restarts only
+after the next GUI/Core application is fully constructed. During a repeated
+native DTK constructor you may see `Warning: The provided thread is not
+running.`: its generated configuration builder only queues initialization;
+the worker is intentionally paused until the application is fully ready, then
+runs the queued work. It is not restarted while the app pointer/vtable is being
+constructed. Native QObject parents
+and adoption/ownership-transfer history are preserved. Cleanup disables user
+close/quit/event callbacks rather than allowing a close veto to leak windows.
+Callback panics are caught at the FFI boundary; ordinary scope panics propagate
+**after** native cleanup. As with Rust RAII generally, `process::exit`, abort
+and forced termination bypass destructors: call `exit` only **after** `with`
+returns. User-created `Rc` cycles are not broken automatically.
 
 Any signal can be connected (runtime connect by name):
 
@@ -88,9 +137,9 @@ unfired timers, and releases the application's singleton. Escaping guarded
 handles become invalid; owned values such as `QVariant` remain usable. This
 cleanup also works if `exec()` never ran or already returned. Native QObject
 parents are unchanged—scope cleanup uses a registry of **constructor owners**,
-not borrowed getters. GUI types still require `DApplication`; its legacy
-shutdown/RAII gaps are **not** fixed by this headless API. Qt/DTK dev packages
-are still needed for linking, even though no GUI runtime is created here.
+not borrowed getters. GUI types still require `DApplication::with`; both
+application types share one native scoped runtime and shutdown protocol.
+Qt/DTK dev packages are still needed for linking, even in headless services.
 
 ## Examples
 
@@ -119,8 +168,18 @@ All examples live in [`dtk/examples/`](dtk/examples/) and build with `cargo buil
 | [`gui_font_selfcheck.rs`](dtk/examples/gui_font_selfcheck.rs) | DFontManager's typed size table, native base-font offset and guarded lifetime | `QT_QPA_PLATFORM=offscreen cargo run --example gui_font_selfcheck` |
 | [`config_selfcheck.rs`](dtk/examples/config_selfcheck.rs) | DConfig factory ownership, QVariant fallback and deferred deletion | `QT_QPA_PLATFORM=offscreen cargo run --example config_selfcheck` |
 | [`core_application_selfcheck.rs`](dtk/examples/core_application_selfcheck.rs) | Headless scope, pending callback cleanup, panic/reentry, invalidated handles and repeated application scopes | `env -u DISPLAY -u WAYLAND_DISPLAY -u QT_QPA_PLATFORM cargo run --example core_application_selfcheck` |
+| [`gui_application_selfcheck.rs`](dtk/examples/gui_application_selfcheck.rs) | GUI scope cleanup, native deletion witnesses, singleton invalidation, callback/reentry safety, no-exec/panic, repeated scopes and latched DConfig queue completion | `QT_QPA_PLATFORM=offscreen cargo run --example gui_application_selfcheck` |
 
-Headless smoke tests (CI-friendly, no display needed):
+Full local validation (generator reproducibility/tests, fmt/clippy/check,
+workspace tests including compile-fail doctests, and **every** example in
+Debug and Release, plus 32 fresh-process native shutdown stress runs in each
+profile; GUI uses offscreen, QtCore runs without display variables):
+
+```sh
+bash tools/check.sh
+```
+
+Individual smoke tests (CI-friendly, no display needed):
 
 ```sh
 QT_QPA_PLATFORM=offscreen ./target/debug/examples/demo --smoke
@@ -158,11 +217,11 @@ The owner owns the Qt notifier and Rust callback; dropping the owner disconnects
 
 Deep dive (layers, full binding walkthrough, signal mechanism, lifetime rules): [ARCHITECTURE.md](ARCHITECTURE.md).
 
-- **Application**: create one application on the **process main thread**. QWidget/DGui/clipboard/pixmap/themed-icon APIs need `DApplication`; DConfig, QTimer and QSocketNotifier need either it or scoped `QCoreApplication::with`. Entry points reject missing runtimes, wrong threads and headless-scope teardown reentry before accessing native objects. QtCore-only values (`QVariant`, `QVariantList`) can be made before it. Trying to create a second application fails before Qt's singleton constructor and cleans up the pending Rust callback. Arguments pass as raw Linux argv bytes rather than lossy delimiter-joined strings.
-- **Lifetime — three wrapper cases.** QObject/widget constructors return `Owned<T>`; their dereferenced `T` is a non-owning `Clone` view guarded by `QPointer` (`!Send`, GUI thread). Drop of an owner *never adopted by Qt* queues `deleteLater()`; after the first Qt parent change its original owner permanently relinquishes deletion, even if an audited `take` method later produces a **new** owner. In the legacy GUI runtime this requires an event loop to execute deferred deletion; dropping after shutdown is not deterministic cleanup. A headless `QCoreApplication::with` scope additionally destroys all registered constructor-owned QtCore objects at scope end, invalidating escaped views even after `exec()` stopped. Pointer getters remain borrowed `Option<T>`, not owned based on method names—this version of DTK schedules deletion after `DListView::take_header_widget`. Non-QObject constructors such as `DPrinter::new()` return `OwnedOpaque<DPrinter>` with a generated C++ deleter. Generated non-QObject pointer getters require `unsafe` because their native allocation lifetime and ownership (borrowed versus transferred) have not been verified; their views are not `Copy`/`Clone`. Value types (`QColor`, `QImage`, `QBrush`, `QPainterPath`, `QKeySequence`, `QUrl`, `DPalette`, …) own copies freed in `Drop`; `WaterMarkData` returned by DTK is copy-constructed into `OwnedOpaque<WaterMarkData>`. Native reentrant destruction and opaque borrows still need auditing; this is **not yet a fully memory-safe binding**.
+- **Application**: create one application on the **process main thread**. QWidget/DGui/clipboard/pixmap/themed-icon APIs need `DApplication`; DConfig, QTimer and QSocketNotifier need either it or scoped `QCoreApplication::with`. Entry points reject missing runtimes, wrong threads and application-scope teardown reentry before accessing native objects. QtCore-only values (`QVariant`, `QVariantList`) can be made before it. Trying to create a second application fails before Qt's singleton constructor and cleans up the pending Rust callback. Arguments pass as raw Linux argv bytes rather than lossy delimiter-joined strings.
+- **Lifetime — three wrapper cases.** QObject/widget constructors return `Owned<T>`; their dereferenced `T` is a non-owning `Clone` view guarded by `QPointer` (`!Send`, GUI thread). Drop of an owner *never adopted by Qt* queues `deleteLater()`; after the first Qt parent change its original owner permanently relinquishes deletion, even if an audited `take` method later produces a **new** owner. During a live scope deferred deletion requires a running event loop. Both `DApplication::with` and `QCoreApplication::with` additionally destroy registered constructor/transfer-owned objects at scope end, even if the loop never ran or already stopped; escaped guards (including native-surviving DTK singleton views) remain dead. Pointer getters remain borrowed `Option<T>`, not owned based on method names—this version of DTK schedules deletion after `DListView::take_header_widget`. Non-QObject constructors such as `DPrinter::new()` return `OwnedOpaque<DPrinter>` with a generated C++ deleter. Generated non-QObject pointer getters require `unsafe` because their native lifetime and ownership (borrowed versus transferred) within a live scope have not been verified; an application guard additionally prevents access after scope exit, and their views are not `Copy`/`Clone`. `DPrinter::new` requires the GUI runtime, as native QPrinter does; independent opaque values retain no-app construction but reject shutdown reentry. Value types (`QColor`, `QImage`, `QBrush`, `QPainterPath`, `QKeySequence`, `QUrl`, `DPalette`, …) own copies freed in `Drop`; `WaterMarkData` returned by DTK is copy-constructed into `OwnedOpaque<WaterMarkData>`. Native reentrant destruction and opaque borrows still need auditing; this is **not yet a fully memory-safe binding**.
 - **Callbacks are `'static`** — share widgets/state into them with `Rc`/`RefCell`/`Cell` (never `Arc<Mutex>`: everything runs on one thread anyway).
 - **Signals**: `DtkRelay` (Q_OBJECT + SLOT) string-connects any signal -> Rust callback id -> closure in a thread_local registry. Qt-object destruction releases its Rust callbacks; `dtk::unregister_callback(id)` disconnects early. `QTimer::single_shot` runs a `FnOnce` and cleans up even on panic or Qt cancellation.
-- **Event overrides**: `DtkAppEx` (QEvent::Quit guard) / `DtkMainWindowEx` (showEvent/closeEvent) shim subclasses -> Rust callbacks. Entry points: `DApplication::new_with_quit_guard`, `DMainWindow::new_with_events`.
+- **Event overrides**: `ScopedDApplication` (QEvent::Quit guard) / `DtkMainWindowEx` (showEvent/closeEvent) shim subclasses -> Rust callbacks. Entry points: `DApplication::with_quit_guard`, `DMainWindow::new_with_events`.
 - **Custom painting**: `PaintDelegate` (QStyledItemDelegate subclass) forwards paint to Rust, with `Painter` primitives + `ModelIndex::data_*`. `PaintWidgetEvent::Paint` only borrows a `Painter` within its callback; storing it afterward is a compile error.
 - **Type mapping**: QString<->&str/String, numbers direct, enums/QFlags->i32 (`dtk::qt` constants module); QColor/QImage/QBrush/QPainterPath/QKeySequence/QUrl/DPalette/QFont/QPalette/QPixmap/QSize/QPoint/QRect/QVariant/QVariantList values -> owning wrappers, QWidget* and DTK class pointers <-> guarded views. QImage is usable before QApplication; QPixmap is not.
 - **Qt ownership**: `QTimer::new(&owner)`, `QSocketNotifier::new(fd, &owner)` and `PaintDelegate::new(&owner, f)` require a QObject parent; the returned `Owned<T>` can be cloned as a non-owning view for callbacks. `DMainWindow::take_central_widget()` has verified ownership transfer and returns `Option<Owned<QWidget>>`, whereas generated `take_*` getters do **not** assume transfer. See [`ownership_transfer_selfcheck.rs`](dtk/examples/ownership_transfer_selfcheck.rs) for the native difference and [`lifetime_selfcheck.rs`](dtk/examples/lifetime_selfcheck.rs) for callback cleanup.

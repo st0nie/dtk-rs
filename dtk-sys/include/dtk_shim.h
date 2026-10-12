@@ -7,7 +7,7 @@
 #include <cstdint>
 #include <memory>
 #include <rust/cxx.h>
-#include "core_application.h"
+#include "application_runtime.h"
 
 #include <QObject>
 #include <QPointer>
@@ -123,12 +123,17 @@ struct QObjectGuard : QObject {
     explicit QObjectGuard(QObject *object);
     bool eventFilter(QObject *object, QEvent *event) override;
     QPointer<QObject> watched;
-    std::shared_ptr<const CoreRuntimeState> runtime_state;
+    std::shared_ptr<const ApplicationRuntimeState> runtime_state;
     bool was_parented;
 };
 std::unique_ptr<QObjectGuard> guard_object(QObject *object);
 std::unique_ptr<QObjectGuard> guard_widget(QWidget *widget);
+// Scope sentinel for borrowed non-QObject views, NOT their native liveness.
+std::unique_ptr<QObjectGuard> guard_current_application();
 bool guard_alive(const QObjectGuard &guard);
+// Diagnostic only: physical native liveness ignores scope invalidation and is
+// NOT permission to access a QObject. Used for independent deletion witnesses.
+bool guard_native_alive(const QObjectGuard &guard);
 bool guard_was_parented(const QObjectGuard &guard);
 
 // ---- QAction / QMenu (DMenu = QMenu typedef in DTK6) ----
@@ -155,12 +160,8 @@ QStringList to_qstringlist(rust::Vec<rust::String> v);
 rust::Vec<rust::String> to_rust_string_pairs(const QHash<QString, QString> &map);
 
 // ---- DApplication ----
-// Raw argv bytes + entry lengths (including argv[0]); make_argv owns the writable strings.
-DApplication *application_new(rust::Str name, rust::Vec<uint8_t> argv, rust::Vec<size_t> lengths);
-DApplication *application_new_ex(rust::Str name, rust::Vec<uint8_t> argv,
-                                 rust::Vec<size_t> lengths, size_t quit_guard_id); // guard returning false swallows the Quit event
-bool application_is_gui();
-int32_t application_exec(DApplication *app);
+// The native owner lives only in the outer Rust application scope.
+DApplication *application_runtime_gui_application(const ApplicationRuntime &runtime);
 void application_quit();
 void application_set_quit_on_last_window_closed(bool quit);
 void application_set_application_display_name(rust::Str name);
@@ -492,6 +493,7 @@ bool relay_connect_bool(QObject *sender, rust::Str signal, size_t cb_id);
 bool relay_connect_i32_i32(QObject *sender, rust::Str signal, size_t cb_id);
 // disconnect + deleteLater the relay for cb_id (no-op if unknown)
 void relay_disconnect(size_t cb_id);
+size_t relay_live_count(); // diagnostic: includes disconnected deferred relays
 
 void widget_set_cursor(QWidget *w, int32_t shape);
 void widget_unset_cursor(QWidget *w);

@@ -15,35 +15,36 @@ fn main() {
     assert_eq!(pixels.pixel_color(1, 2).rgba_u32(), color.rgba_u32());
     assert!(QImage::from_file("/this/file/does/not/exist.png").is_null());
 
-    let app = DApplication::new("dtk-image-selfcheck");
-    DApplication::set_quit_on_last_window_closed(false);
-    let viewer = DImageViewer::new();
-    let watermark = DWaterMarkWidget::new();
-    viewer.set_image(&pixels);
-    let watermark_data = WaterMarkData::new();
-    watermark_data.set_image(&pixels);
-    watermark.set_data(&watermark_data);
-    let helper = DWaterMarkHelper::instance().expect("DTK watermark helper exists");
-    helper.set_data(&watermark_data);
-    drop(watermark_data);
-    drop(pixels); // Qt holds its own implicitly shared value copy
-    let from_viewer = viewer.image();
-    assert_eq!((from_viewer.width(), from_viewer.height()), (2, 3));
-    assert_eq!(from_viewer.pixel_color(1, 2).rgba_u32(), color.rgba_u32());
-    let from_watermark = watermark.data().image();
-    assert_eq!((from_watermark.width(), from_watermark.height()), (2, 3));
-    assert_eq!(
-        from_watermark.pixel_color(1, 2).rgba_u32(),
-        color.rgba_u32()
-    );
-    assert_eq!(
-        helper.data().image().pixel_color(1, 2).rgba_u32(),
-        color.rgba_u32()
-    );
+    DApplication::with("dtk-image-selfcheck", |app| {
+        DApplication::set_quit_on_last_window_closed(false);
+        let viewer = DImageViewer::new();
+        let watermark = DWaterMarkWidget::new();
+        viewer.set_image(&pixels);
+        let watermark_data = WaterMarkData::new();
+        watermark_data.set_image(&pixels);
+        watermark.set_data(&watermark_data);
+        let helper = DWaterMarkHelper::instance().expect("DTK watermark helper exists");
+        helper.set_data(&watermark_data);
+        drop(watermark_data);
+        drop(pixels); // Qt holds its own implicitly shared value copy
+        let from_viewer = viewer.image();
+        assert_eq!((from_viewer.width(), from_viewer.height()), (2, 3));
+        assert_eq!(from_viewer.pixel_color(1, 2).rgba_u32(), color.rgba_u32());
+        let from_watermark = watermark.data().image();
+        assert_eq!((from_watermark.width(), from_watermark.height()), (2, 3));
+        assert_eq!(
+            from_watermark.pixel_color(1, 2).rgba_u32(),
+            color.rgba_u32()
+        );
+        assert_eq!(
+            helper.data().image().pixel_color(1, 2).rgba_u32(),
+            color.rgba_u32()
+        );
 
-    viewer.delete_later();
-    watermark.delete_later();
-    QTimer::single_shot(10, DApplication::quit);
-    assert_eq!(app.exec(), 0);
-    println!("image selfcheck ok");
+        viewer.delete_later();
+        watermark.delete_later();
+        QTimer::single_shot(10, DApplication::quit);
+        assert_eq!(app.exec(), 0);
+        println!("image selfcheck ok");
+    });
 }

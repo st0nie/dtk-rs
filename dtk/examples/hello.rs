@@ -13,49 +13,54 @@ use std::cell::Cell;
 use std::rc::Rc;
 
 fn main() {
-    let app = DApplication::new("dtk-rs-hello");
-    app.load_translator(); // DTK built-in translations (zh_CN etc.)
+    let code = DApplication::with("dtk-rs-hello", |app| {
+        app.load_translator(); // DTK built-in translations (zh_CN etc.)
 
-    let win = DMainWindow::new();
-    win.set_window_title("Hello DTK");
-    win.titlebar().set_title("Hello DTK");
-    win.titlebar()
-        .set_icon(&QIcon::from_theme("preferences-system"));
+        let win = DMainWindow::new();
+        win.set_window_title("Hello DTK");
+        win.titlebar().set_title("Hello DTK");
+        win.titlebar()
+            .set_icon(&QIcon::from_theme("preferences-system"));
 
-    let central = QWidget::new(None);
-    let vbox = QVBoxLayout::new(Some(&central)); // installs on `central` directly
-    vbox.set_contents_margins(24, 24, 24, 24);
-    vbox.set_spacing(12);
+        let central = QWidget::new(None);
+        let vbox = QVBoxLayout::new(Some(&central)); // installs on `central` directly
+        vbox.set_contents_margins(24, 24, 24, 24);
+        vbox.set_spacing(12);
 
-    let label = Rc::new(DLabel::new("Not clicked yet."));
-    label.set_alignment(qt::alignment::CENTER);
-    vbox.add_widget(&label.as_widget());
+        let label = Rc::new(DLabel::new("Not clicked yet."));
+        label.set_alignment(qt::alignment::CENTER);
+        vbox.add_widget(&label.as_widget());
 
-    let btn = DSuggestButton::new("Click me");
-    vbox.add_widget(&btn.as_widget());
+        let btn = DSuggestButton::new("Click me");
+        vbox.add_widget(&btn.as_widget());
 
-    // Rc + Cell: share state with the 'static callback (no Send/Sync needed,
-    // everything stays on the GUI thread).
-    let count = Rc::new(Cell::new(0i32));
-    {
-        let label = label.clone();
-        let count = count.clone();
-        btn.on_clicked(move || {
-            let n = count.get() + 1;
-            count.set(n);
-            label.set_text(&format!("Clicked {n} time(s)."));
+        // Rc + Cell: share state with the 'static callback (no Send/Sync needed,
+        // everything stays on the GUI thread).
+        let count = Rc::new(Cell::new(0i32));
+        {
+            let label = label.clone();
+            let count = count.clone();
+            btn.on_clicked(move || {
+                let n = count.get() + 1;
+                count.set(n);
+                label.set_text(&format!("Clicked {n} time(s)."));
+            });
+        }
+
+        let about_btn = DPushButton::new("About");
+        vbox.add_widget(&about_btn.as_widget());
+        about_btn.on_clicked(|| {
+            DMessageBox::about(None, "About", "Hello from dtk-rs!"); // modal, blocks
         });
-    }
 
-    let about_btn = DPushButton::new("About");
-    vbox.add_widget(&about_btn.as_widget());
-    about_btn.on_clicked(|| {
-        DMessageBox::about(None, "About", "Hello from dtk-rs!"); // modal, blocks
+        win.set_central_widget(&central);
+        win.resize(360, 180);
+        win.show();
+
+        if DApplication::has_arg("--smoke") {
+            QTimer::single_shot(100, DApplication::quit);
+        }
+        app.exec()
     });
-
-    win.set_central_widget(&central);
-    win.resize(360, 180);
-    win.show();
-
-    std::process::exit(app.exec());
+    std::process::exit(code);
 }

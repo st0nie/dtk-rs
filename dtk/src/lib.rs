@@ -8,8 +8,10 @@
 //! to the plain, `Clone`-able, non-owning view; share that (or an `Rc<Owned<T>>`)
 //! into closures/long-lived structs. Every view (owning or not) still must not
 //! be used after Qt destroys the object; a `QPointer`-backed guard makes that a
-//! panic instead of a dangling dereference. A running event loop is required
-//! to execute the `deleteLater()` queued by an unadopted owner.
+//! panic instead of a dangling dereference. A running event loop executes the
+//! `deleteLater()` queued by an unadopted owner. Independently, DApplication::with
+//! and QCoreApplication::with synchronously clean up at their outer boundary,
+//! including no-exec/panic; escaped controls and singleton views remain dead.
 //! Qt GUI objects are single-threaded; wrappers are !Send/!Sync.
 
 use dtk_sys::ffi;
@@ -17,7 +19,7 @@ use std::marker::PhantomData;
 use std::rc::Rc;
 
 mod application;
-pub use application::QCoreApplication;
+pub use application::{DApplication, QCoreApplication};
 pub mod threading;
 pub use threading::GuiSender;
 
@@ -276,9 +278,10 @@ pub unsafe trait QtLifecycle {
 ///
 /// Dropping an object still alive and *never* parented queues Qt `deleteLater`.
 /// This needs an active event loop to actually delete it; dropping an object
-/// after the event loop stops does not guarantee its destructor runs. We use
-/// deferred deletion rather than synchronous `delete`, which can destroy Qt
-/// objects reentrantly while their event handlers are on the stack.
+/// after the event loop stops delays destruction until the outer application
+/// scope exits. Both GUI and headless scopes synchronously reclaim tracked
+/// objects there, even without exec. Drop itself uses deferred deletion rather
+/// than synchronous `delete`, which could destroy native event-handler frames.
 ///
 /// `Deref`s to the plain, `Clone`-able view: clone that (or call a method
 /// through the deref, which itself resolves via `Clone`) to share the object
@@ -292,7 +295,7 @@ impl<T: QtLifecycle> Owned<T> {
         if let Some(object) = inner.live_qobject() {
             // Only verified constructor/transfer owners enter the scoped
             // runtime's cleanup registry. Borrowed getters must not enter it.
-            unsafe { ffi::core_runtime_track_object(object) };
+            unsafe { ffi::application_runtime_track_object(object) };
         }
         Self(inner)
     }
@@ -372,16 +375,31 @@ macro_rules! opaque_wrapper_impl {
         $($attrs)*
         pub struct $name {
             pub(crate) ptr: *mut $ffi,
+            scope_guard: Option<dtk_sys::ObjectGuard>,
             _not_send: PhantomData<*mut ()>,
         }
         impl $name {
-            #[allow(dead_code)] // not every generated class gets constructed
+            #[allow(dead_code)] // borrowed getters are not emitted for every class
             pub(crate) fn from_raw(ptr: *mut $ffi) -> Self {
+                let mut view = Self::from_owned_raw(ptr);
+                view.scope_guard = dtk_sys::ObjectGuard::current_scope();
+                view
+            }
+            #[allow(dead_code)] // constructors/value copies are not emitted for every class
+            pub(crate) fn from_owned_raw(ptr: *mut $ffi) -> Self {
                 assert!(!ptr.is_null());
-                Self {
-                    ptr,
-                    _not_send: PhantomData,
-                }
+                Self { ptr, scope_guard: None, _not_send: PhantomData }
+            }
+            /// Scope liveness only: non-QObject native lifetime within the
+            /// scope is still governed by the unsafe getter's contract.
+            pub fn is_alive(&self) -> bool {
+                self.scope_guard.as_ref().is_none_or(dtk_sys::ObjectGuard::is_alive)
+            }
+            #[allow(dead_code)] // some opaque types expose only static methods
+            pub(crate) fn live_ptr(&self) -> *mut $ffi {
+                dtk_sys::assert_not_closing();
+                assert!(self.is_alive(), concat!(stringify!($name), " application scope has closed"));
+                self.ptr
             }
         }
         impl std::fmt::Debug for $name {
@@ -998,12 +1016,7 @@ pub unsafe trait SignalI32I32 {
 /// disconnect + unregister a connected signal callback (id from connect_signal*)
 pub use dtk_sys::unregister_cb as unregister_callback;
 
-// ---- DApplication ----
-
-pub struct DApplication {
-    ptr: *mut ffi::DApplication,
-    _not_send: PhantomData<*mut ()>,
-}
+// Application scope implementation lives in application.rs.
 
 /// Preserve Linux argv bytes (including non-UTF-8 and control characters).
 /// Qt needs writable, NUL-terminated `char*` entries that outlive QApplication.
@@ -1017,75 +1030,6 @@ fn env_args_raw() -> (Vec<u8>, Vec<usize>) {
         bytes.extend_from_slice(arg);
     }
     (bytes, lengths)
-}
-
-impl DApplication {
-    pub fn new(name: &str) -> Self {
-        require_main_application_thread();
-        let (bytes, lengths) = env_args_raw();
-        let ptr = unsafe { ffi::application_new(name, bytes, lengths) };
-        assert!(
-            !ptr.is_null(),
-            "only one Qt application can exist at a time"
-        );
-        Self {
-            ptr,
-            _not_send: PhantomData,
-        }
-    }
-    /// with quit guard: QEvent::Quit asks the guard; false swallows the event (Rust retries itself)
-    pub fn new_with_quit_guard(name: &str, guard: impl FnMut() -> bool + 'static) -> Self {
-        require_main_application_thread();
-        let id = dtk_sys::register_cb_guard(guard);
-        let (bytes, lengths) = env_args_raw();
-        let ptr = unsafe { ffi::application_new_ex(name, bytes, lengths, id) };
-        if ptr.is_null() {
-            dtk_sys::unregister_cb(id);
-            panic!("only one Qt application can exist at a time");
-        }
-        Self {
-            ptr,
-            _not_send: PhantomData,
-        }
-    }
-    pub fn exec(&self) -> i32 {
-        unsafe { ffi::application_exec(self.ptr) }
-    }
-    pub fn quit() {
-        require_application();
-        unsafe { ffi::application_quit() }
-    }
-    pub fn set_quit_on_last_window_closed(quit: bool) {
-        require_application();
-        unsafe { ffi::application_set_quit_on_last_window_closed(quit) }
-    }
-    pub fn set_application_display_name(name: &str) {
-        unsafe { ffi::application_set_application_display_name(name) }
-    }
-    /// DTK translations (zh_CN etc.); false on failure
-    pub fn load_translator(&self) -> bool {
-        unsafe { ffi::application_load_translator(self.ptr) }
-    }
-    pub fn has_arg(arg: &str) -> bool {
-        unsafe { ffi::application_has_arg(arg) }
-    }
-    /// true while a modal dialog or popup menu is active
-    pub fn popup_active() -> bool {
-        require_application();
-        unsafe { ffi::app_popup_active() }
-    }
-    /// QPalette::Window as (r, g, b) — use to detect light vs dark DTK theme
-    pub fn palette_window_rgb() -> (u8, u8, u8) {
-        require_application();
-        let rgb = unsafe { ffi::app_palette_window_rgb() };
-        ((rgb >> 16) as u8, (rgb >> 8) as u8, rgb as u8)
-    }
-    /// DPalette::Highlight as (r, g, b) — theme accent color
-    pub fn palette_highlight_rgb() -> (u8, u8, u8) {
-        require_application();
-        let rgb = unsafe { ffi::app_palette_highlight_rgb() };
-        ((rgb >> 16) as u8, (rgb >> 8) as u8, rgb as u8)
-    }
 }
 
 // ---- DMainWindow / DTitlebar ----
@@ -2384,12 +2328,6 @@ impl widgets::DProgressBar {
 impl_default!(QFont, QPalette, DPalette, QPainterPath, DDciIcon);
 impl_default_owned!(DMainWindow, DMessageBox);
 
-unsafe impl Signal0 for DApplication {
-    fn qobject_ptr(&self) -> *mut ffi::QObject {
-        self.ptr.cast()
-    }
-}
-
 // ---- typed signal helpers + base-class getters for generated widgets ----
 
 impl widgets::DLineEdit {
@@ -2435,8 +2373,8 @@ impl core::DConfig {
     /// Create an app-independent configuration. Null is None; check
     /// `is_valid()` separately for missing config metadata.
     /// Requires a scoped QCoreApplication or a GUI DApplication on its owning
-    /// thread. A headless scope invalidates this object on scope exit even if
-    /// its Rust owner or view escapes.
+    /// thread. Either application scope invalidates this object on exit even
+    /// if its Rust owner or view escapes.
     pub fn create_generic(name: &str, subpath: &str) -> Option<Owned<Self>> {
         require_core_application();
         Self::from_created(unsafe { ffi::core_config_create_generic(name, subpath) })

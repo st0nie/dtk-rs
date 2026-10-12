@@ -807,23 +807,32 @@ impl DBlurEffectWidget {
 opaque_wrapper!(DBlurEffectGroup, genffi::DBlurEffectGroup);
 impl DBlurEffectGroup {
     pub fn new() -> OwnedOpaque<Self> {
+        dtk_sys::assert_not_closing();
         let ptr = unsafe { genffi::gen_d_blur_effect_group_new() };
-        OwnedOpaque::from_owned(Self::from_raw(ptr), |value| unsafe {
+        OwnedOpaque::from_owned(Self::from_owned_raw(ptr), |value| unsafe {
             genffi::gen_d_blur_effect_group_delete(value.ptr)
         })
     }
     pub fn set_source_image(&self, image: &QImage, blurRadius: i32) {
         unsafe {
-            genffi::gen_d_blur_effect_group_set_source_image(self.ptr, image.ptr as _, blurRadius)
+            genffi::gen_d_blur_effect_group_set_source_image(
+                self.live_ptr(),
+                image.ptr as _,
+                blurRadius,
+            )
         }
     }
     pub fn add_widget(&self, widget: &DBlurEffectWidget, offset: &QPoint) {
         unsafe {
-            genffi::gen_d_blur_effect_group_add_widget(self.ptr, widget.live_ptr(), offset.ptr as _)
+            genffi::gen_d_blur_effect_group_add_widget(
+                self.live_ptr(),
+                widget.live_ptr(),
+                offset.ptr as _,
+            )
         }
     }
     pub fn remove_widget(&self, widget: &DBlurEffectWidget) {
-        unsafe { genffi::gen_d_blur_effect_group_remove_widget(self.ptr, widget.live_ptr()) }
+        unsafe { genffi::gen_d_blur_effect_group_remove_widget(self.live_ptr(), widget.live_ptr()) }
     }
 }
 
@@ -1114,40 +1123,47 @@ impl DCommandLinkButton {
 opaque_wrapper!(DCrumbTextFormat, genffi::DCrumbTextFormat);
 impl DCrumbTextFormat {
     pub fn new() -> OwnedOpaque<Self> {
+        dtk_sys::assert_not_closing();
         let ptr = unsafe { genffi::gen_d_crumb_text_format_new() };
-        OwnedOpaque::from_owned(Self::from_raw(ptr), |value| unsafe {
+        OwnedOpaque::from_owned(Self::from_owned_raw(ptr), |value| unsafe {
             genffi::gen_d_crumb_text_format_delete(value.ptr)
         })
     }
     pub fn tag_color(&self) -> QColor {
-        QColor::from_raw(unsafe { genffi::gen_d_crumb_text_format_tag_color(self.ptr) } as _)
+        QColor::from_raw(unsafe { genffi::gen_d_crumb_text_format_tag_color(self.live_ptr()) } as _)
     }
     pub fn set_tag_color(&self, color: &QColor) {
-        unsafe { genffi::gen_d_crumb_text_format_set_tag_color(self.ptr, color.ptr as _) }
+        unsafe { genffi::gen_d_crumb_text_format_set_tag_color(self.live_ptr(), color.ptr as _) }
     }
     pub fn text(&self) -> String {
-        unsafe { genffi::gen_d_crumb_text_format_text(self.ptr) }
+        unsafe { genffi::gen_d_crumb_text_format_text(self.live_ptr()) }
     }
     pub fn set_text(&self, text: &str) {
-        unsafe { genffi::gen_d_crumb_text_format_set_text(self.ptr, text) }
+        unsafe { genffi::gen_d_crumb_text_format_set_text(self.live_ptr(), text) }
     }
     pub fn text_color(&self) -> QColor {
-        QColor::from_raw(unsafe { genffi::gen_d_crumb_text_format_text_color(self.ptr) } as _)
+        QColor::from_raw(
+            unsafe { genffi::gen_d_crumb_text_format_text_color(self.live_ptr()) } as _,
+        )
     }
     pub fn set_text_color(&self, color: &QColor) {
-        unsafe { genffi::gen_d_crumb_text_format_set_text_color(self.ptr, color.ptr as _) }
+        unsafe { genffi::gen_d_crumb_text_format_set_text_color(self.live_ptr(), color.ptr as _) }
     }
     pub fn background(&self) -> QBrush {
-        QBrush::from_raw(unsafe { genffi::gen_d_crumb_text_format_background(self.ptr) } as _)
+        QBrush::from_raw(
+            unsafe { genffi::gen_d_crumb_text_format_background(self.live_ptr()) } as _,
+        )
     }
     pub fn set_background(&self, background: &QBrush) {
-        unsafe { genffi::gen_d_crumb_text_format_set_background(self.ptr, background.ptr as _) }
+        unsafe {
+            genffi::gen_d_crumb_text_format_set_background(self.live_ptr(), background.ptr as _)
+        }
     }
     pub fn background_radius(&self) -> i32 {
-        unsafe { genffi::gen_d_crumb_text_format_background_radius(self.ptr) }
+        unsafe { genffi::gen_d_crumb_text_format_background_radius(self.live_ptr()) }
     }
     pub fn set_background_radius(&self, radius: i32) {
-        unsafe { genffi::gen_d_crumb_text_format_set_background_radius(self.ptr, radius) }
+        unsafe { genffi::gen_d_crumb_text_format_set_background_radius(self.live_ptr(), radius) }
     }
 }
 
@@ -1652,17 +1668,20 @@ impl DFileDialog {
 opaque_wrapper!(DFileIconProvider, genffi::DFileIconProvider);
 impl DFileIconProvider {
     pub fn new() -> OwnedOpaque<Self> {
+        dtk_sys::assert_not_closing();
         let ptr = unsafe { genffi::gen_d_file_icon_provider_new() };
-        OwnedOpaque::from_owned(Self::from_raw(ptr), |value| unsafe {
+        OwnedOpaque::from_owned(Self::from_owned_raw(ptr), |value| unsafe {
             genffi::gen_d_file_icon_provider_delete(value.ptr)
         })
     }
     /// # Safety
-    /// The returned non-QObject pointer is unguarded. The caller must
-    /// verify this DTK method's ownership contract, keep the native
+    /// This non-QObject borrow is invalidated at application scope exit,
+    /// but has no native liveness guard. The caller must verify this
+    /// DTK method's ownership contract, keep the native
     /// allocation live for every access, and arrange deletion only if
     /// ownership was explicitly transferred by native code.
     pub unsafe fn global_provider() -> Option<DFileIconProvider> {
+        crate::require_application();
         {
             let ptr = unsafe { genffi::gen_d_file_icon_provider_global_provider() };
             (!ptr.is_null()).then(|| DFileIconProvider::from_raw(ptr))
@@ -1744,7 +1763,9 @@ impl DFloatingWidget {
         unsafe { genffi::gen_d_floating_widget_set_fram_radius(self.live_ptr(), radius) }
     }
     pub fn init_style_option(&self, option: &DStyleOptionFloatingWidget) {
-        unsafe { genffi::gen_d_floating_widget_init_style_option(self.live_ptr(), option.ptr) }
+        unsafe {
+            genffi::gen_d_floating_widget_init_style_option(self.live_ptr(), option.live_ptr())
+        }
     }
     pub fn blur_background_is_enabled(&self) -> bool {
         unsafe { genffi::gen_d_floating_widget_blur_background_is_enabled(self.live_ptr()) }
@@ -3158,8 +3179,9 @@ impl DPrintPreviewDialog {
         unsafe { genffi::gen_d_print_preview_dialog_is_asyn_preview(self.live_ptr()) }
     }
     /// # Safety
-    /// The returned non-QObject pointer is unguarded. The caller must
-    /// verify this DTK method's ownership contract, keep the native
+    /// This non-QObject borrow is invalidated at application scope exit,
+    /// but has no native liveness guard. The caller must verify this
+    /// DTK method's ownership contract, keep the native
     /// allocation live for every access, and arrange deletion only if
     /// ownership was explicitly transferred by native code.
     pub unsafe fn create_dialog_setting_info(
@@ -3178,7 +3200,10 @@ impl DPrintPreviewDialog {
     }
     pub fn update_dialog_setting_info(&self, info: &DPrintPreviewSettingInfo) {
         unsafe {
-            genffi::gen_d_print_preview_dialog_update_dialog_setting_info(self.live_ptr(), info.ptr)
+            genffi::gen_d_print_preview_dialog_update_dialog_setting_info(
+                self.live_ptr(),
+                info.live_ptr(),
+            )
         }
     }
 }
@@ -3186,15 +3211,16 @@ impl DPrintPreviewDialog {
 opaque_wrapper!(DPrintPreviewSettingInfo, genffi::DPrintPreviewSettingInfo);
 impl DPrintPreviewSettingInfo {
     pub fn type_(&self) -> i32 {
-        unsafe { genffi::gen_d_print_preview_setting_info_type_(self.ptr) }
+        unsafe { genffi::gen_d_print_preview_setting_info_type_(self.live_ptr()) }
     }
 }
 
 opaque_wrapper!(DPrintPreviewPrinterInfo, genffi::DPrintPreviewPrinterInfo);
 impl DPrintPreviewPrinterInfo {
     pub fn new() -> OwnedOpaque<Self> {
+        dtk_sys::assert_not_closing();
         let ptr = unsafe { genffi::gen_d_print_preview_printer_info_new() };
-        OwnedOpaque::from_owned(Self::from_raw(ptr), |value| unsafe {
+        OwnedOpaque::from_owned(Self::from_owned_raw(ptr), |value| unsafe {
             genffi::gen_d_print_preview_printer_info_delete(value.ptr)
         })
     }
@@ -3203,8 +3229,9 @@ impl DPrintPreviewPrinterInfo {
 opaque_wrapper!(DPrintPreviewCopiesInfo, genffi::DPrintPreviewCopiesInfo);
 impl DPrintPreviewCopiesInfo {
     pub fn new() -> OwnedOpaque<Self> {
+        dtk_sys::assert_not_closing();
         let ptr = unsafe { genffi::gen_d_print_preview_copies_info_new() };
-        OwnedOpaque::from_owned(Self::from_raw(ptr), |value| unsafe {
+        OwnedOpaque::from_owned(Self::from_owned_raw(ptr), |value| unsafe {
             genffi::gen_d_print_preview_copies_info_delete(value.ptr)
         })
     }
@@ -3216,8 +3243,9 @@ opaque_wrapper!(
 );
 impl DPrintPreviewPageRangeInfo {
     pub fn new() -> OwnedOpaque<Self> {
+        dtk_sys::assert_not_closing();
         let ptr = unsafe { genffi::gen_d_print_preview_page_range_info_new() };
-        OwnedOpaque::from_owned(Self::from_raw(ptr), |value| unsafe {
+        OwnedOpaque::from_owned(Self::from_owned_raw(ptr), |value| unsafe {
             genffi::gen_d_print_preview_page_range_info_delete(value.ptr)
         })
     }
@@ -3229,8 +3257,9 @@ opaque_wrapper!(
 );
 impl DPrintPreviewOrientationInfo {
     pub fn new() -> OwnedOpaque<Self> {
+        dtk_sys::assert_not_closing();
         let ptr = unsafe { genffi::gen_d_print_preview_orientation_info_new() };
-        OwnedOpaque::from_owned(Self::from_raw(ptr), |value| unsafe {
+        OwnedOpaque::from_owned(Self::from_owned_raw(ptr), |value| unsafe {
             genffi::gen_d_print_preview_orientation_info_delete(value.ptr)
         })
     }
@@ -3242,8 +3271,9 @@ opaque_wrapper!(
 );
 impl DPrintPreviewPaperSizeInfo {
     pub fn new() -> OwnedOpaque<Self> {
+        dtk_sys::assert_not_closing();
         let ptr = unsafe { genffi::gen_d_print_preview_paper_size_info_new() };
-        OwnedOpaque::from_owned(Self::from_raw(ptr), |value| unsafe {
+        OwnedOpaque::from_owned(Self::from_owned_raw(ptr), |value| unsafe {
             genffi::gen_d_print_preview_paper_size_info_delete(value.ptr)
         })
     }
@@ -3255,8 +3285,9 @@ opaque_wrapper!(
 );
 impl DPrintPreviewPrintDuplexInfo {
     pub fn new() -> OwnedOpaque<Self> {
+        dtk_sys::assert_not_closing();
         let ptr = unsafe { genffi::gen_d_print_preview_print_duplex_info_new() };
-        OwnedOpaque::from_owned(Self::from_raw(ptr), |value| unsafe {
+        OwnedOpaque::from_owned(Self::from_owned_raw(ptr), |value| unsafe {
             genffi::gen_d_print_preview_print_duplex_info_delete(value.ptr)
         })
     }
@@ -3265,8 +3296,9 @@ impl DPrintPreviewPrintDuplexInfo {
 opaque_wrapper!(DPrintPreviewNUpPrintInfo, genffi::DPrintPreviewNUpPrintInfo);
 impl DPrintPreviewNUpPrintInfo {
     pub fn new() -> OwnedOpaque<Self> {
+        dtk_sys::assert_not_closing();
         let ptr = unsafe { genffi::gen_d_print_preview_n_up_print_info_new() };
-        OwnedOpaque::from_owned(Self::from_raw(ptr), |value| unsafe {
+        OwnedOpaque::from_owned(Self::from_owned_raw(ptr), |value| unsafe {
             genffi::gen_d_print_preview_n_up_print_info_delete(value.ptr)
         })
     }
@@ -3278,8 +3310,9 @@ opaque_wrapper!(
 );
 impl DPrintPreviewPageOrderInfo {
     pub fn new() -> OwnedOpaque<Self> {
+        dtk_sys::assert_not_closing();
         let ptr = unsafe { genffi::gen_d_print_preview_page_order_info_new() };
-        OwnedOpaque::from_owned(Self::from_raw(ptr), |value| unsafe {
+        OwnedOpaque::from_owned(Self::from_owned_raw(ptr), |value| unsafe {
             genffi::gen_d_print_preview_page_order_info_delete(value.ptr)
         })
     }
@@ -3291,8 +3324,9 @@ opaque_wrapper!(
 );
 impl DPrintPreviewColorModeInfo {
     pub fn new() -> OwnedOpaque<Self> {
+        dtk_sys::assert_not_closing();
         let ptr = unsafe { genffi::gen_d_print_preview_color_mode_info_new() };
-        OwnedOpaque::from_owned(Self::from_raw(ptr), |value| unsafe {
+        OwnedOpaque::from_owned(Self::from_owned_raw(ptr), |value| unsafe {
             genffi::gen_d_print_preview_color_mode_info_delete(value.ptr)
         })
     }
@@ -3304,8 +3338,9 @@ opaque_wrapper!(
 );
 impl DPrintPreviewPaperMarginsInfo {
     pub fn new() -> OwnedOpaque<Self> {
+        dtk_sys::assert_not_closing();
         let ptr = unsafe { genffi::gen_d_print_preview_paper_margins_info_new() };
-        OwnedOpaque::from_owned(Self::from_raw(ptr), |value| unsafe {
+        OwnedOpaque::from_owned(Self::from_owned_raw(ptr), |value| unsafe {
             genffi::gen_d_print_preview_paper_margins_info_delete(value.ptr)
         })
     }
@@ -3314,8 +3349,9 @@ impl DPrintPreviewPaperMarginsInfo {
 opaque_wrapper!(DPrintPreviewScalingInfo, genffi::DPrintPreviewScalingInfo);
 impl DPrintPreviewScalingInfo {
     pub fn new() -> OwnedOpaque<Self> {
+        dtk_sys::assert_not_closing();
         let ptr = unsafe { genffi::gen_d_print_preview_scaling_info_new() };
-        OwnedOpaque::from_owned(Self::from_raw(ptr), |value| unsafe {
+        OwnedOpaque::from_owned(Self::from_owned_raw(ptr), |value| unsafe {
             genffi::gen_d_print_preview_scaling_info_delete(value.ptr)
         })
     }
@@ -3327,8 +3363,9 @@ opaque_wrapper!(
 );
 impl DPrintPreviewWatermarkInfo {
     pub fn new() -> OwnedOpaque<Self> {
+        dtk_sys::assert_not_closing();
         let ptr = unsafe { genffi::gen_d_print_preview_watermark_info_new() };
-        OwnedOpaque::from_owned(Self::from_raw(ptr), |value| unsafe {
+        OwnedOpaque::from_owned(Self::from_owned_raw(ptr), |value| unsafe {
             genffi::gen_d_print_preview_watermark_info_delete(value.ptr)
         })
     }
@@ -3340,21 +3377,21 @@ opaque_wrapper!(
 );
 impl DPrintPreviewSettingInterface {
     pub fn name(&self) -> String {
-        unsafe { genffi::gen_d_print_preview_setting_interface_name(self.ptr) }
+        unsafe { genffi::gen_d_print_preview_setting_interface_name(self.live_ptr()) }
     }
     pub fn setting_filter(&self, mimeData: &QVariant, info: &DPrintPreviewSettingInfo) -> bool {
         unsafe {
             genffi::gen_d_print_preview_setting_interface_setting_filter(
-                self.ptr,
+                self.live_ptr(),
                 mimeData.ptr as _,
-                info.ptr,
+                info.live_ptr(),
             )
         }
     }
     pub fn setting_status(&self, mimeData: &QVariant, control: i32) -> i32 {
         unsafe {
             genffi::gen_d_print_preview_setting_interface_setting_status(
-                self.ptr,
+                self.live_ptr(),
                 mimeData.ptr as _,
                 control,
             )
@@ -3365,13 +3402,14 @@ impl DPrintPreviewSettingInterface {
 opaque_wrapper!(DPrinter, genffi::DPrinter);
 impl DPrinter {
     pub fn new() -> OwnedOpaque<Self> {
+        crate::require_application();
         let ptr = unsafe { genffi::gen_d_printer_new() };
-        OwnedOpaque::from_owned(Self::from_raw(ptr), |value| unsafe {
+        OwnedOpaque::from_owned(Self::from_owned_raw(ptr), |value| unsafe {
             genffi::gen_d_printer_delete(value.ptr)
         })
     }
     pub fn set_preview_mode(&self, isPreview: bool) {
-        unsafe { genffi::gen_d_printer_set_preview_mode(self.ptr, isPreview) }
+        unsafe { genffi::gen_d_printer_set_preview_mode(self.live_ptr(), isPreview) }
     }
 }
 
@@ -4177,7 +4215,7 @@ opaque_wrapper!(DStyleHelper, genffi::DStyleHelper);
 impl DStyleHelper {
     pub fn dstyle(&self) -> Option<DStyle> {
         {
-            let ptr = unsafe { genffi::gen_d_style_helper_dstyle(self.ptr) };
+            let ptr = unsafe { genffi::gen_d_style_helper_dstyle(self.live_ptr()) };
             (!ptr.is_null()).then(|| DStyle::from_raw(ptr))
         }
     }
@@ -4186,12 +4224,12 @@ impl DStyleHelper {
 opaque_wrapper!(DStylePainter, genffi::DStylePainter);
 impl DStylePainter {
     pub fn begin(&self, w: &QWidget) -> bool {
-        unsafe { genffi::gen_d_style_painter_begin(self.ptr, w.live_ptr() as _) }
+        unsafe { genffi::gen_d_style_painter_begin(self.live_ptr(), w.live_ptr() as _) }
     }
     pub fn draw_item_pixmap(&self, r: &QRect, flags: i32, pixmap: &QPixmap) {
         unsafe {
             genffi::gen_d_style_painter_draw_item_pixmap(
-                self.ptr,
+                self.live_ptr(),
                 r.ptr as _,
                 flags,
                 pixmap.ptr as _,
@@ -4203,7 +4241,7 @@ impl DStylePainter {
 opaque_wrapper!(DStyledIconEngine, genffi::DStyledIconEngine);
 impl DStyledIconEngine {
     pub fn set_icon_name(&self, name: &str) {
-        unsafe { genffi::gen_d_styled_icon_engine_set_icon_name(self.ptr, name) }
+        unsafe { genffi::gen_d_styled_icon_engine_set_icon_name(self.live_ptr(), name) }
     }
 }
 
@@ -4329,63 +4367,64 @@ impl DStyledItemDelegate {
 opaque_wrapper!(DStandardItem, genffi::DStandardItem);
 impl DStandardItem {
     pub fn set_text_color_role(&self, role: i32) {
-        unsafe { genffi::gen_d_standard_item_set_text_color_role(self.ptr, role) }
+        unsafe { genffi::gen_d_standard_item_set_text_color_role(self.live_ptr(), role) }
     }
     pub fn set_text_color_role_2(&self, role: i32) {
-        unsafe { genffi::gen_d_standard_item_set_text_color_role_2(self.ptr, role) }
+        unsafe { genffi::gen_d_standard_item_set_text_color_role_2(self.live_ptr(), role) }
     }
     pub fn text_color_type(&self) -> i32 {
-        unsafe { genffi::gen_d_standard_item_text_color_type(self.ptr) }
+        unsafe { genffi::gen_d_standard_item_text_color_type(self.live_ptr()) }
     }
     pub fn text_color_role(&self) -> i32 {
-        unsafe { genffi::gen_d_standard_item_text_color_role(self.ptr) }
+        unsafe { genffi::gen_d_standard_item_text_color_role(self.live_ptr()) }
     }
     pub fn set_background_role(&self, role: i32) {
-        unsafe { genffi::gen_d_standard_item_set_background_role(self.ptr, role) }
+        unsafe { genffi::gen_d_standard_item_set_background_role(self.live_ptr(), role) }
     }
     pub fn set_background_role_2(&self, role: i32) {
-        unsafe { genffi::gen_d_standard_item_set_background_role_2(self.ptr, role) }
+        unsafe { genffi::gen_d_standard_item_set_background_role_2(self.live_ptr(), role) }
     }
     pub fn background_type(&self) -> i32 {
-        unsafe { genffi::gen_d_standard_item_background_type(self.ptr) }
+        unsafe { genffi::gen_d_standard_item_background_type(self.live_ptr()) }
     }
     pub fn background_role(&self) -> i32 {
-        unsafe { genffi::gen_d_standard_item_background_role(self.ptr) }
+        unsafe { genffi::gen_d_standard_item_background_role(self.live_ptr()) }
     }
     pub fn set_font_size(&self, size: i32) {
-        unsafe { genffi::gen_d_standard_item_set_font_size(self.ptr, size) }
+        unsafe { genffi::gen_d_standard_item_set_font_size(self.live_ptr(), size) }
     }
     pub fn font(&self) -> QFont {
-        QFont::from_raw(unsafe { genffi::gen_d_standard_item_font(self.ptr) } as _)
+        QFont::from_raw(unsafe { genffi::gen_d_standard_item_font(self.live_ptr()) } as _)
     }
     pub fn set_dci_icon(&self, dciIcon: &DDciIcon) {
-        unsafe { genffi::gen_d_standard_item_set_dci_icon(self.ptr, dciIcon.ptr as _) }
+        unsafe { genffi::gen_d_standard_item_set_dci_icon(self.live_ptr(), dciIcon.ptr as _) }
     }
     pub fn dci_icon(&self) -> DDciIcon {
-        DDciIcon::from_raw(unsafe { genffi::gen_d_standard_item_dci_icon(self.ptr) } as _)
+        DDciIcon::from_raw(unsafe { genffi::gen_d_standard_item_dci_icon(self.live_ptr()) } as _)
     }
 }
 
 opaque_wrapper!(DStyleOption, genffi::DStyleOption);
 impl DStyleOption {
     pub fn init(&self, widget: &QWidget) {
-        unsafe { genffi::gen_d_style_option_init(self.ptr, widget.live_ptr() as _) }
+        unsafe { genffi::gen_d_style_option_init(self.live_ptr(), widget.live_ptr() as _) }
     }
     pub fn init_2(&self, widget: &QWidget) {
-        unsafe { genffi::gen_d_style_option_init_2(self.ptr, widget.live_ptr() as _) }
+        unsafe { genffi::gen_d_style_option_init_2(self.live_ptr(), widget.live_ptr() as _) }
     }
 }
 
 opaque_wrapper!(DStyleOptionButton, genffi::DStyleOptionButton);
 impl DStyleOptionButton {
     pub fn new() -> OwnedOpaque<Self> {
+        dtk_sys::assert_not_closing();
         let ptr = unsafe { genffi::gen_d_style_option_button_new() };
-        OwnedOpaque::from_owned(Self::from_raw(ptr), |value| unsafe {
+        OwnedOpaque::from_owned(Self::from_owned_raw(ptr), |value| unsafe {
             genffi::gen_d_style_option_button_delete(value.ptr)
         })
     }
     pub fn init(&self, widget: &QWidget) {
-        unsafe { genffi::gen_d_style_option_button_init(self.ptr, widget.live_ptr() as _) }
+        unsafe { genffi::gen_d_style_option_button_init(self.live_ptr(), widget.live_ptr() as _) }
     }
 }
 
@@ -4398,7 +4437,9 @@ impl DStyleOptionButtonBoxButton {}
 opaque_wrapper!(DStyleOptionLineEdit, genffi::DStyleOptionLineEdit);
 impl DStyleOptionLineEdit {
     pub fn init(&self, widget: &QWidget) {
-        unsafe { genffi::gen_d_style_option_line_edit_init(self.ptr, widget.live_ptr() as _) }
+        unsafe {
+            genffi::gen_d_style_option_line_edit_init(self.live_ptr(), widget.live_ptr() as _)
+        }
     }
 }
 
@@ -4409,7 +4450,10 @@ opaque_wrapper!(
 impl DStyleOptionBackgroundGroup {
     pub fn init(&self, widget: &QWidget) {
         unsafe {
-            genffi::gen_d_style_option_background_group_init(self.ptr, widget.live_ptr() as _)
+            genffi::gen_d_style_option_background_group_init(
+                self.live_ptr(),
+                widget.live_ptr() as _,
+            )
         }
     }
 }
@@ -4432,84 +4476,114 @@ impl DStyleOptionFloatingWidget {}
 opaque_wrapper!(DFontSizeManager, genffi::DFontSizeManager);
 impl DFontSizeManager {
     /// # Safety
-    /// The returned non-QObject pointer is unguarded. The caller must
-    /// verify this DTK method's ownership contract, keep the native
+    /// This non-QObject borrow is invalidated at application scope exit,
+    /// but has no native liveness guard. The caller must verify this
+    /// DTK method's ownership contract, keep the native
     /// allocation live for every access, and arrange deletion only if
     /// ownership was explicitly transferred by native code.
     pub unsafe fn instance() -> Option<DFontSizeManager> {
+        crate::require_application();
         {
             let ptr = unsafe { genffi::gen_d_font_size_manager_instance() };
             (!ptr.is_null()).then(|| DFontSizeManager::from_raw(ptr))
         }
     }
     pub fn bind(&self, widget: &QWidget, type_: i32) {
-        unsafe { genffi::gen_d_font_size_manager_bind(self.ptr, widget.live_ptr() as _, type_) }
+        unsafe {
+            genffi::gen_d_font_size_manager_bind(self.live_ptr(), widget.live_ptr() as _, type_)
+        }
     }
     pub fn bind_2(&self, widget: &QWidget, type_: i32, weight: i32) {
         unsafe {
-            genffi::gen_d_font_size_manager_bind_2(self.ptr, widget.live_ptr() as _, type_, weight)
+            genffi::gen_d_font_size_manager_bind_2(
+                self.live_ptr(),
+                widget.live_ptr() as _,
+                type_,
+                weight,
+            )
         }
     }
     pub fn unbind(&self, widget: &QWidget) {
-        unsafe { genffi::gen_d_font_size_manager_unbind(self.ptr, widget.live_ptr() as _) }
+        unsafe { genffi::gen_d_font_size_manager_unbind(self.live_ptr(), widget.live_ptr() as _) }
     }
     pub fn font_pixel_size(&self, type_: i32) -> u16 {
-        unsafe { genffi::gen_d_font_size_manager_font_pixel_size(self.ptr, type_) }
+        unsafe { genffi::gen_d_font_size_manager_font_pixel_size(self.live_ptr(), type_) }
     }
     pub fn set_font_pixel_size(&self, type_: i32, size: u16) {
-        unsafe { genffi::gen_d_font_size_manager_set_font_pixel_size(self.ptr, type_, size) }
+        unsafe { genffi::gen_d_font_size_manager_set_font_pixel_size(self.live_ptr(), type_, size) }
     }
     pub fn set_font_generic_pixel_size(&self, size: u16) {
-        unsafe { genffi::gen_d_font_size_manager_set_font_generic_pixel_size(self.ptr, size) }
+        unsafe {
+            genffi::gen_d_font_size_manager_set_font_generic_pixel_size(self.live_ptr(), size)
+        }
     }
     pub fn get(&self, type_: i32, base: &QFont) -> QFont {
         QFont::from_raw(unsafe {
-            genffi::gen_d_font_size_manager_get(self.ptr, type_, base.ptr as _)
+            genffi::gen_d_font_size_manager_get(self.live_ptr(), type_, base.ptr as _)
         } as _)
     }
     pub fn get_2(&self, type_: i32, weight: i32, base: &QFont) -> QFont {
         QFont::from_raw(unsafe {
-            genffi::gen_d_font_size_manager_get_2(self.ptr, type_, weight, base.ptr as _)
+            genffi::gen_d_font_size_manager_get_2(self.live_ptr(), type_, weight, base.ptr as _)
         } as _)
     }
     pub fn t1(&self, base: &QFont) -> QFont {
-        QFont::from_raw(unsafe { genffi::gen_d_font_size_manager_t1(self.ptr, base.ptr as _) } as _)
+        QFont::from_raw(unsafe {
+            genffi::gen_d_font_size_manager_t1(self.live_ptr(), base.ptr as _)
+        } as _)
     }
     pub fn t2(&self, base: &QFont) -> QFont {
-        QFont::from_raw(unsafe { genffi::gen_d_font_size_manager_t2(self.ptr, base.ptr as _) } as _)
+        QFont::from_raw(unsafe {
+            genffi::gen_d_font_size_manager_t2(self.live_ptr(), base.ptr as _)
+        } as _)
     }
     pub fn t3(&self, base: &QFont) -> QFont {
-        QFont::from_raw(unsafe { genffi::gen_d_font_size_manager_t3(self.ptr, base.ptr as _) } as _)
+        QFont::from_raw(unsafe {
+            genffi::gen_d_font_size_manager_t3(self.live_ptr(), base.ptr as _)
+        } as _)
     }
     pub fn t4(&self, base: &QFont) -> QFont {
-        QFont::from_raw(unsafe { genffi::gen_d_font_size_manager_t4(self.ptr, base.ptr as _) } as _)
+        QFont::from_raw(unsafe {
+            genffi::gen_d_font_size_manager_t4(self.live_ptr(), base.ptr as _)
+        } as _)
     }
     pub fn t5(&self, base: &QFont) -> QFont {
-        QFont::from_raw(unsafe { genffi::gen_d_font_size_manager_t5(self.ptr, base.ptr as _) } as _)
+        QFont::from_raw(unsafe {
+            genffi::gen_d_font_size_manager_t5(self.live_ptr(), base.ptr as _)
+        } as _)
     }
     pub fn t6(&self, base: &QFont) -> QFont {
-        QFont::from_raw(unsafe { genffi::gen_d_font_size_manager_t6(self.ptr, base.ptr as _) } as _)
+        QFont::from_raw(unsafe {
+            genffi::gen_d_font_size_manager_t6(self.live_ptr(), base.ptr as _)
+        } as _)
     }
     pub fn t7(&self, base: &QFont) -> QFont {
-        QFont::from_raw(unsafe { genffi::gen_d_font_size_manager_t7(self.ptr, base.ptr as _) } as _)
+        QFont::from_raw(unsafe {
+            genffi::gen_d_font_size_manager_t7(self.live_ptr(), base.ptr as _)
+        } as _)
     }
     pub fn t8(&self, base: &QFont) -> QFont {
-        QFont::from_raw(unsafe { genffi::gen_d_font_size_manager_t8(self.ptr, base.ptr as _) } as _)
+        QFont::from_raw(unsafe {
+            genffi::gen_d_font_size_manager_t8(self.live_ptr(), base.ptr as _)
+        } as _)
     }
     pub fn t9(&self, base: &QFont) -> QFont {
-        QFont::from_raw(unsafe { genffi::gen_d_font_size_manager_t9(self.ptr, base.ptr as _) } as _)
+        QFont::from_raw(unsafe {
+            genffi::gen_d_font_size_manager_t9(self.live_ptr(), base.ptr as _)
+        } as _)
     }
     pub fn t10(&self, base: &QFont) -> QFont {
-        QFont::from_raw(
-            unsafe { genffi::gen_d_font_size_manager_t10(self.ptr, base.ptr as _) } as _,
-        )
+        QFont::from_raw(unsafe {
+            genffi::gen_d_font_size_manager_t10(self.live_ptr(), base.ptr as _)
+        } as _)
     }
     pub fn t11(&self, base: &QFont) -> QFont {
-        QFont::from_raw(
-            unsafe { genffi::gen_d_font_size_manager_t11(self.ptr, base.ptr as _) } as _,
-        )
+        QFont::from_raw(unsafe {
+            genffi::gen_d_font_size_manager_t11(self.live_ptr(), base.ptr as _)
+        } as _)
     }
     pub fn font_pixel_size_2(font: &QFont) -> i32 {
+        dtk_sys::assert_not_closing();
         unsafe { genffi::gen_d_font_size_manager_font_pixel_size_2(font.ptr as _) }
     }
 }
@@ -4941,7 +5015,7 @@ opaque_wrapper!(DTitlebarSettings, genffi::DTitlebarSettings);
 impl DTitlebarSettings {
     pub fn tools_edit_panel(&self) -> Option<QWidget> {
         {
-            let ptr = unsafe { genffi::gen_d_titlebar_settings_tools_edit_panel(self.ptr) };
+            let ptr = unsafe { genffi::gen_d_titlebar_settings_tools_edit_panel(self.live_ptr()) };
             (!ptr.is_null()).then(|| QWidget::from_raw(ptr as _))
         }
     }
@@ -5038,95 +5112,96 @@ impl DWaterMarkHelper {
     pub fn data(&self) -> OwnedOpaque<WaterMarkData> {
         {
             let ptr = unsafe { genffi::gen_d_water_mark_helper_data(self.live_ptr()) };
-            OwnedOpaque::from_owned(WaterMarkData::from_raw(ptr), |value| unsafe {
+            OwnedOpaque::from_owned(WaterMarkData::from_owned_raw(ptr), |value| unsafe {
                 genffi::gen_water_mark_data_delete(value.ptr)
             })
         }
     }
     pub fn set_data(&self, data: &WaterMarkData) {
-        unsafe { genffi::gen_d_water_mark_helper_set_data(self.live_ptr(), data.ptr as _) }
+        unsafe { genffi::gen_d_water_mark_helper_set_data(self.live_ptr(), data.live_ptr() as _) }
     }
 }
 
 opaque_wrapper!(WaterMarkData, genffi::WaterMarkData);
 impl WaterMarkData {
     pub fn new() -> OwnedOpaque<Self> {
+        dtk_sys::assert_not_closing();
         let ptr = unsafe { genffi::gen_water_mark_data_new() };
-        OwnedOpaque::from_owned(Self::from_raw(ptr), |value| unsafe {
+        OwnedOpaque::from_owned(Self::from_owned_raw(ptr), |value| unsafe {
             genffi::gen_water_mark_data_delete(value.ptr)
         })
     }
     pub fn type_(&self) -> i32 {
-        unsafe { genffi::gen_water_mark_data_type_(self.ptr) }
+        unsafe { genffi::gen_water_mark_data_type_(self.live_ptr()) }
     }
     pub fn set_type(&self, type_: i32) {
-        unsafe { genffi::gen_water_mark_data_set_type(self.ptr, type_) }
+        unsafe { genffi::gen_water_mark_data_set_type(self.live_ptr(), type_) }
     }
     pub fn layout(&self) -> i32 {
-        unsafe { genffi::gen_water_mark_data_layout(self.ptr) }
+        unsafe { genffi::gen_water_mark_data_layout(self.live_ptr()) }
     }
     pub fn set_layout(&self, layout: i32) {
-        unsafe { genffi::gen_water_mark_data_set_layout(self.ptr, layout) }
+        unsafe { genffi::gen_water_mark_data_set_layout(self.live_ptr(), layout) }
     }
     pub fn scale_factor(&self) -> f64 {
-        unsafe { genffi::gen_water_mark_data_scale_factor(self.ptr) }
+        unsafe { genffi::gen_water_mark_data_scale_factor(self.live_ptr()) }
     }
     pub fn set_scale_factor(&self, scaleFactor: f64) {
-        unsafe { genffi::gen_water_mark_data_set_scale_factor(self.ptr, scaleFactor) }
+        unsafe { genffi::gen_water_mark_data_set_scale_factor(self.live_ptr(), scaleFactor) }
     }
     pub fn spacing(&self) -> i32 {
-        unsafe { genffi::gen_water_mark_data_spacing(self.ptr) }
+        unsafe { genffi::gen_water_mark_data_spacing(self.live_ptr()) }
     }
     pub fn set_spacing(&self, spacing: i32) {
-        unsafe { genffi::gen_water_mark_data_set_spacing(self.ptr, spacing) }
+        unsafe { genffi::gen_water_mark_data_set_spacing(self.live_ptr(), spacing) }
     }
     pub fn line_spacing(&self) -> i32 {
-        unsafe { genffi::gen_water_mark_data_line_spacing(self.ptr) }
+        unsafe { genffi::gen_water_mark_data_line_spacing(self.live_ptr()) }
     }
     pub fn set_line_spacing(&self, lineSpacing: i32) {
-        unsafe { genffi::gen_water_mark_data_set_line_spacing(self.ptr, lineSpacing) }
+        unsafe { genffi::gen_water_mark_data_set_line_spacing(self.live_ptr(), lineSpacing) }
     }
     pub fn text(&self) -> String {
-        unsafe { genffi::gen_water_mark_data_text(self.ptr) }
+        unsafe { genffi::gen_water_mark_data_text(self.live_ptr()) }
     }
     pub fn set_text(&self, text: &str) {
-        unsafe { genffi::gen_water_mark_data_set_text(self.ptr, text) }
+        unsafe { genffi::gen_water_mark_data_set_text(self.live_ptr(), text) }
     }
     pub fn font(&self) -> QFont {
-        QFont::from_raw(unsafe { genffi::gen_water_mark_data_font(self.ptr) } as _)
+        QFont::from_raw(unsafe { genffi::gen_water_mark_data_font(self.live_ptr()) } as _)
     }
     pub fn set_font(&self, font: &QFont) {
-        unsafe { genffi::gen_water_mark_data_set_font(self.ptr, font.ptr as _) }
+        unsafe { genffi::gen_water_mark_data_set_font(self.live_ptr(), font.ptr as _) }
     }
     pub fn color(&self) -> QColor {
-        QColor::from_raw(unsafe { genffi::gen_water_mark_data_color(self.ptr) } as _)
+        QColor::from_raw(unsafe { genffi::gen_water_mark_data_color(self.live_ptr()) } as _)
     }
     pub fn set_color(&self, color: &QColor) {
-        unsafe { genffi::gen_water_mark_data_set_color(self.ptr, color.ptr as _) }
+        unsafe { genffi::gen_water_mark_data_set_color(self.live_ptr(), color.ptr as _) }
     }
     pub fn rotation(&self) -> f64 {
-        unsafe { genffi::gen_water_mark_data_rotation(self.ptr) }
+        unsafe { genffi::gen_water_mark_data_rotation(self.live_ptr()) }
     }
     pub fn set_rotation(&self, rotation: f64) {
-        unsafe { genffi::gen_water_mark_data_set_rotation(self.ptr, rotation) }
+        unsafe { genffi::gen_water_mark_data_set_rotation(self.live_ptr(), rotation) }
     }
     pub fn opacity(&self) -> f64 {
-        unsafe { genffi::gen_water_mark_data_opacity(self.ptr) }
+        unsafe { genffi::gen_water_mark_data_opacity(self.live_ptr()) }
     }
     pub fn set_opacity(&self, opacity: f64) {
-        unsafe { genffi::gen_water_mark_data_set_opacity(self.ptr, opacity) }
+        unsafe { genffi::gen_water_mark_data_set_opacity(self.live_ptr(), opacity) }
     }
     pub fn image(&self) -> QImage {
-        QImage::from_raw(unsafe { genffi::gen_water_mark_data_image(self.ptr) } as _)
+        QImage::from_raw(unsafe { genffi::gen_water_mark_data_image(self.live_ptr()) } as _)
     }
     pub fn set_image(&self, image: &QImage) {
-        unsafe { genffi::gen_water_mark_data_set_image(self.ptr, image.ptr as _) }
+        unsafe { genffi::gen_water_mark_data_set_image(self.live_ptr(), image.ptr as _) }
     }
     pub fn gray_scale(&self) -> bool {
-        unsafe { genffi::gen_water_mark_data_gray_scale(self.ptr) }
+        unsafe { genffi::gen_water_mark_data_gray_scale(self.live_ptr()) }
     }
     pub fn set_gray_scale(&self, grayScale: bool) {
-        unsafe { genffi::gen_water_mark_data_set_gray_scale(self.ptr, grayScale) }
+        unsafe { genffi::gen_water_mark_data_set_gray_scale(self.live_ptr(), grayScale) }
     }
 }
 
@@ -5146,13 +5221,13 @@ impl DWaterMarkWidget {
     pub fn data(&self) -> OwnedOpaque<WaterMarkData> {
         {
             let ptr = unsafe { genffi::gen_d_water_mark_widget_data(self.live_ptr()) };
-            OwnedOpaque::from_owned(WaterMarkData::from_raw(ptr), |value| unsafe {
+            OwnedOpaque::from_owned(WaterMarkData::from_owned_raw(ptr), |value| unsafe {
                 genffi::gen_water_mark_data_delete(value.ptr)
             })
         }
     }
     pub fn set_data(&self, data: &WaterMarkData) {
-        unsafe { genffi::gen_d_water_mark_widget_set_data(self.live_ptr(), data.ptr as _) }
+        unsafe { genffi::gen_d_water_mark_widget_set_data(self.live_ptr(), data.live_ptr() as _) }
     }
 }
 

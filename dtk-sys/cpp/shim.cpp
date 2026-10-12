@@ -46,7 +46,7 @@ public:
 namespace dtkrs {
 
 QObjectGuard::QObjectGuard(QObject *object)
-    : watched(object), runtime_state(core_runtime_guard_state()),
+    : watched(object), runtime_state(application_runtime_guard_state()),
       was_parented(object->parent() != nullptr) {
     object->installEventFilter(this);
 }
@@ -62,34 +62,22 @@ std::unique_ptr<QObjectGuard> guard_object(QObject *object) {
 std::unique_ptr<QObjectGuard> guard_widget(QWidget *widget) {
     return guard_object(widget); // C++ adjusts QWidget* to its QObject base
 }
+std::unique_ptr<QObjectGuard> guard_current_application() {
+    // Reject workers/closing scopes before touching Qt's singleton.
+    return application_is_core() ? guard_object(QCoreApplication::instance()) : nullptr;
+}
 bool guard_alive(const QObjectGuard &guard) {
     return (!guard.runtime_state || !guard.runtime_state->closing) && !guard.watched.isNull();
 }
+bool guard_native_alive(const QObjectGuard &guard) { return !guard.watched.isNull(); }
 bool guard_was_parented(const QObjectGuard &guard) { return guard.was_parented; }
 
 // Release a Rust closure as soon as the QObject that can invoke it is destroyed.
 // No receiver/context is needed: Qt removes the connection with its sender.
 static void dispose_on_destroy(QObject *owner, size_t cb_id) {
+    application_runtime_track_object(owner);
     QObject::connect(owner, &QObject::destroyed, [cb_id] { dtk_cb_dispose(cb_id); });
 }
-
-// DApplication subclass: event() intercepts QEvent::Quit and asks the Rust guard
-class DtkAppEx : public DApplication {
-public:
-    DtkAppEx(int &argc, char **argv, size_t guard_id)
-        : DApplication(argc, argv), m_guard_id(guard_id) {
-        dispose_on_destroy(this, guard_id);
-    }
-
-    bool event(QEvent *e) override {
-        if (e->type() == QEvent::Quit && m_guard_id && !dtk_cb_guard(m_guard_id))
-            return true; // guard refused -> swallow; the Rust side schedules its own retry
-        return DApplication::event(e);
-    }
-
-private:
-    size_t m_guard_id;
-};
 
 // DMainWindow subclass: forwards showEvent/closeEvent to Rust
 class DtkMainWindowEx : public DMainWindow {
@@ -303,61 +291,10 @@ private:
 };
 
 // ---- DApplication ----
-// QApplication requires argc AND argv to outlive the app (Qt6 stores int& argc):
-// static storage, filled on first call (QApplication is a singleton anyway)
-static std::pair<int &, char **> make_argv(rust::Str name, rust::Vec<uint8_t> bytes,
-                                           rust::Vec<size_t> lengths) {
-    static std::vector<std::string> store;
-    static std::vector<char *> argv;
-    static int argc;
-    if (!store.empty()) // QApplication singleton: second call reuses the first argv
-        return {argc, argv.data()};
-    size_t offset = 0;
-    for (const size_t length : lengths) {
-        if (length > bytes.size() - offset) // malformed FFI input; never read outside the buffer
-            break;
-        if (length)
-            store.emplace_back(reinterpret_cast<const char *>(bytes.data() + offset), length);
-        else
-            store.emplace_back(); // an empty argv entry is valid and must be kept
-        offset += length;
-    }
-    if (store.empty())
-        store.emplace_back(name.data(), name.size());
-    for (auto &s : store)
-        argv.push_back(s.data());
-    argv.push_back(nullptr); // Qt expects argv[argc] == nullptr
-    argc = static_cast<int>(store.size());
-    return {argc, argv.data()};
+DApplication *application_runtime_gui_application(const ApplicationRuntime &runtime) {
+    return qobject_cast<DApplication *>(runtime.application());
 }
-
-DApplication *application_new(rust::Str name, rust::Vec<uint8_t> bytes,
-                              rust::Vec<size_t> lengths) {
-    if (!application_can_construct())
-        return nullptr; // Main thread, singleton, and not inside Core teardown
-    auto [argc, argv] = make_argv(name, std::move(bytes), std::move(lengths));
-    auto *app = new DApplication(argc, argv);
-    app->setApplicationName(from_rust_str(name));
-    return app;
-}
-
-bool application_is_gui() {
-    // application_is_core rejects workers before they can race native teardown.
-    return application_is_core()
-        && qobject_cast<QApplication *>(QCoreApplication::instance()) != nullptr;
-}
-int32_t application_exec(DApplication *app) { return app->exec(); }
 void application_quit() { QCoreApplication::quit(); }
-
-DApplication *application_new_ex(rust::Str name, rust::Vec<uint8_t> bytes,
-                                 rust::Vec<size_t> lengths, size_t quit_guard_id) {
-    if (!application_can_construct())
-        return nullptr;
-    auto [argc, argv] = make_argv(name, std::move(bytes), std::move(lengths));
-    auto *app = new DtkAppEx(argc, argv, quit_guard_id);
-    app->setApplicationName(from_rust_str(name));
-    return app;
-}
 
 void application_set_quit_on_last_window_closed(bool quit) {
     QGuiApplication::setQuitOnLastWindowClosed(quit);
@@ -1050,6 +987,7 @@ bool relay_connect_i32_i32(QObject *sender, rust::Str signal, size_t cb_id) {
 }
 
 void relay_disconnect(size_t cb_id) { DtkRelay::disconnectId(cb_id); }
+size_t relay_live_count() { return DtkRelay::liveCount(); }
 
 void widget_set_cursor(QWidget *w, int32_t shape) {
     w->setCursor(static_cast<Qt::CursorShape>(shape));

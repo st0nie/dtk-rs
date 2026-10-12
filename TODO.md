@@ -29,12 +29,12 @@ Known gaps in dtk-rs, roughly in priority order.
       constructor-owned DConfig objects without reparenting, and invalidates
       escaped guards. Tests cover panic/no-exec, repeated/nested scopes,
       wrong-thread/teardown reentry and headless worker-message delivery
-      (`core_application_selfcheck`). GUI DApplication RAII is still incomplete.
-- [ ] Finish the remaining lifetime/FFI audit: GUI `DApplication` is not RAII;
-      `deleteLater()` cannot guarantee deletion after the GUI event loop stops,
-      non-QObject borrowed returns have no liveness guard, and native Qt calls
-      may reentrantly delete objects *after* a guard check. A public method
-      must not become sound solely because QPointer was checked earlier.
+      (`core_application_selfcheck`). GUI and Core now share the native scope.
+- [ ] Finish the remaining lifetime/FFI audit: non-QObject borrowed returns
+      have scope invalidation but no native-allocation liveness guard within
+      that scope, and native Qt calls may reentrantly delete objects *after*
+      a guard check. A public method must not become sound solely because
+      QPointer was checked earlier.
 - [x] Split 18 generated non-QObject constructors (including `DPrinter`,
       `DStyleOptionButton`, `DFileIconProvider`) into `OwnedOpaque<T>` with a
       generated C++ deleter in `Drop`; opaque views are not `Copy`/`Clone`.
@@ -57,15 +57,27 @@ Known gaps in dtk-rs, roughly in priority order.
       `PaintDelegate` already borrows `&Painter`/`&ModelIndex`.
 - [ ] Audit other borrowed handles and reentrant deletion before claiming Rust
       safety; Qt may destroy the native object *during* an FFI call.
-- [ ] Make QApplication creation/destruction a genuine singleton RAII contract,
-      including cleanup of unparented objects and event-loop shutdown semantics.
-      Offscreen `.pi/app-drop-probe` demonstrated that after dropping Rust
-      `DApplication`, a 60-second QTimer still holds its Rust callback and
-      `QWidget::new()` still succeeds: native QApplication remains allocated.
-      Synchronously deleting QApplication from `Drop` is **not** safe if an
-      app owner is moved into a click/signal callback and dropped during its
-      C++ event frame. Design scoped/non-reentrant shutdown plus invalidation
-      of QApplication-dependent QObject views and deferred-deletion draining.
+- [x] Replace GUI's leaked application handle with `DApplication::with` and
+      `with_quit_guard`: privately owned singleton/argv, borrowed non-Clone
+      tokens, native deletion outside callback/event/exec frames. Shared
+      GUI/Core closing state rejects constructor/method/dispatch reentry;
+      scope exit frees top-level windows, constructor/transfer-owned objects,
+      pending timers, connections and Rust captures without another loop turn.
+      Finish accepted native DConfig work with a FIFO worker-affinity stop
+      marker, then join its event thread before application deletion (Qt6
+      notify/self-pointer race). Keep its borrowed allocation and restart only
+      after the next GUI/Core runtime is constructed. A gate fixture verifies
+      actual config updates complete before scope return; worker roundtrips
+      prove functionality across GUI→Core→GUI rather than only isRunning.
+      Borrowed DTK QObject and opaque singleton views expire, even when native
+      singletons survive a new application. Preserve Qt parents and adoption
+      history; do not globally drain borrowed native DeferredDelete events.
+      `gui_application_selfcheck` includes independent native QPointer deletion
+      witnesses, no-exec/panic/capture-Drop panic, close veto, singleton relays,
+      worker sender cancellation and repeated GUI/Core scopes. Compile-fail
+      docs reject token escape/capture/owning clone; sys `guard_selfcheck` checks
+      recursive exec rejection and fresh per-scope argv. Run all existing and
+      new Debug/Release regressions with `bash tools/check.sh`.
 
 ## Qt/DTK feature coverage (see GEN_REPORT.md for per-method detail)
 

@@ -39,7 +39,9 @@ fn main() {
         expect_panic("process main thread", || {
             QCoreApplication::with("wrong-thread", |_| {})
         });
-        expect_panic("process main thread", || DApplication::new("wrong-thread"));
+        expect_panic("process main thread", || {
+            DApplication::with("wrong-thread", |_| {})
+        });
     })
     .join()
     .expect("wrong-thread application creation is rejected");
@@ -55,7 +57,7 @@ fn main() {
                 QCoreApplication::with("nested", |_| {})
             });
             expect_panic("only one Qt application", || {
-                DApplication::new("nested-gui")
+                DApplication::with("nested-gui", |_| {})
             });
             expect_panic("create DApplication", || QWidget::new(None));
             expect_panic("create DApplication", || QPixmap::new(""));

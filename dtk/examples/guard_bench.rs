@@ -19,24 +19,25 @@ fn measure(mut get: impl FnMut() -> i32) -> f64 {
 }
 
 fn main() {
-    let app = DApplication::new("dtk-guard-bench");
-    DApplication::set_quit_on_last_window_closed(false);
-    let widget = QWidget::new(None);
-    let combo = DComboBox::new();
-    // QWidget/QObject are the primary Qt base of these objects. The raw path
-    // is benchmarking-only and must never be used after their Qt destruction.
-    let raw = widget.qobject_ptr().cast::<ffi::QWidget>();
-    let combo_raw = combo.as_widget().qobject_ptr().cast::<ffi::QWidget>();
-    let baseline = measure(|| unsafe { ffi::widget_width(black_box(raw)) });
-    let checked = measure(|| black_box(&widget).width());
-    let combo_checked = measure(|| black_box(&combo).width());
-    let combo_raw_ns = measure(|| unsafe { ffi::widget_width(black_box(combo_raw)) });
-    println!("raw QWidget width: {baseline:.1} ns/call");
-    println!("checked QWidget width: {checked:.1} ns/call");
-    println!("raw DTK widget width: {combo_raw_ns:.1} ns/call");
-    println!("checked DTK widget width: {combo_checked:.1} ns/call");
-    widget.delete_later();
-    combo.delete_later();
-    QTimer::single_shot(10, DApplication::quit);
-    assert_eq!(app.exec(), 0);
+    DApplication::with("dtk-guard-bench", |app| {
+        DApplication::set_quit_on_last_window_closed(false);
+        let widget = QWidget::new(None);
+        let combo = DComboBox::new();
+        // QWidget/QObject are the primary Qt base of these objects. The raw path
+        // is benchmarking-only and must never be used after their Qt destruction.
+        let raw = widget.qobject_ptr().cast::<ffi::QWidget>();
+        let combo_raw = combo.as_widget().qobject_ptr().cast::<ffi::QWidget>();
+        let baseline = measure(|| unsafe { ffi::widget_width(black_box(raw)) });
+        let checked = measure(|| black_box(&widget).width());
+        let combo_checked = measure(|| black_box(&combo).width());
+        let combo_raw_ns = measure(|| unsafe { ffi::widget_width(black_box(combo_raw)) });
+        println!("raw QWidget width: {baseline:.1} ns/call");
+        println!("checked QWidget width: {checked:.1} ns/call");
+        println!("raw DTK widget width: {combo_raw_ns:.1} ns/call");
+        println!("checked DTK widget width: {combo_checked:.1} ns/call");
+        widget.delete_later();
+        combo.delete_later();
+        QTimer::single_shot(10, DApplication::quit);
+        assert_eq!(app.exec(), 0);
+    });
 }

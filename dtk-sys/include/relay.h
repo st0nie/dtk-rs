@@ -20,6 +20,8 @@ public:
     static bool connectI32I32(QObject *sender, const char *signal, size_t cb_id);
     /// disconnect + deleteLater the relay for cb_id (no-op if unknown)
     static void disconnectId(size_t cb_id);
+    // Owning-thread diagnostic, including relays waiting for deleteLater.
+    static size_t liveCount();
 
 public Q_SLOTS:
     void fire0();

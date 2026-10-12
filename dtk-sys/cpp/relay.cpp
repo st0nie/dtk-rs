@@ -1,4 +1,5 @@
 #include "relay.h"
+#include "application_runtime.h"
 #include "dtk-sys/src/lib.rs.h" // dtk_cb0 / dtk_cb_i32 / dtk_cb_bool
 
 #include <QHash>
@@ -8,10 +9,15 @@ namespace dtkrs {
 
 // GUI-thread only; relays self-remove from this map on destruction (sender gone)
 static QHash<size_t, DtkRelay *> g_relays;
+static size_t g_live_relays = 0;
 
-DtkRelay::DtkRelay(size_t cb_id, QObject *parent) : QObject(parent), m_cb_id(cb_id) {}
+DtkRelay::DtkRelay(size_t cb_id, QObject *parent) : QObject(parent), m_cb_id(cb_id) {
+    ++g_live_relays;
+}
+size_t DtkRelay::liveCount() { return g_live_relays; }
 
 DtkRelay::~DtkRelay() {
+    --g_live_relays;
     // Explicit unregister takes the entry first; destruction with the sender
     // must also release the Rust closure (including reentrant destruction).
     if (g_relays.value(m_cb_id) == this) {
@@ -23,6 +29,9 @@ DtkRelay::~DtkRelay() {
 static bool connect_impl(QObject *sender, const char *signal, size_t cb_id,
                          const char *slot) {
     auto *relay = new DtkRelay(cb_id, sender); // parented to sender, destroyed with it
+    // The sender can be a process-global borrowed DTK singleton. Reclaim our
+    // relay at scope exit even if that singleton survives QApplication.
+    application_runtime_track_object(relay);
     QByteArray sig = "2" + QMetaObject::normalizedSignature(signal); // '2' = signal prefix
     if (!QObject::connect(sender, sig.constData(), relay, slot)) {
         qWarning("dtkrs: connect signal %s on %s failed", signal,

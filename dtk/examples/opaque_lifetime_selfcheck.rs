@@ -4,21 +4,22 @@ use dtk::widgets::{DFileIconProvider, DPrinter, DStyleOptionButton};
 use dtk::{DApplication, OwnedOpaque};
 
 fn main() {
-    let _app = DApplication::new("dtk-opaque-lifetime-selfcheck");
-    assert!(std::mem::needs_drop::<OwnedOpaque<DStyleOptionButton>>());
-    assert!(std::mem::needs_drop::<OwnedOpaque<DFileIconProvider>>());
-    assert!(std::mem::needs_drop::<OwnedOpaque<DPrinter>>());
+    DApplication::with("dtk-opaque-lifetime-selfcheck", |_| {
+        assert!(std::mem::needs_drop::<OwnedOpaque<DStyleOptionButton>>());
+        assert!(std::mem::needs_drop::<OwnedOpaque<DFileIconProvider>>());
+        assert!(std::mem::needs_drop::<OwnedOpaque<DPrinter>>());
 
-    for _ in 0..64 {
-        let style = DStyleOptionButton::new();
-        let provider = DFileIconProvider::new();
-        let printer = DPrinter::new();
-        // Deref gives methods their normal borrowed DTK receiver without
-        // duplicating the unique owner or freeing borrowed singleton pointers.
-        let _ = &*style;
-        let _ = &*provider;
-        let _ = &*printer;
-        drop((style, provider, printer));
-    }
-    println!("opaque lifetime selfcheck ok");
+        for _ in 0..64 {
+            let style = DStyleOptionButton::new();
+            let provider = DFileIconProvider::new();
+            let printer = DPrinter::new();
+            // Deref gives methods their normal borrowed DTK receiver without
+            // duplicating the unique owner or freeing borrowed singleton pointers.
+            let _ = &*style;
+            let _ = &*provider;
+            let _ = &*printer;
+            drop((style, provider, printer));
+        }
+        println!("opaque lifetime selfcheck ok");
+    });
 }

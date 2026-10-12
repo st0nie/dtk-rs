@@ -141,6 +141,18 @@ class QtAncestryTests(unittest.TestCase):
         )
         self.assertIn("pub unsafe fn instance() -> Option<DFontSizeManager>", generated)
 
+    def test_opaque_borrows_expire_but_owned_copies_remain_independent(self):
+        root = Path(REPO)
+        generated = (root / "dtk/src/widgets.rs").read_text()
+        self.assertIn("OwnedOpaque::from_owned(Self::from_owned_raw(ptr)", generated)
+        self.assertIn("OwnedOpaque::from_owned(WaterMarkData::from_owned_raw(ptr)", generated)
+        self.assertRegex(generated, r"pub unsafe fn instance\(\) -> Option<DFontSizeManager> \{\s*crate::require_application\(\);")
+        self.assertRegex(generated, r"pub unsafe fn global_provider\(\) -> Option<DFileIconProvider> \{\s*crate::require_application\(\);")
+        self.assertIn("genffi::gen_d_font_size_manager_font_pixel_size(self.live_ptr(), type_)", generated)
+        self.assertNotIn("genffi::gen_d_font_size_manager_font_pixel_size(self.ptr,", generated)
+        self.assertRegex(generated, r"impl DPrinter \{\s*pub fn new\(\) -> OwnedOpaque<Self> \{\s*crate::require_application\(\);")
+        self.assertIn("scope_guard: Option<dtk_sys::ObjectGuard>", (root / "dtk/src/lib.rs").read_text())
+
     def test_qt_layout_pointer_binding(self):
         generated = Path(REPO, "dtk/src/widgets.rs").read_text()
         report = Path(REPO, "GEN_REPORT.md").read_text()

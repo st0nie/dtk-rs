@@ -55,10 +55,11 @@ fn _messagemanager_usage() {
 fn main() {
     // smoke: methods exist + types resolve; exec() only with --show (blocks offscreen otherwise)
     let show = std::env::args().any(|a| a == "--show");
-    let _app = DApplication::new("selfcheck");
-    _ddialog_usage(show);
-    _dmessagebox_usage(show);
-    _messagemanager_usage();
-    let _w = QWidget::new(None);
-    println!("selfcheck ok");
+    DApplication::with("selfcheck", |_| {
+        _ddialog_usage(show);
+        _dmessagebox_usage(show);
+        _messagemanager_usage();
+        let _w = QWidget::new(None);
+        println!("selfcheck ok");
+    });
 }

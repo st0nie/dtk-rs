@@ -760,9 +760,13 @@ def emit(classes, domain="widget"):
             casts += f", genffi::gen_{sname}_as_widget"
         wrapper.append(f"{mac}!({name}, genffi::{name}{casts});\nimpl {name} {{\n")
         if owns_opaque:
+            # QPrinter requires a GUI application; independent opaque values
+            # retain their old no-app behavior, but none may reenter shutdown.
+            ctor_check = f"        crate::{runtime_check}();\n" if name == "DPrinter" else "        dtk_sys::assert_not_closing();\n"
             wrapper.append(f"    pub fn new() -> OwnedOpaque<Self> {{\n"
+                           f"{ctor_check}"
                            f"        let ptr = unsafe {{ genffi::gen_{sname}_new() }};\n"
-                           f"        OwnedOpaque::from_owned(Self::from_raw(ptr), "
+                           f"        OwnedOpaque::from_owned(Self::from_owned_raw(ptr), "
                            f"|value| unsafe {{ genffi::gen_{sname}_delete(value.ptr) }})\n    }}\n")
         elif c["ctor_new"]:
             wrapper.append(f"    pub fn new() -> Owned<Self> {{\n        crate::{runtime_check}();\n        "
@@ -786,8 +790,7 @@ def emit(classes, domain="widget"):
                 pname, ptype = rs.split(": ", 1)
                 if pkind == "ptr":
                     wr_args.append(f"{pname}: &{pcls}")
-                    source = f"{pname}.ptr" if kind_by_name[pcls] == "opaque" else f"{pname}.live_ptr()"
-                    call_args.append(source)
+                    call_args.append(f"{pname}.live_ptr()")
                 elif pkind == "qtptr":
                     wr_args.append(f"{pname}: &{pcls}")
                     # AUDIT(2026-02): casting between ffi::QWidget and genffi::QWidget is sound.
@@ -800,7 +803,8 @@ def emit(classes, domain="widget"):
                     call_args.append(f"{pname}.live_ptr() as _")
                 elif pkind in ("val", "valref", "valmut"):
                     wr_args.append(f"{pname}: {'&mut ' if pkind == 'valmut' else '&'}{pcls}")
-                    call_args.append(f"{pname}.ptr as _")  # same audit as qtptr above
+                    source = f"{pname}.live_ptr()" if kind_by_name.get(pcls) == "opaque" else f"{pname}.ptr"
+                    call_args.append(f"{source} as _")  # same audit as qtptr above
                 elif pkind in ("enum", "qtenum", "qflags") and pcls in domain_enums:
                     rust_enum, _members = domain_enums[pcls]
                     wr_args.append(f"{pname}: {rust_enum}")
@@ -810,7 +814,7 @@ def emit(classes, domain="widget"):
                     call_args.append(pname)
             self_piece = [] if is_static else ["&self"]
             sig = ", ".join(self_piece + wr_args)
-            self_call = [] if is_static else ["self.ptr" if c["kind"] == "opaque" else "self.live_ptr()"]
+            self_call = [] if is_static else ["self.live_ptr()"]
             calls = ", ".join(self_call + call_args)
             # Returns: wrap pointer getters in borrowed, nullable views, NOT
             # in Owned<T> merely because the method name starts with `take`.
@@ -835,7 +839,7 @@ def emit(classes, domain="widget"):
             elif ret_kind == "valcopy":
                 ret_decl = f" -> OwnedOpaque<{ret_cls}>"
                 expr = (f"{{ let ptr = unsafe {{ genffi::{fn_name}({calls}) }}; "
-                        f"OwnedOpaque::from_owned({ret_cls}::from_raw(ptr), "
+                        f"OwnedOpaque::from_owned({ret_cls}::from_owned_raw(ptr), "
                         f"|value| unsafe {{ genffi::gen_{snake(ret_cls)}_delete(value.ptr) }}) }}")
             else:
                 ret_decl = "" if ret_rs == "()" else f" -> {ret_rs}"
@@ -844,16 +848,20 @@ def emit(classes, domain="widget"):
             # Requiring an existing GUI app here would invert that contract.
             pre_app_call = domain == "core" and name == "DConfig" and meth == "setAppId"
             precheck = (f"        crate::{runtime_check}();\n"
-                        if is_static and c["kind"] in ("widget", "object") and not pre_app_call
-                        else "")
-            # A non-QObject pointer has no QPointer guard or Rust lifetime.
+                        if is_static and not pre_app_call and (
+                            c["kind"] in ("widget", "object") or ret_kind == "ptr"
+                        ) else "        dtk_sys::assert_not_closing();\n" if is_static and c["kind"] == "opaque" else "")
+            # Non-QObject borrows carry a scope guard, not a native QPointer:
+            # application exit invalidates them, but native deletion within a
+            # live scope still needs the caller's audited ownership/lifetime.
             # Its native ownership may be borrowed OR transferred, depending
             # on the specific DTK method; don't infer from spelling. Neither
             # access nor destruction can be promised by a safe Rust method.
             unguarded_return = ret_kind == "ptr" and kind_by_name.get(ret_cls) == "opaque"
             safety = ("    /// # Safety\n"
-                      "    /// The returned non-QObject pointer is unguarded. The caller must\n"
-                      "    /// verify this DTK method's ownership contract, keep the native\n"
+                      "    /// This non-QObject borrow is invalidated at application scope exit,\n"
+                      "    /// but has no native liveness guard. The caller must verify this\n"
+                      "    /// DTK method's ownership contract, keep the native\n"
                       "    /// allocation live for every access, and arrange deletion only if\n"
                       "    /// ownership was explicitly transferred by native code.\n"
                       if unguarded_return else "")

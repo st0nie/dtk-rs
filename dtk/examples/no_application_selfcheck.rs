@@ -2,7 +2,7 @@
 //! QT_QPA_PLATFORM=offscreen cargo run --example no_application_selfcheck
 use dtk::core::DConfig;
 use dtk::gui::{DFontManager, DImageHandler};
-use dtk::widgets::{DListView, DMessageManager};
+use dtk::widgets::{DFileIconProvider, DFontSizeManager, DListView, DMessageManager, DPrinter};
 use dtk::{
     Clipboard, DApplication, QCoreApplication, QPixmap, QTableWidget, QTimer, QVariant,
     QVariantList, QWidget,
@@ -24,6 +24,13 @@ fn main() {
         DConfig::create_generic("missing", "")
     });
     expect_panic("create DApplication", DMessageManager::instance);
+    expect_panic("create DApplication", DPrinter::new);
+    expect_panic("create DApplication", || unsafe {
+        DFontSizeManager::instance()
+    });
+    expect_panic("create DApplication", || unsafe {
+        DFileIconProvider::global_provider()
+    });
     expect_panic("create DApplication", || QTableWidget::new(0, 0));
     expect_panic("create DApplication", Clipboard::text);
     expect_panic("create DApplication", || QPixmap::new(""));
@@ -41,30 +48,33 @@ fn main() {
 
     // A finished headless scope releases Qt's singleton before GUI startup.
     QCoreApplication::with("headless-before-gui", |_| {});
-    let app = DApplication::new("dtk-no-application-selfcheck");
-    expect_panic("only one Qt application", || {
-        QCoreApplication::with("nested-core", |_| {})
-    });
-    DApplication::set_quit_on_last_window_closed(false);
-    let widget = QWidget::new(None);
-    assert!(widget.is_alive());
-    std::thread::spawn(|| {
-        // A process-global QApplication existing on the GUI thread is NOT
-        // permission for a worker to allocate a QWidget or QObject there.
-        expect_panic("GUI thread", || QWidget::new(None));
-        expect_panic("GUI thread", DListView::new);
-        expect_panic("GUI thread", DImageHandler::new);
-        expect_panic("GUI thread", DFontManager::new);
-        expect_panic("owning Qt thread", || {
-            DConfig::create_generic("missing", "")
+    DApplication::with("dtk-no-application-selfcheck", |app| {
+        expect_panic("only one Qt application", || {
+            QCoreApplication::with("nested-core", |_| {})
         });
-        expect_panic("owning Qt thread", || QTimer::single_shot(0, || {}));
-    })
-    .join()
-    .unwrap();
-    widget.delete_later();
-    QTimer::single_shot(10, DApplication::quit);
-    assert_eq!(app.exec(), 0);
-    assert!(!widget.is_alive());
-    println!("no-application selfcheck ok");
+        DApplication::set_quit_on_last_window_closed(false);
+        let widget = QWidget::new(None);
+        assert!(widget.is_alive());
+        std::thread::spawn(|| {
+            // A process-global QApplication existing on the GUI thread is NOT
+            // permission for a worker to allocate a QWidget or QObject there.
+            expect_panic("GUI thread", || QWidget::new(None));
+            expect_panic("GUI thread", DListView::new);
+            expect_panic("GUI thread", DImageHandler::new);
+            expect_panic("GUI thread", DFontManager::new);
+            expect_panic("GUI thread", DPrinter::new);
+            expect_panic("GUI thread", || unsafe { DFontSizeManager::instance() });
+            expect_panic("owning Qt thread", || {
+                DConfig::create_generic("missing", "")
+            });
+            expect_panic("owning Qt thread", || QTimer::single_shot(0, || {}));
+        })
+        .join()
+        .unwrap();
+        widget.delete_later();
+        QTimer::single_shot(10, DApplication::quit);
+        assert_eq!(app.exec(), 0);
+        assert!(!widget.is_alive());
+        println!("no-application selfcheck ok");
+    });
 }

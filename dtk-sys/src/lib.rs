@@ -16,6 +16,7 @@ pub mod gui_ffi;
 pub mod ffi {
     extern "C++" {
         include!("dtk_shim.h");
+        include!("runtime_worker_probe.h");
 
         type QObject;
         type QWidget;
@@ -24,8 +25,12 @@ pub mod ffi {
         unsafe fn guard_object(object: *mut QObject) -> UniquePtr<QObjectGuard>;
         /// Same for QWidget; C++ performs the correct base-class pointer adjustment.
         unsafe fn guard_widget(widget: *mut QWidget) -> UniquePtr<QObjectGuard>;
+        /// Owning-thread scope sentinel; null without an open managed application.
+        unsafe fn guard_current_application() -> UniquePtr<QObjectGuard>;
         /// QPointer clears on Qt destruction, even when Rust still holds its guard.
         unsafe fn guard_alive(guard: &QObjectGuard) -> bool;
+        /// Diagnostic only: ignores scope closing, NEVER authorizes object access.
+        unsafe fn guard_native_alive(guard: &QObjectGuard) -> bool;
         /// True once Qt has parented the object, even if it was later detached.
         unsafe fn guard_was_parented(guard: &QObjectGuard) -> bool;
         type QAbstractButton;
@@ -72,35 +77,39 @@ pub mod ffi {
         type QMenu;
         type QAction;
 
-        // Scoped QCoreApplication (owner never exposed to 'static callbacks)
-        type CoreRuntime;
-        unsafe fn core_runtime_new(
+        // Scoped QtCore/GUI owner: only destroy after all native event/FFI
+        // frames have returned. Raw sys callers must uphold this contract too.
+        type ApplicationRuntime;
+        // Each scope owns writable raw argv bytes + entry lengths (incl. argv[0]).
+        unsafe fn application_runtime_new(
             name: &str,
             argv: Vec<u8>,
             lengths: Vec<usize>,
-        ) -> UniquePtr<CoreRuntime>;
-        unsafe fn core_runtime_application(runtime: &CoreRuntime) -> *mut QObject;
-        unsafe fn core_runtime_can_exec(runtime: &CoreRuntime) -> bool;
-        unsafe fn core_runtime_exec(runtime: *mut CoreRuntime) -> i32;
-        unsafe fn core_runtime_track_object(object: *mut QObject);
-        unsafe fn application_is_main_thread() -> bool;
-        unsafe fn application_is_core() -> bool;
-
-        // DApplication
-        // Raw argv bytes + lengths (incl. argv[0]); Qt stores writable char* entries.
-        unsafe fn application_new(
-            name: &str,
-            argv: Vec<u8>,
-            lengths: Vec<usize>,
-        ) -> *mut DApplication;
-        unsafe fn application_new_ex(
-            name: &str,
-            argv: Vec<u8>,
-            lengths: Vec<usize>,
+            gui: bool,
             quit_guard_id: usize,
+        ) -> UniquePtr<ApplicationRuntime>;
+        unsafe fn application_runtime_application(runtime: &ApplicationRuntime) -> *mut QObject;
+        unsafe fn application_runtime_gui_application(
+            runtime: &ApplicationRuntime,
         ) -> *mut DApplication;
+        unsafe fn application_runtime_can_exec(runtime: &ApplicationRuntime) -> bool;
+        unsafe fn application_runtime_exec(runtime: *mut ApplicationRuntime) -> i32;
+        unsafe fn application_runtime_track_object(object: *mut QObject);
+        unsafe fn application_is_main_thread() -> bool;
+        unsafe fn application_can_construct() -> bool;
+        unsafe fn application_is_core() -> bool;
         unsafe fn application_is_gui() -> bool;
-        unsafe fn application_exec(app: *mut DApplication) -> i32;
+        /// Owning-thread diagnostic; does not instantiate a native worker.
+        unsafe fn application_runtime_workers_stopped() -> bool;
+        /// A real FIFO worker-affinity task, without dispatching the GUI loop.
+        unsafe fn application_runtime_worker_roundtrip() -> bool;
+        // Native-only deterministic queue fixture. Keep it outside the user
+        // closure until after scope cleanup: A is held until stop is enqueued.
+        type ConfigWorkerProbe;
+        unsafe fn config_worker_probe_new() -> UniquePtr<ConfigWorkerProbe>;
+        unsafe fn config_worker_probe_completed(probe: &ConfigWorkerProbe) -> bool;
+
+        // DApplication operations
         unsafe fn application_quit();
         unsafe fn application_set_quit_on_last_window_closed(quit: bool);
         unsafe fn application_set_application_display_name(name: &str);
@@ -520,6 +529,8 @@ pub mod ffi {
         unsafe fn relay_connect_i32_i32(sender: *mut QObject, signal: &str, cb_id: usize) -> bool;
         /// disconnect + schedule deletion of the relay for cb_id (no-op if unknown)
         unsafe fn relay_disconnect(cb_id: usize);
+        /// Owning-thread diagnostic, including disconnected deferred relays.
+        unsafe fn relay_live_count() -> usize;
 
         // user-drawn widget + clipboard + shortcuts
         unsafe fn paint_widget_new(cb_id: usize, parent: *mut QWidget) -> *mut QWidget;
@@ -530,6 +541,9 @@ pub mod ffi {
     }
 
     extern "Rust" {
+        fn dtk_callbacks_begin_scope(quit_guard_id: usize);
+        fn dtk_callbacks_end_scope();
+        fn dtk_callbacks_finish_scope();
         fn dtk_cb_dispose(id: usize);
         fn dtk_cb0(id: usize);
         fn dtk_cb_i32(id: usize, v: i32);
@@ -578,6 +592,17 @@ pub struct ObjectGuard {
 }
 
 impl ObjectGuard {
+    /// Watch the current application's scope, not an opaque allocation. Used
+    /// by borrowed non-QObject views to reject access after application exit;
+    /// their native lifetime within an open scope is still the caller's duty.
+    pub fn current_scope() -> Option<Self> {
+        let inner = unsafe { ffi::guard_current_application() };
+        (!inner.is_null()).then_some(Self {
+            inner,
+            _not_send: PhantomData,
+        })
+    }
+
     /// # Safety
     /// `object` must be a live QObject on its owning Qt thread. Its
     /// `QPointer` is invalidated by Qt before emitting `destroyed(QObject*)`.
@@ -608,6 +633,15 @@ impl ObjectGuard {
         self.inner
             .as_ref()
             .is_some_and(|guard| unsafe { ffi::guard_alive(guard) })
+    }
+
+    /// Physical QObject liveness, for independent shutdown diagnostics only.
+    /// Unlike `is_alive`, this ignores the scope's closing state. A true result
+    /// NEVER authorizes using a scoped pointer after application shutdown.
+    pub fn native_is_alive(&self) -> bool {
+        self.inner
+            .as_ref()
+            .is_some_and(|guard| unsafe { ffi::guard_native_alive(guard) })
     }
 
     pub fn was_parented(&self) -> bool {
@@ -688,6 +722,68 @@ thread_local! {
     // Only these ids have a C++ DtkRelay to disconnect. Thread-local so a
     // foreign-thread unregister never touches Qt's owning-thread-only QHash.
     static RELAY_IDS: RefCell<HashSet<usize>> = RefCell::new(HashSet::new());
+    static CALLBACK_SCOPE: RefCell<CallbackScope> = const { RefCell::new(CallbackScope::Idle) };
+}
+
+// Native ApplicationRuntime brackets this on its owning thread. Standalone
+// registry tests can register callbacks while Idle; only scope-created ids
+// (and its quit guard) are reclaimed, never unrelated preexisting callbacks.
+enum CallbackScope {
+    Idle,
+    Open(HashSet<usize>),
+    Closing,
+}
+
+fn callbacks_closing() -> bool {
+    CALLBACK_SCOPE.with(|scope| matches!(*scope.borrow(), CallbackScope::Closing))
+}
+
+/// Reject registration/native allocation/access from capture Drop during
+/// application shutdown. Independent owned values otherwise need no runtime.
+pub fn assert_not_closing() {
+    assert!(!callbacks_closing(), "Qt application is closing");
+}
+
+fn forget_scoped_callback(id: usize) {
+    CALLBACK_SCOPE.with(|scope| {
+        if let CallbackScope::Open(ids) = &mut *scope.borrow_mut() {
+            ids.remove(&id);
+        }
+    });
+}
+
+fn dtk_callbacks_begin_scope(quit_guard_id: usize) {
+    CALLBACK_SCOPE.with(|scope| {
+        let mut scope = scope.borrow_mut();
+        assert!(
+            matches!(*scope, CallbackScope::Idle),
+            "nested callback scope"
+        );
+        let mut ids = HashSet::new();
+        if quit_guard_id != 0 {
+            ids.insert(quit_guard_id);
+        }
+        *scope = CallbackScope::Open(ids);
+    });
+}
+
+fn dtk_callbacks_end_scope() {
+    // Release all RefCell borrows before dropping captures: Drop may reenter
+    // (unregister other ids, try constructors, or panic). Closing also blocks
+    // all dispatch, including destructor-induced signals on native objects.
+    let previous = CALLBACK_SCOPE
+        .with(|scope| std::mem::replace(&mut *scope.borrow_mut(), CallbackScope::Closing));
+    if let CallbackScope::Open(ids) = previous {
+        for id in ids {
+            unregister_cb(id);
+        }
+    }
+}
+
+fn dtk_callbacks_finish_scope() {
+    CALLBACK_SCOPE.with(|scope| {
+        *scope.borrow_mut() = CallbackScope::Idle;
+    });
 }
 
 /// Record a successfully connected Qt relay on its GUI thread.
@@ -705,59 +801,69 @@ pub unsafe fn register_qt_relay(id: usize) {
     }
 }
 
+/// Owning-thread diagnostic for shutdown regression tests. Includes closures,
+/// checked-out dispatches, relay ids and copied pending events, not just slots.
+pub fn callback_registry_is_empty() -> bool {
+    CALLBACKS.with(|c| c.borrow().is_empty())
+        && IN_FLIGHT.with(|c| c.borrow().is_empty())
+        && RELAY_IDS.with(|c| c.borrow().is_empty())
+        && SIGNAL_QUEUED.with(|c| c.borrow().is_empty())
+        && PW_QUEUED.with(|c| c.borrow().is_empty())
+        && CALLBACK_SCOPE.with(|scope| match &*scope.borrow() {
+            CallbackScope::Open(ids) => ids.is_empty(),
+            _ => true,
+        })
+}
+
 fn next_id() -> usize {
     use std::sync::atomic::{AtomicUsize, Ordering};
     static NEXT: AtomicUsize = AtomicUsize::new(1);
     NEXT.fetch_add(1, Ordering::Relaxed)
 }
 
-pub fn register_cb0(f: impl FnMut() + 'static) -> usize {
+fn register_callback(cb: Cb) -> usize {
+    assert_not_closing();
     let id = next_id();
-    CALLBACKS.with(|c| c.borrow_mut().insert(id, Cb::C0(Box::new(f))));
+    CALLBACKS.with(|c| c.borrow_mut().insert(id, cb));
+    CALLBACK_SCOPE.with(|scope| {
+        if let CallbackScope::Open(ids) = &mut *scope.borrow_mut() {
+            ids.insert(id);
+        }
+    });
     id
+}
+
+pub fn register_cb0(f: impl FnMut() + 'static) -> usize {
+    register_callback(Cb::C0(Box::new(f)))
 }
 
 /// A callback that is removed even if it panics when invoked from Qt.
 pub fn register_cb_once(f: impl FnOnce() + 'static) -> usize {
-    let id = next_id();
-    CALLBACKS.with(|c| c.borrow_mut().insert(id, Cb::Once0(Box::new(f))));
-    id
+    register_callback(Cb::Once0(Box::new(f)))
 }
 
 pub fn register_cb_i32(f: impl FnMut(i32) + 'static) -> usize {
-    let id = next_id();
-    CALLBACKS.with(|c| c.borrow_mut().insert(id, Cb::I32(Box::new(f))));
-    id
+    register_callback(Cb::I32(Box::new(f)))
 }
 
 pub fn register_cb_bool(f: impl FnMut(bool) + 'static) -> usize {
-    let id = next_id();
-    CALLBACKS.with(|c| c.borrow_mut().insert(id, Cb::Bool(Box::new(f))));
-    id
+    register_callback(Cb::Bool(Box::new(f)))
 }
 
 pub fn register_cb_i32_i32(f: impl FnMut(i32, i32) + 'static) -> usize {
-    let id = next_id();
-    CALLBACKS.with(|c| c.borrow_mut().insert(id, Cb::I32I32(Box::new(f))));
-    id
+    register_callback(Cb::I32I32(Box::new(f)))
 }
 
 pub fn register_cb_pw(f: impl FnMut(PwEvent) + 'static) -> usize {
-    let id = next_id();
-    CALLBACKS.with(|c| c.borrow_mut().insert(id, Cb::Pw(Box::new(f))));
-    id
+    register_callback(Cb::Pw(Box::new(f)))
 }
 
 pub fn register_cb_guard(f: impl FnMut() -> bool + 'static) -> usize {
-    let id = next_id();
-    CALLBACKS.with(|c| c.borrow_mut().insert(id, Cb::Guard(Box::new(f))));
-    id
+    register_callback(Cb::Guard(Box::new(f)))
 }
 
 pub fn register_cb_paint(f: impl FnMut(PaintData) + 'static) -> usize {
-    let id = next_id();
-    CALLBACKS.with(|c| c.borrow_mut().insert(id, Cb::Paint(Box::new(f))));
-    id
+    register_callback(Cb::Paint(Box::new(f)))
 }
 
 fn drop_callback(id: usize, cb: Cb) {
@@ -768,6 +874,7 @@ fn drop_callback(id: usize, cb: Cb) {
 }
 
 fn remove_callback(id: usize) -> bool {
+    forget_scoped_callback(id);
     if let Some(cb) = CALLBACKS.with(|c| c.borrow_mut().remove(&id)) {
         drop_callback(id, cb);
         true
@@ -806,7 +913,14 @@ pub fn unregister_cb(id: usize) -> bool {
     removed
 }
 
+fn dispatch_cancelled(id: usize) -> bool {
+    callbacks_closing() || IN_FLIGHT.with(|active| active.borrow().get(&id).copied()) == Some(true)
+}
+
 fn begin_dispatch(id: usize) -> Option<Cb> {
+    if callbacks_closing() {
+        return None;
+    }
     let cb = CALLBACKS.with(|c| c.borrow_mut().remove(&id));
     if cb.is_some() {
         IN_FLIGHT.with(|active| active.borrow_mut().insert(id, false));
@@ -821,8 +935,11 @@ fn finish_dispatch(id: usize, cb: Option<Cb>) {
         if cancelled == Some(false) {
             CALLBACKS.with(|c| c.borrow_mut().insert(id, cb));
         } else {
+            forget_scoped_callback(id);
             drop_callback(id, cb);
         }
+    } else {
+        forget_scoped_callback(id);
     }
 }
 
@@ -845,6 +962,9 @@ thread_local! {
 // remove-then-call so callbacks can safely (un)register callbacks; put back after.
 // catch_unwind: a panicking Rust callback must never unwind across the FFI boundary (UB).
 fn dispatch_signal(id: usize, event: SignalEvent) {
+    if callbacks_closing() {
+        return;
+    }
     let nested = SIGNAL_QUEUED.with(|pending| {
         let mut pending = pending.borrow_mut();
         if let Some(queue) = pending.get_mut(&id) {
@@ -864,7 +984,7 @@ fn dispatch_signal(id: usize, event: SignalEvent) {
         .take()
         .or_else(|| SIGNAL_QUEUED.with(|pending| pending.borrow_mut().get_mut(&id)?.pop_front()))
     {
-        if IN_FLIGHT.with(|active| active.borrow().get(&id).copied()) == Some(true) {
+        if dispatch_cancelled(id) {
             break; // Qt destroyed the sender or user explicitly disconnected
         }
         let result = match event {
@@ -927,6 +1047,9 @@ thread_local! {
 }
 
 fn dispatch_pw(id: usize, ev: PwEvent) {
+    if callbacks_closing() {
+        return;
+    }
     if PW_QUEUED.with(|q| q.borrow().contains_key(&id)) {
         match ev {
             // A QPainter is stack-scoped to this nested C++ paintEvent. Never
@@ -948,6 +1071,9 @@ fn dispatch_pw(id: usize, ev: PwEvent) {
         .take()
         .or_else(|| PW_QUEUED.with(|q| q.borrow_mut().get_mut(&id).and_then(|q| q.pop_front())))
     {
+        if dispatch_cancelled(id) {
+            break;
+        }
         if let Some(Cb::Pw(f)) = &mut cb
             && std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| f(ev))).is_err()
         {
@@ -1026,6 +1152,9 @@ fn dtk_cb_i32_i32(id: usize, a: i32, b: i32) {
 }
 
 fn dtk_cb_guard(id: usize) -> bool {
+    if callbacks_closing() {
+        return true; // native teardown cannot be vetoed by a user guard
+    }
     let mut cb = begin_dispatch(id);
     let result = if let Some(Cb::Guard(f)) = &mut cb {
         match std::panic::catch_unwind(std::panic::AssertUnwindSafe(&mut *f)) {
@@ -1085,6 +1214,126 @@ mod tests {
         fn drop(&mut self) {
             self.0.set(self.0.get() + 1);
         }
+    }
+
+    #[test]
+    fn scope_cleanup_disables_dispatch_and_contains_drop_reentry() {
+        let calls = Rc::new(std::cell::Cell::new(0));
+        let observed = calls.clone();
+        let outside = register_cb0(move || observed.set(observed.get() + 1));
+        let drops = Rc::new(std::cell::Cell::new(0));
+        let guard_probe = DropCount(drops.clone());
+        let guard = register_cb_guard(move || {
+            let _ = &guard_probe;
+            true
+        });
+        dtk_callbacks_begin_scope(guard);
+        let probe = DropCount(drops.clone());
+        register_cb_once(move || {
+            let _ = &probe;
+        });
+        let probe = DropCount(drops.clone());
+        register_cb_i32(move |_| {
+            let _ = &probe;
+        });
+        let probe = DropCount(drops.clone());
+        register_cb_bool(move |_| {
+            let _ = &probe;
+        });
+        let probe = DropCount(drops.clone());
+        register_cb_i32_i32(move |_, _| {
+            let _ = &probe;
+        });
+        let probe = DropCount(drops.clone());
+        register_cb_pw(move |_| {
+            let _ = &probe;
+        });
+        let probe = DropCount(drops.clone());
+        register_cb_paint(move |_| {
+            let _ = &probe;
+        });
+        struct Reenter(Rc<std::cell::Cell<bool>>);
+        impl Drop for Reenter {
+            fn drop(&mut self) {
+                self.0.set(true);
+                register_cb0(|| {}); // must panic before adding any slot
+            }
+        }
+        let reentered = Rc::new(std::cell::Cell::new(false));
+        let reenter = Reenter(reentered.clone());
+        register_cb0(move || {
+            let _ = &reenter;
+        });
+        dtk_callbacks_end_scope();
+        assert_eq!(drops.get(), 7);
+        assert!(reentered.get());
+        dtk_cb0(outside); // preexisting slot survives, but cannot run during shutdown
+        assert_eq!(calls.get(), 0);
+        assert!(CALLBACKS.with(|c| c.borrow().contains_key(&outside)));
+        dtk_callbacks_finish_scope();
+        dtk_cb0(outside);
+        assert_eq!(calls.get(), 1);
+        assert!(unregister_cb(outside));
+        assert!(callback_registry_is_empty());
+    }
+
+    #[test]
+    fn scoped_one_shots_and_cancellation_do_not_accumulate_ids() {
+        dtk_callbacks_begin_scope(0);
+        for _ in 0..128 {
+            let once = register_cb_once(|| {});
+            dtk_cb0(once);
+            let cancelled = register_cb0(|| {});
+            assert!(unregister_cb(cancelled));
+        }
+        assert!(callback_registry_is_empty());
+        dtk_callbacks_end_scope();
+        dtk_callbacks_finish_scope();
+        assert!(callback_registry_is_empty());
+    }
+
+    #[test]
+    fn scope_cancellation_during_dispatch_does_not_resurrect_or_replay() {
+        dtk_callbacks_begin_scope(0);
+        let drops = Rc::new(std::cell::Cell::new(0));
+        let probe = DropCount(drops.clone());
+        let id_slot = Rc::new(std::cell::Cell::new(0));
+        let slot = id_slot.clone();
+        let calls = Rc::new(std::cell::Cell::new(0));
+        let observed = calls.clone();
+        let id = register_cb0(move || {
+            let _ = &probe;
+            observed.set(observed.get() + 1);
+            dtk_cb0(slot.get()); // queued nested invocation
+            dtk_callbacks_end_scope();
+        });
+        id_slot.set(id);
+        dtk_cb0(id);
+        assert_eq!(calls.get(), 1);
+        assert_eq!(drops.get(), 1);
+        assert!(callback_registry_is_empty());
+        dtk_callbacks_finish_scope();
+        assert!(!unregister_cb(id));
+    }
+
+    #[test]
+    fn scope_cancellation_discards_pending_paint_widget_events() {
+        dtk_callbacks_begin_scope(0);
+        let id_slot = Rc::new(std::cell::Cell::new(0));
+        let slot = id_slot.clone();
+        let calls = Rc::new(std::cell::Cell::new(0));
+        let observed = calls.clone();
+        let id = register_cb_pw(move |_| {
+            observed.set(observed.get() + 1);
+            dispatch_pw(slot.get(), PwEvent::Resize { w: 1, h: 2 });
+            dtk_callbacks_end_scope();
+        });
+        id_slot.set(id);
+        dispatch_pw(id, PwEvent::Resize { w: 3, h: 4 });
+        assert_eq!(calls.get(), 1);
+        assert!(callback_registry_is_empty());
+        dtk_callbacks_finish_scope();
+        assert!(!unregister_cb(id));
     }
 
     #[test]
