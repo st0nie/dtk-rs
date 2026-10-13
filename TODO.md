@@ -30,33 +30,48 @@ Known gaps in dtk-rs, roughly in priority order.
       escaped guards. Tests cover panic/no-exec, repeated/nested scopes,
       wrong-thread/teardown reentry and headless worker-message delivery
       (`core_application_selfcheck`). GUI and Core now share the native scope.
-- [ ] Finish the remaining lifetime/FFI audit: non-QObject borrowed returns
-      have scope invalidation but no native-allocation liveness guard within
-      that scope, and native Qt calls may reentrantly delete objects *after*
-      a guard check. A public method must not become sound solely because
-      QPointer was checked earlier.
+- [x] Audit all exposed pointer returns/inputs, constructor/factory/take
+      ownership and value copies against matching apt source. Explicit tables
+      and generated `OWNERSHIP_*_REPORT.md` fail on unaudited additions.
+      Runtime native transactions include argument conversion, the call and
+      guarded/owned result wrapping; event frames participate too. Ordinary
+      callbacks dispatch after native return, not after a mere QPointer check.
+      Synchronous paint/index/return-value borrows reject QObject reentry;
+      suspended modal loops admit only verified unwind controls and hold
+      DeferredDelete with its original Qt loop/scope state. See
+      `RUNTIME_SAFETY_AUDIT.md` and `runtime_borrow_selfcheck`.
 - [x] Split 18 generated non-QObject constructors (including `DPrinter`,
       `DStyleOptionButton`, `DFileIconProvider`) into `OwnedOpaque<T>` with a
       generated C++ deleter in `Drop`; opaque views are not `Copy`/`Clone`.
-      Unguarded opaque pointer getters (e.g. `globalProvider()`,
-      `createDialogSettingInfo()`) now require `unsafe` because the native
-      ownership and lifetime of their return allocations have not been audited.
-- [ ] Audit each unsafe opaque pointer getter's native ownership (some may
-      return borrowed singletons, others transferred heap storage), model
-      ownership correctly, and remove `unsafe` only with lifetime evidence.
-- [ ] Audit all native pointer-return ownership and handoff APIs individually;
+      Audited process-static `globalProvider`/font-size-manager getters are
+      safe borrowed views; print-setting factories return unique owned heap
+      storage with a virtual deleter. Opaque views remain neither Clone nor
+      Copy; owners do not expose replaceable mutable pointer views.
+- [x] Audit each mapped opaque getter/factory individually: explicit source
+      ownership/lifetime evidence separates process-static borrows, unique
+      constructors/transfers and owned copies. Arbitrary foreign pure-virtual
+      widget factories have no universal contract and remain explicit unsafe
+      boundaries, not fabricated Rust owners.
+- [x] Audit all native pointer-return ownership and handoff APIs individually;
       never infer from method names. Local DTK6 `DListView::takeHeaderWidget()`
       returns a still-parented widget *scheduled for native deletion*, so it
-      remains a borrowed `Option<QWidget>`, not `Owned<QWidget>`. Only the
-      verified `QMainWindow::takeCentralWidget` returns `Owned<QWidget>`.
-      `QTableWidgetItem*` was removed from the safe API: `TableCell` re-resolves
-      (row,col) on every call, but a full item identity/lifetime design is still
-      needed for pointer-oriented Qt model APIs.
+      remains a borrowed `Option<QWidget>`, not `Owned<QWidget>`. The verified
+      `QMainWindow::takeCentralWidget` and DFeatureItem release return fresh
+      owners. Source-backed repairs enforce retained anchor/proxy/group,
+      animation, layout and titlebar dependencies plus duplicate/cycle and
+      destruction-provenance rules (`pointer_contract_selfcheck`).
+      `QTableWidgetItem*` stays outside the safe API: `TableCell` re-resolves
+      (row,col) under one transaction and never exposes the native pointer.
+      Pointer-oriented model identity APIs remain a feature-coverage task.
 - [x] `PaintWidgetEvent::Paint` now borrows `Painter` for the paint callback
       lifetime; a compile-fail doc test rejects storing it in `'static` state.
       `PaintDelegate` already borrows `&Painter`/`&ModelIndex`.
-- [ ] Audit other borrowed handles and reentrant deletion before claiming Rust
-      safety; Qt may destroy the native object *during* an FFI call.
+- [x] Enforce shared-handle alias and destructor/callback boundaries: no
+      `Pin<&mut NativeQObject>` or exclusive native reference from `&self`,
+      no `DerefMut` on QObject/opaque owners, and exclusive opaque outputs use
+      `&mut OwnedOpaque<T>`. Compile-fail docs reject mutable native borrowing
+      and opaque pointer-view replacement. Capture Drop retirement and panic/
+      closing cleanup remain independently covered by GUI/Core selfchecks.
 - [x] Replace GUI's leaked application handle with `DApplication::with` and
       `with_quit_guard`: privately owned singleton/argv, borrowed non-Clone
       tokens, native deletion outside callback/event/exec frames. Shared

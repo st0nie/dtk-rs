@@ -4,13 +4,14 @@
 
 #include <QObject>
 #include <cstddef>
+#include <QSocketNotifier>
 
 namespace dtkrs {
 
 class DtkRelay : public QObject {
     Q_OBJECT
 public:
-    explicit DtkRelay(size_t cb_id, QObject *parent);
+    explicit DtkRelay(size_t cb_id, QObject *parent, bool coalesced_ready);
     ~DtkRelay() override;
 
     /// signal looks like "clicked(bool)" / "timeout()"; returns false on failure (qWarning logged)
@@ -22,6 +23,8 @@ public:
     static void disconnectId(size_t cb_id);
     // Owning-thread diagnostic, including relays waiting for deleteLater.
     static size_t liveCount();
+    static void finishReady(size_t cb_id);
+    static void setNotifierEnabled(QSocketNotifier *notifier, bool enabled);
 
 public Q_SLOTS:
     void fire0();
@@ -31,6 +34,10 @@ public Q_SLOTS:
 
 private:
     size_t m_cb_id;
+    bool m_coalesced_ready;
+    bool m_ready_pending = false;
+    bool prepareReady();
+    void releaseReady();
 };
 
 } // namespace dtkrs

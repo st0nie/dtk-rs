@@ -98,8 +98,11 @@ object_wrapper!(
     genffi::gen_d_gui_application_helper_as_qobject
 );
 impl DGuiApplicationHelper {
+    /// Native ownership: `object_borrow`.
+    /// Evidence: `dtkgui/src/kernel/dguiapplicationhelper.cpp`: returns native global helper; staticCleanApplication post routine resets it.
     pub fn instance() -> Option<DGuiApplicationHelper> {
         crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
         {
             let ptr = unsafe { genffi::gen_d_gui_application_helper_instance() };
             (!ptr.is_null()).then(|| DGuiApplicationHelper::from_raw(ptr))
@@ -116,6 +119,7 @@ impl DGuiApplicationHelper {
         alphaFloat: i8,
     ) -> QColor {
         crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
         QColor::from_raw(unsafe {
             genffi::gen_d_gui_application_helper_adjust_color(
                 base.ptr as _,
@@ -140,6 +144,7 @@ impl DGuiApplicationHelper {
         alphaFloat: i8,
     ) -> QImage {
         crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
         QImage::from_raw(unsafe {
             genffi::gen_d_gui_application_helper_adjust_color_2(
                 base.ptr as _,
@@ -155,6 +160,7 @@ impl DGuiApplicationHelper {
     }
     pub fn blend_color(substrate: &QColor, superstratum: &QColor) -> QColor {
         crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
         QColor::from_raw(unsafe {
             genffi::gen_d_gui_application_helper_blend_color(
                 substrate.ptr as _,
@@ -164,6 +170,7 @@ impl DGuiApplicationHelper {
     }
     pub fn standard_palette(type_: GuiColorType) -> DPalette {
         crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
         DPalette::from_raw(unsafe {
             genffi::gen_d_gui_application_helper_standard_palette(type_.native_value())
         } as _)
@@ -173,6 +180,7 @@ impl DGuiApplicationHelper {
     /// corresponding native Qt/DTK type.
     pub unsafe fn generate_palette_color(base: &mut DPalette, role: i32, type_: GuiColorType) {
         crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
         unsafe {
             genffi::gen_d_gui_application_helper_generate_palette_color(
                 base.ptr as _,
@@ -183,6 +191,7 @@ impl DGuiApplicationHelper {
     }
     pub fn generate_palette(base: &mut DPalette, type_: GuiColorType) {
         crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
         unsafe {
             genffi::gen_d_gui_application_helper_generate_palette(
                 base.ptr as _,
@@ -192,14 +201,17 @@ impl DGuiApplicationHelper {
     }
     pub fn is_x_window_platform() -> bool {
         crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_gui_application_helper_is_x_window_platform() }
     }
     pub fn is_tablet_environment() -> bool {
         crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_gui_application_helper_is_tablet_environment() }
     }
     pub fn is_special_effects_environment() -> bool {
         crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_gui_application_helper_is_special_effects_environment() }
     }
     /// # Safety
@@ -207,6 +219,7 @@ impl DGuiApplicationHelper {
     /// corresponding native Qt/DTK type.
     pub unsafe fn set_attribute(attribute: i32, enable: bool) {
         crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_gui_application_helper_set_attribute(attribute, enable) }
     }
     /// # Safety
@@ -214,14 +227,17 @@ impl DGuiApplicationHelper {
     /// corresponding native Qt/DTK type.
     pub unsafe fn test_attribute(attribute: i32) -> bool {
         crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_gui_application_helper_test_attribute(attribute) }
     }
     pub fn application_palette(&self) -> DPalette {
+        let _call = dtk_sys::NativeCall::new();
         DPalette::from_raw(unsafe {
             genffi::gen_d_gui_application_helper_application_palette(self.live_ptr())
         } as _)
     }
     pub fn application_palette_2(&self, paletteType: GuiColorType) -> DPalette {
+        let _call = dtk_sys::NativeCall::new();
         DPalette::from_raw(unsafe {
             genffi::gen_d_gui_application_helper_application_palette_2(
                 self.live_ptr(),
@@ -230,6 +246,7 @@ impl DGuiApplicationHelper {
         } as _)
     }
     pub fn set_application_palette(&self, palette: &DPalette) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe {
             genffi::gen_d_gui_application_helper_set_application_palette(
                 self.live_ptr(),
@@ -237,7 +254,10 @@ impl DGuiApplicationHelper {
             )
         }
     }
+    /// Native ownership: `object_borrow`.
+    /// Evidence: `dtkgui/src/kernel/dguiapplicationhelper.cpp`: returns Q_GLOBAL_STATIC(DFontManager, _globalFM); no transfer.
     pub fn font_manager(&self) -> Option<DFontManager> {
+        let _call = dtk_sys::NativeCall::new();
         {
             let ptr = unsafe { genffi::gen_d_gui_application_helper_font_manager(self.live_ptr()) };
             (!ptr.is_null()).then(|| DFontManager::from_raw(ptr))
@@ -245,20 +265,25 @@ impl DGuiApplicationHelper {
     }
     pub fn to_color_type(color: &QColor) -> i32 {
         crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_gui_application_helper_to_color_type(color.ptr as _) }
     }
     pub fn to_color_type_2(palette: &QPalette) -> i32 {
         crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_gui_application_helper_to_color_type_2(palette.ptr as _) }
     }
     pub fn theme_type(&self) -> i32 {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_gui_application_helper_theme_type(self.live_ptr()) }
     }
     pub fn palette_type(&self) -> i32 {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_gui_application_helper_palette_type(self.live_ptr()) }
     }
     pub fn set_single_instance(key: &str, singleScope: GuiSingleScope) -> bool {
         crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
         unsafe {
             genffi::gen_d_gui_application_helper_set_single_instance(
                 key,
@@ -268,16 +293,20 @@ impl DGuiApplicationHelper {
     }
     pub fn set_single_instance_interval(interval: i32) {
         crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_gui_application_helper_set_single_instance_interval(interval) }
     }
     pub fn user_manual_paths(appName: &str) -> Vec<String> {
         crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_gui_application_helper_user_manual_paths(appName) }
     }
     pub fn has_user_manual(&self) -> bool {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_gui_application_helper_has_user_manual(self.live_ptr()) }
     }
     pub fn set_palette_type(&self, paletteType: GuiColorType) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe {
             genffi::gen_d_gui_application_helper_set_palette_type(
                 self.live_ptr(),
@@ -286,21 +315,26 @@ impl DGuiApplicationHelper {
         }
     }
     pub fn handle_help_action(&self) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_gui_application_helper_handle_help_action(self.live_ptr()) }
     }
     pub fn open_url(url: &str) {
         crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_gui_application_helper_open_url(url) }
     }
     pub fn size_mode(&self) -> i32 {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_gui_application_helper_size_mode(self.live_ptr()) }
     }
     pub fn set_size_mode(&self, mode: GuiSizeMode) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe {
             genffi::gen_d_gui_application_helper_set_size_mode(self.live_ptr(), mode.native_value())
         }
     }
     pub fn reset_size_mode(&self) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_gui_application_helper_reset_size_mode(self.live_ptr()) }
     }
 }
@@ -313,43 +347,54 @@ object_wrapper!(
 impl DImageHandler {
     pub fn new() -> Owned<Self> {
         crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
         Owned::new(Self::from_raw(unsafe { genffi::gen_d_image_handler_new() }))
     }
     pub fn set_file_name(&self, fileName: &str) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_image_handler_set_file_name(self.live_ptr(), fileName) }
     }
     pub fn file_name(&self) -> String {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_image_handler_file_name(self.live_ptr()) }
     }
     pub fn read_image(&self) -> QImage {
+        let _call = dtk_sys::NativeCall::new();
         QImage::from_raw(unsafe { genffi::gen_d_image_handler_read_image(self.live_ptr()) } as _)
     }
     /// # Safety
     /// Integer enum/flags arguments must be valid values of the
     /// corresponding native Qt/DTK type.
     pub unsafe fn thumbnail(&self, size: &QSize, mode: i32) -> QImage {
+        let _call = dtk_sys::NativeCall::new();
         QImage::from_raw(unsafe {
             genffi::gen_d_image_handler_thumbnail(self.live_ptr(), size.ptr as _, mode)
         } as _)
     }
     pub fn image_format(&self) -> String {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_image_handler_image_format(self.live_ptr()) }
     }
     pub fn image_size(&self) -> QSize {
+        let _call = dtk_sys::NativeCall::new();
         QSize::from_raw(unsafe { genffi::gen_d_image_handler_image_size(self.live_ptr()) } as _)
     }
     pub fn find_all_meta_data(&self) -> std::collections::BTreeMap<String, String> {
+        let _call = dtk_sys::NativeCall::new();
         crate::string_map_from_pairs(unsafe {
             genffi::gen_d_image_handler_find_all_meta_data(self.live_ptr())
         })
     }
     pub fn clear_cache(&self) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_image_handler_clear_cache(self.live_ptr()) }
     }
     pub fn save_image(&self, fileName: &str, format: &str) -> bool {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_image_handler_save_image(self.live_ptr(), fileName, format) }
     }
     pub fn save_image_2(&self, image: &QImage, fileName: &str, format: &str) -> bool {
+        let _call = dtk_sys::NativeCall::new();
         unsafe {
             genffi::gen_d_image_handler_save_image_2(
                 self.live_ptr(),
@@ -360,61 +405,75 @@ impl DImageHandler {
         }
     }
     pub fn rotate_image(&self, image: &mut QImage, angle: i32) -> bool {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_image_handler_rotate_image(self.live_ptr(), image.ptr as _, angle) }
     }
     pub fn rotate_image_file(&self, fileName: &str, angle: i32) -> bool {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_image_handler_rotate_image_file(self.live_ptr(), fileName, angle) }
     }
     pub fn is_readable(&self) -> bool {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_image_handler_is_readable(self.live_ptr()) }
     }
     pub fn is_writeable(&self) -> bool {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_image_handler_is_writeable(self.live_ptr()) }
     }
     pub fn is_rotatable(&self) -> bool {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_image_handler_is_rotatable(self.live_ptr()) }
     }
     pub fn last_error(&self) -> String {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_image_handler_last_error(self.live_ptr()) }
     }
     pub fn support_formats() -> Vec<String> {
         crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_image_handler_support_formats() }
     }
     pub fn detect_image_format(fileName: &str) -> String {
         crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_image_handler_detect_image_format(fileName) }
     }
     pub fn old_color_filter(img: &QImage) -> QImage {
         crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
         QImage::from_raw(unsafe { genffi::gen_d_image_handler_old_color_filter(img.ptr as _) } as _)
     }
     pub fn warm_color_filter(img: &QImage, intensity: i32) -> QImage {
         crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
         QImage::from_raw(unsafe {
             genffi::gen_d_image_handler_warm_color_filter(img.ptr as _, intensity)
         } as _)
     }
     pub fn cool_color_filter(img: &QImage, intensity: i32) -> QImage {
         crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
         QImage::from_raw(unsafe {
             genffi::gen_d_image_handler_cool_color_filter(img.ptr as _, intensity)
         } as _)
     }
     pub fn gray_scale_color_filter(img: &QImage) -> QImage {
         crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
         QImage::from_raw(unsafe {
             genffi::gen_d_image_handler_gray_scale_color_filter(img.ptr as _)
         } as _)
     }
     pub fn anti_color_filter(img: &QImage) -> QImage {
         crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
         QImage::from_raw(
             unsafe { genffi::gen_d_image_handler_anti_color_filter(img.ptr as _) } as _,
         )
     }
     pub fn metal_color_filter(img: &QImage) -> QImage {
         crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
         QImage::from_raw(
             unsafe { genffi::gen_d_image_handler_metal_color_filter(img.ptr as _) } as _,
         )
@@ -425,6 +484,7 @@ impl DImageHandler {
         photometricStandardDeviation: f64,
     ) -> QImage {
         crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
         QImage::from_raw(unsafe {
             genffi::gen_d_image_handler_bilateral_filter(
                 img.ptr as _,
@@ -435,54 +495,64 @@ impl DImageHandler {
     }
     pub fn contour_extraction(img: &QImage) -> QImage {
         crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
         QImage::from_raw(
             unsafe { genffi::gen_d_image_handler_contour_extraction(img.ptr as _) } as _,
         )
     }
     pub fn binaryzation(img: &QImage) -> QImage {
         crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
         QImage::from_raw(unsafe { genffi::gen_d_image_handler_binaryzation(img.ptr as _) } as _)
     }
     pub fn gray_scale(img: &QImage) -> QImage {
         crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
         QImage::from_raw(unsafe { genffi::gen_d_image_handler_gray_scale(img.ptr as _) } as _)
     }
     pub fn laplace_sharpen(img: &QImage) -> QImage {
         crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
         QImage::from_raw(unsafe { genffi::gen_d_image_handler_laplace_sharpen(img.ptr as _) } as _)
     }
     pub fn sobel_edge_detector(img: &QImage) -> QImage {
         crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
         QImage::from_raw(
             unsafe { genffi::gen_d_image_handler_sobel_edge_detector(img.ptr as _) } as _,
         )
     }
     pub fn change_light_and_contrast(img: &QImage, light: i32, contrast: i32) -> QImage {
         crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
         QImage::from_raw(unsafe {
             genffi::gen_d_image_handler_change_light_and_contrast(img.ptr as _, light, contrast)
         } as _)
     }
     pub fn change_brightness(img: &QImage, brightness: i32) -> QImage {
         crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
         QImage::from_raw(unsafe {
             genffi::gen_d_image_handler_change_brightness(img.ptr as _, brightness)
         } as _)
     }
     pub fn change_transparency(img: &QImage, transparency: i32) -> QImage {
         crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
         QImage::from_raw(unsafe {
             genffi::gen_d_image_handler_change_transparency(img.ptr as _, transparency)
         } as _)
     }
     pub fn change_stauration(img: &QImage, saturation: i32) -> QImage {
         crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
         QImage::from_raw(unsafe {
             genffi::gen_d_image_handler_change_stauration(img.ptr as _, saturation)
         } as _)
     }
     pub fn replace_point_color(img: &QImage, oldColor: &QColor, newColor: &QColor) -> QImage {
         crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
         QImage::from_raw(unsafe {
             genffi::gen_d_image_handler_replace_point_color(
                 img.ptr as _,
@@ -493,10 +563,12 @@ impl DImageHandler {
     }
     pub fn flip_horizontal(img: &QImage) -> QImage {
         crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
         QImage::from_raw(unsafe { genffi::gen_d_image_handler_flip_horizontal(img.ptr as _) } as _)
     }
     pub fn flip_vertical(img: &QImage) -> QImage {
         crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
         QImage::from_raw(unsafe { genffi::gen_d_image_handler_flip_vertical(img.ptr as _) } as _)
     }
 }
@@ -509,12 +581,15 @@ object_wrapper!(
 impl DFontManager {
     pub fn new() -> Owned<Self> {
         crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
         Owned::new(Self::from_raw(unsafe { genffi::gen_d_font_manager_new() }))
     }
     pub fn font_pixel_size(&self, type_: FontSizeType) -> i32 {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_font_manager_font_pixel_size(self.live_ptr(), type_.native_value()) }
     }
     pub fn set_font_pixel_size(&self, type_: FontSizeType, size: i32) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe {
             genffi::gen_d_font_manager_set_font_pixel_size(
                 self.live_ptr(),
@@ -525,62 +600,80 @@ impl DFontManager {
     }
     pub fn font_pixel_size_2(font: &QFont) -> i32 {
         crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_font_manager_font_pixel_size_2(font.ptr as _) }
     }
     pub fn get(pixelSize: i32, base: &QFont) -> QFont {
         crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
         QFont::from_raw(unsafe { genffi::gen_d_font_manager_get(pixelSize, base.ptr as _) } as _)
     }
     pub fn get_2(&self, type_: FontSizeType, base: &QFont) -> QFont {
+        let _call = dtk_sys::NativeCall::new();
         QFont::from_raw(unsafe {
             genffi::gen_d_font_manager_get_2(self.live_ptr(), type_.native_value(), base.ptr as _)
         } as _)
     }
     pub fn get_3(&self, type_: FontSizeType) -> QFont {
+        let _call = dtk_sys::NativeCall::new();
         QFont::from_raw(unsafe {
             genffi::gen_d_font_manager_get_3(self.live_ptr(), type_.native_value())
         } as _)
     }
     pub fn base_font(&self) -> QFont {
+        let _call = dtk_sys::NativeCall::new();
         QFont::from_raw(unsafe { genffi::gen_d_font_manager_base_font(self.live_ptr()) } as _)
     }
     pub fn set_base_font(&self, font: &QFont) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_font_manager_set_base_font(self.live_ptr(), font.ptr as _) }
     }
     pub fn reset_base_font(&self) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_font_manager_reset_base_font(self.live_ptr()) }
     }
     pub fn t1(&self) -> QFont {
+        let _call = dtk_sys::NativeCall::new();
         QFont::from_raw(unsafe { genffi::gen_d_font_manager_t1(self.live_ptr()) } as _)
     }
     pub fn t2(&self) -> QFont {
+        let _call = dtk_sys::NativeCall::new();
         QFont::from_raw(unsafe { genffi::gen_d_font_manager_t2(self.live_ptr()) } as _)
     }
     pub fn t3(&self) -> QFont {
+        let _call = dtk_sys::NativeCall::new();
         QFont::from_raw(unsafe { genffi::gen_d_font_manager_t3(self.live_ptr()) } as _)
     }
     pub fn t4(&self) -> QFont {
+        let _call = dtk_sys::NativeCall::new();
         QFont::from_raw(unsafe { genffi::gen_d_font_manager_t4(self.live_ptr()) } as _)
     }
     pub fn t5(&self) -> QFont {
+        let _call = dtk_sys::NativeCall::new();
         QFont::from_raw(unsafe { genffi::gen_d_font_manager_t5(self.live_ptr()) } as _)
     }
     pub fn t6(&self) -> QFont {
+        let _call = dtk_sys::NativeCall::new();
         QFont::from_raw(unsafe { genffi::gen_d_font_manager_t6(self.live_ptr()) } as _)
     }
     pub fn t7(&self) -> QFont {
+        let _call = dtk_sys::NativeCall::new();
         QFont::from_raw(unsafe { genffi::gen_d_font_manager_t7(self.live_ptr()) } as _)
     }
     pub fn t8(&self) -> QFont {
+        let _call = dtk_sys::NativeCall::new();
         QFont::from_raw(unsafe { genffi::gen_d_font_manager_t8(self.live_ptr()) } as _)
     }
     pub fn t9(&self) -> QFont {
+        let _call = dtk_sys::NativeCall::new();
         QFont::from_raw(unsafe { genffi::gen_d_font_manager_t9(self.live_ptr()) } as _)
     }
     pub fn t10(&self) -> QFont {
+        let _call = dtk_sys::NativeCall::new();
         QFont::from_raw(unsafe { genffi::gen_d_font_manager_t10(self.live_ptr()) } as _)
     }
     pub fn t11(&self) -> QFont {
+        let _call = dtk_sys::NativeCall::new();
         QFont::from_raw(unsafe { genffi::gen_d_font_manager_t11(self.live_ptr()) } as _)
     }
 }

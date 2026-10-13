@@ -130,73 +130,97 @@ macro_rules! widget_wrapper {
                 QWidget::from_guarded(self.widget_ptr(), self.guard.clone())
             }
             pub fn show(&self) {
+                let _call = dtk_sys::NativeCall::new();
                 unsafe { ffi::widget_show(self.widget_ptr()) }
             }
             pub fn hide(&self) {
+                let _call = dtk_sys::NativeCall::new();
                 unsafe { ffi::widget_hide(self.widget_ptr()) }
             }
             pub fn resize(&self, w: i32, h: i32) {
+                let _call = dtk_sys::NativeCall::new();
                 unsafe { ffi::widget_resize(self.widget_ptr(), w, h) }
             }
             /// widget size in pixels (window: includes the DTK titlebar)
             pub fn width(&self) -> i32 {
+                let _call = dtk_sys::NativeCall::new();
                 unsafe { ffi::widget_width(self.widget_ptr()) }
             }
             pub fn height(&self) -> i32 {
+                let _call = dtk_sys::NativeCall::new();
                 unsafe { ffi::widget_height(self.widget_ptr()) }
             }
             pub fn move_to(&self, x: i32, y: i32) {
+                let _call = dtk_sys::NativeCall::new();
                 unsafe { ffi::widget_move(self.widget_ptr(), x, y) }
             }
             pub fn set_enabled(&self, on: bool) {
+                let _call = dtk_sys::NativeCall::new();
                 unsafe { ffi::widget_set_enabled(self.widget_ptr(), on) }
             }
             pub fn set_window_title(&self, title: &str) {
+                let _call = dtk_sys::NativeCall::new();
                 unsafe { ffi::widget_set_window_title(self.widget_ptr(), title) }
             }
             pub fn set_window_icon(&self, icon: &QIcon) {
+                let _call = dtk_sys::NativeCall::new();
                 unsafe { ffi::widget_set_window_icon(self.widget_ptr(), icon.ptr) }
             }
             pub fn set_fixed_size(&self, w: i32, h: i32) {
+                let _call = dtk_sys::NativeCall::new();
                 unsafe { ffi::widget_set_fixed_size(self.widget_ptr(), w, h) }
             }
             pub fn raise(&self) {
+                let _call = dtk_sys::NativeCall::new();
                 unsafe { ffi::widget_raise(self.widget_ptr()) }
             }
             pub fn update(&self) {
+                let _call = dtk_sys::NativeCall::new();
                 unsafe { ffi::widget_update(self.widget_ptr()) }
             }
             pub fn set_focus(&self) {
+                let _call = dtk_sys::NativeCall::new();
                 unsafe { ffi::widget_set_focus(self.widget_ptr()) }
             }
             pub fn activate_window(&self) {
+                let _call = dtk_sys::NativeCall::new();
                 unsafe { ffi::widget_activate_window(self.widget_ptr()) }
             }
             pub fn close(&self) {
+                let _call = dtk_sys::NativeCall::control();
+                assert!(unsafe { ffi::runtime_can_close(self.widget_ptr().cast()) }, "only a modal dialog may close while native state is borrowed");
                 unsafe { ffi::widget_close(self.widget_ptr()) }
             }
             pub fn is_visible(&self) -> bool {
+                let _call = dtk_sys::NativeCall::new();
                 unsafe { ffi::widget_is_visible(self.widget_ptr()) }
             }
             pub fn set_focus_policy(&self, policy: i32) {
+                let _call = dtk_sys::NativeCall::new();
                 unsafe { ffi::widget_set_focus_policy(self.widget_ptr(), policy) }
             }
             pub fn set_font(&self, font: &QFont) {
+                let _call = dtk_sys::NativeCall::new();
                 unsafe { ffi::widget_set_font(self.widget_ptr(), font.ptr) }
             }
             pub fn set_cursor(&self, shape: i32) {
+                let _call = dtk_sys::NativeCall::new();
                 unsafe { ffi::widget_set_cursor(self.widget_ptr(), shape) }
             }
             pub fn unset_cursor(&self) {
+                let _call = dtk_sys::NativeCall::new();
                 unsafe { ffi::widget_unset_cursor(self.widget_ptr()) }
             }
             pub fn palette(&self) -> QPalette {
+                let _call = dtk_sys::NativeCall::new();
                 QPalette::from_raw(unsafe { ffi::widget_palette(self.widget_ptr()) })
             }
             pub fn set_palette(&self, pal: &QPalette) {
+                let _call = dtk_sys::NativeCall::new();
                 unsafe { ffi::widget_set_palette(self.widget_ptr(), pal.ptr) }
             }
             pub fn standard_icon_pixmap(&self, icon: i32, size: i32) -> QPixmap {
+                let _call = dtk_sys::NativeCall::new();
                 QPixmap::from_raw(unsafe { ffi::standard_icon_pixmap(self.widget_ptr(), icon, size) })
             }
         }
@@ -205,28 +229,47 @@ macro_rules! widget_wrapper {
 
 /// Owns exactly one heap allocation returned by a generated non-QObject
 /// constructor. Unlike a borrowed pointer getter, this calls its C++ deleter.
-/// Dereferencing exposes only a shared view; ownership is never duplicated.
-pub struct OwnedOpaque<T> {
-    inner: T,
+/// Dereferencing exposes a unique allocation's shared view; ownership is never
+/// duplicated. No `DerefMut`: replacing a non-owning view would let it escape
+/// its owner's allocation. Output APIs borrow `&mut OwnedOpaque<T>` instead.
+///
+/// ```compile_fail
+/// use dtk::{DApplication, widgets::DFileIconProvider};
+/// DApplication::with("no-replaceable-pointer-view", |_| {
+///     let mut owner = DFileIconProvider::new();
+///     let borrowed = DFileIconProvider::global_provider().unwrap();
+///     // This would detach a pointer beyond its allocation or make the owner
+///     // delete borrowed static storage. No mutable view is exposed.
+///     let _detached = std::mem::replace(&mut *owner, borrowed);
+/// });
+/// ```
+pub struct OwnedOpaque<T: 'static> {
+    inner: Option<T>,
     deleter: fn(&T),
 }
 
-impl<T> OwnedOpaque<T> {
+impl<T: 'static> OwnedOpaque<T> {
     pub(crate) fn from_owned(inner: T, deleter: fn(&T)) -> Self {
-        Self { inner, deleter }
+        Self {
+            inner: Some(inner),
+            deleter,
+        }
     }
 }
 
-impl<T> std::ops::Deref for OwnedOpaque<T> {
+impl<T: 'static> std::ops::Deref for OwnedOpaque<T> {
     type Target = T;
     fn deref(&self) -> &T {
-        &self.inner
+        self.inner.as_ref().expect("owned allocation was released")
     }
 }
 
-impl<T> Drop for OwnedOpaque<T> {
+impl<T: 'static> Drop for OwnedOpaque<T> {
     fn drop(&mut self) {
-        (self.deleter)(&self.inner);
+        if let Some(inner) = self.inner.take() {
+            let deleter = self.deleter;
+            dtk_sys::defer_cleanup(move || deleter(&inner));
+        }
     }
 }
 
@@ -285,8 +328,21 @@ pub unsafe trait QtLifecycle {
 ///
 /// `Deref`s to the plain, `Clone`-able view: clone that (or call a method
 /// through the deref, which itself resolves via `Clone`) to share the object
-/// into closures, layouts, or long-lived structs. Those clones never delete
-/// anything themselves — only this unique owner does, and only once.
+/// into closures, layouts, or long-lived structs. Clones are shared runtime
+/// views, not exclusive native references. A provenance-checked `delete_later`
+/// request never deletes in a borrowed native frame; Qt adoption revokes it.
+/// `Owned<T>` deliberately has no `DerefMut`: do not manufacture a pinned
+/// exclusive native borrow through a shared view.
+///
+/// ```compile_fail
+/// use dtk::{DApplication, DPushButton};
+/// use std::pin::Pin;
+/// DApplication::with("no-exclusive-borrow", |_| {
+///     let mut owner = DPushButton::new("shared object");
+///     let _alias = owner.clone();
+///     let _exclusive: Pin<&mut DPushButton> = Pin::new(&mut *owner);
+/// });
+/// ```
 #[must_use = "dropping this queues deletion if Qt never adopted this object"]
 pub struct Owned<T: QtLifecycle>(T);
 
@@ -295,7 +351,10 @@ impl<T: QtLifecycle> Owned<T> {
         if let Some(object) = inner.live_qobject() {
             // Only verified constructor/transfer owners enter the scoped
             // runtime's cleanup registry. Borrowed getters must not enter it.
-            unsafe { ffi::application_runtime_track_object(object) };
+            unsafe {
+                ffi::application_runtime_track_object(object);
+                ffi::object_grant_constructor_authority(object);
+            };
         }
         Self(inner)
     }
@@ -390,8 +449,9 @@ macro_rules! opaque_wrapper_impl {
                 assert!(!ptr.is_null());
                 Self { ptr, scope_guard: None, _not_send: PhantomData }
             }
-            /// Scope liveness only: non-QObject native lifetime within the
-            /// scope is still governed by the unsafe getter's contract.
+            /// Scope liveness only. Audited process-static returns have a proven
+            /// native lifetime; unique constructors/copies own theirs. Foreign
+            /// opaque borrows are available only through an unsafe contract.
             pub fn is_alive(&self) -> bool {
                 self.scope_guard.as_ref().is_none_or(dtk_sys::ObjectGuard::is_alive)
             }
@@ -458,8 +518,11 @@ macro_rules! object_wrapper_impl {
                 self.live_ptr();
                 self.qobject
             }
-            /// Defer QObject destruction to Qt's event loop.
+            /// Request deferred deletion only with constructor/transfer provenance.
+            /// Arbitrary borrowed getters and Qt-adopted objects cannot be destroyed
+            /// through this view; their native owner remains responsible.
             pub fn delete_later(&self) {
+                self.guard.request_deletion();
                 unsafe { ffi::object_delete_later(self.as_qobject()) }
             }
         }
@@ -545,70 +608,88 @@ impl QWidget {
     /// without ever parenting it and Qt deletes it for you.
     pub fn new(parent: Option<&QWidget>) -> Owned<QWidget> {
         let p = opt_ptr(parent);
+        let _call = dtk_sys::NativeCall::new();
         Owned::new(Self::from_raw(unsafe { ffi::widget_new(p) }))
     }
     pub fn show(&self) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::widget_show(self.live_ptr()) }
     }
     /// deliver mouse moves without a button held (they propagate to the parent)
     pub fn set_mouse_tracking(&self, on: bool) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::widget_set_mouse_tracking(self.live_ptr(), on) }
     }
     pub fn hide(&self) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::widget_hide(self.live_ptr()) }
     }
     pub fn width(&self) -> i32 {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::widget_width(self.live_ptr()) }
     }
     pub fn height(&self) -> i32 {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::widget_height(self.live_ptr()) }
     }
     /// schedule a repaint
     pub fn update(&self) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::widget_update(self.live_ptr()) }
     }
     /// grab keyboard focus
     pub fn set_focus(&self) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::widget_set_focus(self.live_ptr()) }
     }
     /// qt::cursor::* shape; stays until unset_cursor
     pub fn set_cursor(&self, shape: i32) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::widget_set_cursor(self.live_ptr(), shape) }
     }
     pub fn unset_cursor(&self) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::widget_unset_cursor(self.live_ptr()) }
     }
     /// deepin-terminal style: install the tab bar as titlebar custom widget
     /// (zero-margin layout, vertically centered)
     pub fn titlebar_set_tabbar(&self, tabbar: &QWidget) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::main_window_titlebar_set_tabbar(self.live_ptr(), tabbar.live_ptr()) }
     }
     /// add a widget into the titlebar, left-aligned (DMainWindow only)
     pub fn titlebar_add_widget(&self, child: &QWidget) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::main_window_titlebar_add_widget(self.live_ptr(), child.live_ptr()) }
     }
     /// set the titlebar icon (DMainWindow only; no-op otherwise)
     pub fn set_titlebar_icon(&self, icon: &QIcon) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::widget_set_titlebar_icon(self.live_ptr(), icon.ptr) }
     }
     /// IME candidate window anchor: cursor rect in widget coords (PaintWidget only)
     pub fn set_ime_cursor_rect(&self, x: i32, y: i32, w: i32, h: i32) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::paint_widget_set_ime_rect(self.live_ptr(), x, y, w, h) }
     }
     pub fn resize(&self, w: i32, h: i32) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::widget_resize(self.live_ptr(), w, h) }
     }
     pub fn move_to(&self, x: i32, y: i32) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::widget_move(self.live_ptr(), x, y) }
     }
     /// deepin-terminal-style tab labels: centered, elided clear of the close button
     pub fn install_tab_label_style(&self) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::tabbar_install_style(self.live_ptr()) }
     }
     /// force the tab bar's internal layout (and ancestors) to relayout now, not
     /// on the next event pass; call after add/remove/set_tab_text to avoid a
     /// 1-frame misaligned paint
     pub fn flush_layout(&self) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::tabbar_flush_layout(self.live_ptr()) }
     }
     /// unlatch QTabBar's scroll buttons: once shown, their own width keeps the
@@ -616,19 +697,23 @@ impl QWidget {
     /// (buttons hidden, spacers zeroed); Qt re-shows them on the next layout if
     /// scrolling is genuinely needed, so this is safe to call any time.
     pub fn unlatch_scroll_buttons(&self) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::tabbar_unlatch_scroll_buttons(self.live_ptr()) }
     }
     /// Reparent as in Qt: the widget becomes hidden and must be shown again.
     pub fn set_parent(&self, parent: &QWidget) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::widget_set_parent(self.live_ptr(), parent.live_ptr()) }
     }
     /// deferred delete (next event-loop turn)
     pub fn delete_later(&self) {
+        self.guard.request_deletion();
         unsafe { ffi::object_delete_later(self.live_ptr().cast()) }
     }
     /// key sequence like "Ctrl+Shift+C"; fires while the widget lives.
     /// Returns the callback id for [`unregister_callback`].
     pub fn add_shortcut(&self, key: &str, f: impl FnMut() + 'static) -> usize {
+        let _call = dtk_sys::NativeCall::new();
         let ptr = self.live_ptr();
         let id = dtk_sys::register_cb0(f);
         unsafe { ffi::shortcut_new(ptr, key, id) };
@@ -737,6 +822,7 @@ impl PaintWidget {
         handler: impl for<'paint> FnMut(PaintWidgetEvent<'paint>) + 'static,
     ) -> Owned<PaintWidget> {
         let parent_ptr = opt_ptr(parent);
+        let _call = dtk_sys::NativeCall::new();
         let mut handler = handler;
         let id = dtk_sys::register_cb_pw(move |ev| {
             let ev = match ev {
@@ -789,10 +875,12 @@ impl PaintWidget {
     }
     /// test/helper: synchronously deliver a key-press (bypasses the OS event source)
     pub fn inject_key(&self, key: i32, mods: i32, text: &str) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::paint_widget_inject_key(self.live_ptr(), key, mods, text) }
     }
     /// IME candidate window anchor: cursor rect in widget coords (call when it moves)
     pub fn set_ime_cursor_rect(&self, x: i32, y: i32, w: i32, h: i32) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::paint_widget_set_ime_rect(self.live_ptr(), x, y, w, h) }
     }
 }
@@ -806,6 +894,7 @@ pub struct ScrollBar {
 impl ScrollBar {
     pub fn new(parent: &QWidget) -> Owned<ScrollBar> {
         require_application();
+        let _call = dtk_sys::NativeCall::new();
         Owned::new(Self {
             w: QWidget::from_raw(unsafe { ffi::scrollbar_new(parent.live_ptr()) }),
         })
@@ -814,18 +903,23 @@ impl ScrollBar {
         self.w.clone()
     }
     pub fn set_range(&self, min: i32, max: i32) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::scrollbar_set_range(self.w.live_ptr(), min, max) }
     }
     pub fn maximum(&self) -> i32 {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::scrollbar_maximum(self.w.live_ptr()) }
     }
     pub fn set_value(&self, v: i32) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::scrollbar_set_value(self.w.live_ptr(), v) }
     }
     pub fn value(&self) -> i32 {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::scrollbar_value(self.w.live_ptr()) }
     }
     pub fn set_page_step(&self, v: i32) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::scrollbar_set_page_step(self.w.live_ptr(), v) }
     }
     /// valueChanged(int); 0 on failure
@@ -848,19 +942,23 @@ pub struct Clipboard;
 impl Clipboard {
     pub fn set_text(text: &str) {
         require_application();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::clipboard_set_text(text, 0) }
     }
     pub fn text() -> String {
         require_application();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::clipboard_text(0) }
     }
     /// X11 primary selection (copy-on-select)
     pub fn set_selection(text: &str) {
         require_application();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::clipboard_set_text(text, 1) }
     }
     pub fn selection() -> String {
         require_application();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::clipboard_text(1) }
     }
 }
@@ -871,29 +969,37 @@ object_wrapper!(QAction, ffi::QAction);
 impl QAction {
     pub fn new(text: &str, parent: &impl Signal0) -> Owned<QAction> {
         require_application();
+        let _call = dtk_sys::NativeCall::new();
         Owned::new(Self::from_raw(unsafe {
             ffi::action_new(text, parent.qobject_ptr())
         }))
     }
     pub fn set_enabled(&self, enabled: bool) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::action_set_enabled(self.live_ptr(), enabled) }
     }
     pub fn is_enabled(&self) -> bool {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::action_is_enabled(self.live_ptr()) }
     }
     pub fn set_visible(&self, visible: bool) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::action_set_visible(self.live_ptr(), visible) }
     }
     pub fn is_visible(&self) -> bool {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::action_is_visible(self.live_ptr()) }
     }
     pub fn set_text(&self, text: &str) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::action_set_text(self.live_ptr(), text) }
     }
     pub fn text(&self) -> String {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::action_text(self.live_ptr()) }
     }
     pub fn trigger(&self) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::action_trigger(self.live_ptr()) }
     }
     /// Connect `triggered(bool)`, including the checked state for checkable actions.
@@ -908,26 +1014,31 @@ widget_wrapper!(DMenu, ffi::QMenu);
 impl DMenu {
     pub fn new(parent: &QWidget) -> Owned<DMenu> {
         require_application();
+        let _call = dtk_sys::NativeCall::new();
         Owned::new(Self::from_raw(unsafe { ffi::menu_new(parent.live_ptr()) }))
     }
     /// Append an action; its callback is released when the action/menu is destroyed.
     /// Returns an id for [`unregister_callback`] if early cancellation is needed.
     pub fn add_action(&self, text: &str, f: impl FnMut() + 'static) -> usize {
+        let _call = dtk_sys::NativeCall::new();
         let ptr = self.live_ptr();
         let id = dtk_sys::register_cb0(f);
         unsafe { ffi::menu_add_action_cb(ptr, text, id) };
         id
     }
     pub fn add_separator(&self) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::menu_add_separator(self.live_ptr()) }
     }
     /// Add an existing QAction without changing its QObject parent/ownership.
     /// Parent the action to this menu if it should live and die with the menu.
     pub fn add_action_object(&self, action: &QAction) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::menu_add_existing_action(self.live_ptr(), action.live_ptr()) }
     }
     /// Popup at (x, y) in ref widget coords; like QMenu, closing only hides it.
     pub fn popup(&self, ref_: &QWidget, x: i32, y: i32) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::menu_popup(self.live_ptr(), ref_.live_ptr(), x, y) }
     }
 }
@@ -941,6 +1052,7 @@ pub unsafe trait Signal0 {
     /// Full Qt signature, e.g. "clicked(bool)" / "timeout()"; signal args are ignored.
     /// Returns the callback id for [`unregister_callback`]; 0 = connect failed.
     fn connect_signal(&self, signal: &str, f: impl FnMut() + 'static) -> usize {
+        let _call = dtk_sys::NativeCall::new();
         let sender = self.qobject_ptr();
         let id = dtk_sys::register_cb0(f);
         if unsafe { ffi::relay_connect0(sender, signal, id) } {
@@ -961,6 +1073,7 @@ pub unsafe trait SignalI32 {
     fn qobject_ptr(&self) -> *mut ffi::QObject;
     /// Returns the callback id for [`unregister_callback`]; 0 = connect failed.
     fn connect_signal_i32(&self, signal: &str, f: impl FnMut(i32) + 'static) -> usize {
+        let _call = dtk_sys::NativeCall::new();
         let sender = self.qobject_ptr();
         let id = dtk_sys::register_cb_i32(f);
         if unsafe { ffi::relay_connect_i32(sender, signal, id) } {
@@ -981,6 +1094,7 @@ pub unsafe trait SignalBool {
     fn qobject_ptr(&self) -> *mut ffi::QObject;
     /// Returns the callback id for [`unregister_callback`]; 0 = connect failed.
     fn connect_signal_bool(&self, signal: &str, f: impl FnMut(bool) + 'static) -> usize {
+        let _call = dtk_sys::NativeCall::new();
         let sender = self.qobject_ptr();
         let id = dtk_sys::register_cb_bool(f);
         if unsafe { ffi::relay_connect_bool(sender, signal, id) } {
@@ -1001,6 +1115,7 @@ pub unsafe trait SignalI32I32 {
     fn qobject_ptr(&self) -> *mut ffi::QObject;
     /// Returns the callback id for [`unregister_callback`]; 0 = connect failed.
     fn connect_signal_i32_i32(&self, signal: &str, f: impl FnMut(i32, i32) + 'static) -> usize {
+        let _call = dtk_sys::NativeCall::new();
         let sender = self.qobject_ptr();
         let id = dtk_sys::register_cb_i32_i32(f);
         if unsafe { ffi::relay_connect_i32_i32(sender, signal, id) } {
@@ -1040,6 +1155,7 @@ widget_wrapper!(DTitlebar, ffi::DTitlebar);
 impl DMainWindow {
     pub fn new() -> Owned<DMainWindow> {
         require_application();
+        let _call = dtk_sys::NativeCall::new();
         Owned::new(Self::from_raw(unsafe { ffi::mainwindow_new() }))
     }
     /// with event callbacks: on_close returning false keeps the window open (event ignore)
@@ -1048,6 +1164,7 @@ impl DMainWindow {
         on_close: impl FnMut() -> bool + 'static,
     ) -> Owned<DMainWindow> {
         require_application();
+        let _call = dtk_sys::NativeCall::new();
         let show_id = dtk_sys::register_cb0(on_show);
         let close_id = dtk_sys::register_cb_guard(on_close);
         Owned::new(Self::from_raw(unsafe {
@@ -1055,15 +1172,19 @@ impl DMainWindow {
         }))
     }
     pub fn titlebar(&self) -> DTitlebar {
+        let _call = dtk_sys::NativeCall::new();
         DTitlebar::from_raw(unsafe { ffi::mainwindow_titlebar(self.live_ptr()) })
     }
     pub fn set_central_widget(&self, w: &QWidget) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::mainwindow_set_central_widget(self.live_ptr(), w.live_ptr()) }
     }
     pub fn set_window_radius(&self, radius: i32) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::mainwindow_set_window_radius(self.live_ptr(), radius) }
     }
     pub fn set_enable_blur_window(&self, enable: bool) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::mainwindow_set_enable_blur(self.live_ptr(), enable) }
     }
     /// Take ownership from the window; Qt returns None if no central widget is
@@ -1071,6 +1192,7 @@ impl DMainWindow {
     /// (`set_central_widget`, `layout.add_widget`, ...) or it gets deleted
     /// once the returned handle drops without ever being reparented.
     pub fn take_central_widget(&self) -> Option<Owned<QWidget>> {
+        let _call = dtk_sys::NativeCall::new();
         let ptr = unsafe { ffi::mainwindow_take_central_widget(self.live_ptr()) };
         (!ptr.is_null()).then(|| Owned::new(QWidget::from_raw(ptr)))
     }
@@ -1078,9 +1200,11 @@ impl DMainWindow {
 
 impl DTitlebar {
     pub fn set_title(&self, title: &str) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::titlebar_set_title(self.live_ptr(), title) }
     }
     pub fn set_icon(&self, icon: &QIcon) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::titlebar_set_icon(self.live_ptr(), &*icon.ptr) }
     }
 }
@@ -1315,8 +1439,8 @@ impl QPixmap {
 }
 
 impl QImage {
-    /// ARGB32 pixel buffer. Pixels start uninitialised, as in Qt's QImage;
-    /// call `fill` before reading them.
+    /// ARGB32 pixel buffer initialized to transparent black. Unlike raw Qt's
+    /// allocation API, safe pixel reads never expose uninitialized storage.
     pub fn new(width: i32, height: i32) -> Self {
         Self::from_raw(unsafe { ffi::image_new(width, height) })
     }
@@ -1649,15 +1773,18 @@ value_wrapper!(QIcon, ffi::QIcon, icon_delete);
 impl QIcon {
     pub fn from_theme(name: &str) -> Self {
         require_application();
+        let _call = dtk_sys::NativeCall::new();
         Self::from_raw(unsafe { ffi::icon_from_theme(name) })
     }
     /// like from_theme, but falls back to `fallback` when `name` is not in the icon theme.
     pub fn from_theme_with_fallback(name: &str, fallback: &QIcon) -> Self {
         require_application();
+        let _call = dtk_sys::NativeCall::new();
         Self::from_raw(unsafe { ffi::icon_from_theme_fallback(name, fallback.ptr) })
     }
     pub fn from_file(path: &str) -> Self {
         require_application();
+        let _call = dtk_sys::NativeCall::new();
         Self::from_raw(unsafe { ffi::icon_from_file(path) })
     }
 }
@@ -1669,19 +1796,24 @@ widget_wrapper!(DLabel, ffi::DLabel);
 impl DLabel {
     pub fn new(text: &str) -> Owned<DLabel> {
         require_application();
+        let _call = dtk_sys::NativeCall::new();
         Owned::new(Self::from_raw(unsafe { ffi::label_new(text) }))
     }
     pub fn set_text(&self, text: &str) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::label_set_text(self.live_ptr(), text) }
     }
     pub fn set_word_wrap(&self, wrap: bool) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::label_set_word_wrap(self.live_ptr(), wrap) }
     }
     /// use qt::alignment::* constants for alignment
     pub fn set_alignment(&self, alignment: i32) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::label_set_alignment(self.live_ptr(), alignment) }
     }
     pub fn set_pixmap(&self, pm: &QPixmap) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::label_set_pixmap(self.live_ptr(), pm.ptr) }
     }
 }
@@ -1694,9 +1826,11 @@ widget_wrapper!(DPushButton, ffi::DPushButton);
 impl DSuggestButton {
     pub fn new(text: &str) -> Owned<DSuggestButton> {
         require_application();
+        let _call = dtk_sys::NativeCall::new();
         Owned::new(Self::from_raw(unsafe { ffi::suggest_button_new(text) }))
     }
     pub fn set_text(&self, text: &str) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::button_set_text(self.live_ptr().cast(), text) }
     }
     pub fn on_clicked(&self, f: impl FnMut() + 'static) -> usize {
@@ -1704,6 +1838,7 @@ impl DSuggestButton {
     }
     /// programmatic click (emits clicked; useful for tests)
     pub fn click(&self) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::button_click(self.live_ptr().cast()) }
     }
 }
@@ -1711,12 +1846,15 @@ impl DSuggestButton {
 impl DPushButton {
     pub fn new(text: &str) -> Owned<DPushButton> {
         require_application();
+        let _call = dtk_sys::NativeCall::new();
         Owned::new(Self::from_raw(unsafe { ffi::push_button_new(text) }))
     }
     pub fn set_text(&self, text: &str) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::button_set_text(self.live_ptr(), text) }
     }
     pub fn click(&self) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::button_click(self.live_ptr()) }
     }
     pub fn on_clicked(&self, f: impl FnMut() + 'static) -> usize {
@@ -1732,6 +1870,7 @@ impl DMessageBox {
     /// create an empty dialog; set title/text/icon/buttons then exec()
     pub fn new() -> Owned<DMessageBox> {
         require_application();
+        let _call = dtk_sys::NativeCall::new();
         Owned::new(Self::from_raw(unsafe { ffi::qmessagebox_new() }))
     }
     /// create a pre-configured dialog; use qt::msg_icon::* and qt::msg_btn::* constants
@@ -1743,49 +1882,61 @@ impl DMessageBox {
         parent: Option<&QWidget>,
     ) -> Owned<DMessageBox> {
         let p = opt_ptr(parent);
+        let _call = dtk_sys::NativeCall::new();
         Owned::new(Self::from_raw(unsafe {
             ffi::qmessagebox_new_with(icon, title, text, buttons, p)
         }))
     }
     pub fn set_text(&self, text: &str) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::qmessagebox_set_text(self.live_ptr(), text) }
     }
     pub fn set_icon(&self, icon: i32) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::qmessagebox_set_icon(self.live_ptr(), icon) }
     }
     pub fn set_informative_text(&self, text: &str) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::qmessagebox_set_informative_text(self.live_ptr(), text) }
     }
     pub fn set_detailed_text(&self, text: &str) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::qmessagebox_set_detailed_text(self.live_ptr(), text) }
     }
     pub fn set_standard_buttons(&self, buttons: i32) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::qmessagebox_set_standard_buttons(self.live_ptr(), buttons) }
     }
     /// add a custom button with a text + ButtonRole; returns the button handle
     pub fn add_button(&self, text: &str, role: i32) -> DPushButton {
+        let _call = dtk_sys::NativeCall::new();
         DPushButton::from_raw(unsafe {
             ffi::qmessagebox_add_button_text(self.live_ptr(), text, role)
         })
     }
     /// add a standard button (qt::msg_btn::*); returns the button handle
     pub fn add_standard_button(&self, button: i32) -> DPushButton {
+        let _call = dtk_sys::NativeCall::new();
         DPushButton::from_raw(unsafe {
             ffi::qmessagebox_add_button_standard(self.live_ptr(), button)
         })
     }
     pub fn set_default_button(&self, button: i32) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::qmessagebox_set_default_button(self.live_ptr(), button) }
     }
     /// exec the dialog (blocking); returns the clicked StandardButton (qt::msg_btn::*)
     pub fn exec(&self) -> i32 {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::qmessagebox_exec(self.live_ptr()) }
     }
     /// which standard button was clicked after exec returns
     pub fn clicked_button(&self) -> i32 {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::qmessagebox_clicked_button(self.live_ptr()) }
     }
     pub fn text(&self) -> String {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::qmessagebox_text(self.live_ptr()) }
     }
 
@@ -1799,6 +1950,7 @@ impl DMessageBox {
         default_button: i32,
     ) -> i32 {
         let p = opt_ptr(parent);
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::qmessagebox_information(p, title, text, buttons, default_button) }
     }
     pub fn warning(
@@ -1809,6 +1961,7 @@ impl DMessageBox {
         default_button: i32,
     ) -> i32 {
         let p = opt_ptr(parent);
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::qmessagebox_warning(p, title, text, buttons, default_button) }
     }
     pub fn critical(
@@ -1819,6 +1972,7 @@ impl DMessageBox {
         default_button: i32,
     ) -> i32 {
         let p = opt_ptr(parent);
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::qmessagebox_critical(p, title, text, buttons, default_button) }
     }
     pub fn question(
@@ -1829,10 +1983,12 @@ impl DMessageBox {
         default_button: i32,
     ) -> i32 {
         let p = opt_ptr(parent);
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::qmessagebox_question(p, title, text, buttons, default_button) }
     }
     pub fn about(parent: Option<&QWidget>, title: &str, text: &str) {
         let p = opt_ptr(parent);
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::qmessagebox_about(p, title, text) }
     }
 }
@@ -1874,12 +2030,15 @@ macro_rules! layout_wrapper {
             /// When parent is Some, the layout installs directly on the parent widget.
             pub fn new(parent: Option<&QWidget>) -> Owned<$name> {
                 require_application();
+                let _call = dtk_sys::NativeCall::new();
                 Owned::new(Self::from_raw(unsafe { ffi::$new(opt_ptr(parent)) }))
             }
             pub fn add_widget(&self, w: &QWidget) {
+                let _call = dtk_sys::NativeCall::new();
                 unsafe { ffi::layout_add_widget(self.live_ptr().cast(), w.live_ptr()) }
             }
             pub fn add_widget_ex(&self, w: &QWidget, stretch: i32, alignment: i32) {
+                let _call = dtk_sys::NativeCall::new();
                 unsafe {
                     ffi::layout_add_widget_ex(
                         self.live_ptr().cast(),
@@ -1890,15 +2049,19 @@ macro_rules! layout_wrapper {
                 }
             }
             pub fn add_stretch(&self, stretch: i32) {
+                let _call = dtk_sys::NativeCall::new();
                 unsafe { ffi::layout_add_stretch(self.live_ptr().cast(), stretch) }
             }
             pub fn add_layout<L: AsLayout>(&self, child: &L) {
+                let _call = dtk_sys::NativeCall::new();
                 unsafe { ffi::layout_add_layout(self.live_ptr().cast(), child.layout_ptr()) }
             }
             pub fn set_spacing(&self, spacing: i32) {
+                let _call = dtk_sys::NativeCall::new();
                 unsafe { ffi::layout_set_spacing(self.live_ptr().cast(), spacing) }
             }
             pub fn set_contents_margins(&self, l: i32, t: i32, r: i32, b: i32) {
+                let _call = dtk_sys::NativeCall::new();
                 unsafe { ffi::layout_set_contents_margins(self.live_ptr().cast(), l, t, r, b) }
             }
         }
@@ -1956,24 +2119,31 @@ impl QAbstractItemModel {
     /// Make this non-widget QObject a child of its view (setModel alone does
     /// not transfer ownership in Qt). The parent must stay on the GUI thread.
     pub fn set_parent(&self, parent: &impl Signal0) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::model_set_parent(self.live_ptr(), parent.qobject_ptr()) }
     }
     pub fn row_count(&self) -> i32 {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::model_row_count(self.live_ptr()) }
     }
     pub fn column_count(&self) -> i32 {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::model_column_count(self.live_ptr()) }
     }
     pub fn data(&self, row: i32, col: i32, role: i32) -> QVariant {
+        let _call = dtk_sys::NativeCall::new();
         QVariant::from_raw(unsafe { ffi::model_data(self.live_ptr(), row, col, role) })
     }
     pub fn set_data(&self, row: i32, col: i32, data: &QVariant, role: i32) -> bool {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::model_set_data(self.live_ptr(), row, col, data.ptr, role) }
     }
     pub fn insert_rows(&self, row: i32, count: i32) -> bool {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::model_insert_rows(self.live_ptr(), row, count) }
     }
     pub fn remove_rows(&self, row: i32, count: i32) -> bool {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::model_remove_rows(self.live_ptr(), row, count) }
     }
 }
@@ -1984,11 +2154,13 @@ impl QStandardItemModel {
     /// The Qt parent owns this model; pass its view when appropriate.
     pub fn new(parent: &impl Signal0) -> Owned<QStandardItemModel> {
         require_application();
+        let _call = dtk_sys::NativeCall::new();
         Owned::new(Self::from_raw(unsafe {
             ffi::standard_item_model_new(parent.qobject_ptr())
         }))
     }
     pub fn set_column_count(&self, count: i32) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::standard_item_model_set_column_count(self.live_ptr(), count) }
     }
     pub fn as_model(&self) -> QAbstractItemModel {
@@ -2015,59 +2187,74 @@ widget_wrapper!(QTableWidget, ffi::QTableWidget);
 impl QTableWidget {
     pub fn new(rows: i32, cols: i32) -> Owned<QTableWidget> {
         require_application();
+        let _call = dtk_sys::NativeCall::new();
         Owned::new(Self::from_raw(unsafe { ffi::table_new(rows, cols) }))
     }
     pub fn set_column_count(&self, cols: i32) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::table_set_column_count(self.live_ptr(), cols) }
     }
     pub fn set_row_count(&self, rows: i32) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::table_set_row_count(self.live_ptr(), rows) }
     }
     /// Set one header label per column; strings are passed verbatim to Qt,
     /// including separators and embedded NUL (no delimiter-encoded protocol).
     pub fn set_horizontal_header_labels<S: AsRef<str>>(&self, labels: &[S]) {
+        let _call = dtk_sys::NativeCall::new();
         let values = labels.iter().map(|s| s.as_ref().to_owned()).collect();
         unsafe { ffi::table_set_horizontal_header_labels(self.live_ptr(), values) }
     }
     /// Text of an existing horizontal header item; empty for a missing item.
     pub fn horizontal_header_label(&self, col: i32) -> String {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::table_horizontal_header_label(self.live_ptr(), col) }
     }
     /// Set text without replacing an existing item; return false if out of bounds.
     pub fn set_cell_text(&self, row: i32, col: i32, text: &str) -> bool {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::table_set_cell_text(self.live_ptr(), row, col, text) }
     }
     /// Store i64 UserRole data (e.g. a pid), creating an item when needed.
     /// Return false if out of bounds; no allocation occurs for invalid cells.
     pub fn set_cell_data(&self, row: i32, col: i32, data: i64) -> bool {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::table_set_cell_data(self.live_ptr(), row, col, data) }
     }
     pub fn cell_data(&self, row: i32, col: i32) -> i64 {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::table_cell_data(self.live_ptr(), row, col) }
     }
     pub fn cell_text(&self, row: i32, col: i32) -> String {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::table_cell_text(self.live_ptr(), row, col) }
     }
     pub fn current_row(&self) -> i32 {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::table_current_row(self.live_ptr()) }
     }
     pub fn row_count(&self) -> i32 {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::table_row_count(self.live_ptr()) }
     }
     /// row selection, read-only, single-select
     pub fn select_rows_readonly(&self) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::table_select_rows_readonly(self.live_ptr()) }
     }
     pub fn header_stretch_last(&self, stretch: bool) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::table_header_stretch_last(self.live_ptr(), stretch) }
     }
     pub fn set_column_width(&self, col: i32, width: i32) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::table_set_column_width(self.live_ptr(), col, width) }
     }
     /// A coordinate view of the current item, or None if this cell is empty.
     /// The view re-resolves (row, col) on every call, so replacing the cell's
     /// item changes which item it operates on; it never holds a dangling item*.
     pub fn item(&self, row: i32, col: i32) -> Option<TableCell> {
+        let _call = dtk_sys::NativeCall::new();
         let p = unsafe { ffi::table_item(self.live_ptr(), row, col) };
         (!p.is_null()).then(|| TableCell {
             table: self.clone(),
@@ -2076,29 +2263,37 @@ impl QTableWidget {
         })
     }
     pub fn select_row(&self, row: i32) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::table_select_row(self.live_ptr(), row) }
     }
     pub fn hide_headers(&self, horizontal: bool, vertical: bool) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::table_hide_headers(self.live_ptr(), horizontal, vertical) }
     }
     /// use qt::header_resize::* constants for mode
     pub fn set_section_resize_mode(&self, col: i32, mode: i32) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::table_set_section_resize_mode(self.live_ptr(), col, mode) }
     }
     pub fn set_vertical_header_default_section_size(&self, size: i32) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::table_set_vertical_header_default_section_size(self.live_ptr(), size) }
     }
     pub fn set_show_grid(&self, show: bool) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::table_set_show_grid(self.live_ptr(), show) }
     }
     /// use qt::frame::* constants for shape
     pub fn set_frame_shape(&self, shape: i32) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::table_set_frame_shape(self.live_ptr(), shape) }
     }
     pub fn set_icon_size(&self, w: i32, h: i32) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::table_set_icon_size(self.live_ptr(), w, h) }
     }
     pub fn set_delegate_for_column(&self, col: i32, delegate: &PaintDelegate) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::table_set_delegate_for_column(self.live_ptr(), col, delegate.live_ptr()) }
     }
     /// Returns the callback id for [`unregister_callback`]; 0 = connect failed.
@@ -2120,14 +2315,17 @@ impl QTimer {
     /// guarded QObject/widget as parent.
     pub fn new(parent: &impl Signal0) -> Owned<QTimer> {
         require_core_application();
+        let _call = dtk_sys::NativeCall::new();
         Owned::new(Self::from_raw(unsafe {
             ffi::timer_new(parent.qobject_ptr())
         }))
     }
     pub fn start(&self, msec: i32) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::timer_start(self.live_ptr(), msec) }
     }
     pub fn stop(&self) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::timer_stop(self.live_ptr()) }
     }
     /// Returns the callback id for [`unregister_callback`]; 0 = connect failed.
@@ -2138,6 +2336,7 @@ impl QTimer {
     /// or when Qt cancels it because the application is destroyed.
     pub fn single_shot(msec: i32, f: impl FnOnce() + 'static) {
         require_core_application();
+        let _call = dtk_sys::NativeCall::control();
         let id = dtk_sys::register_cb_once(f);
         unsafe { ffi::timer_single_shot(msec, id) }
     }
@@ -2154,6 +2353,7 @@ pub struct TableCell {
 
 impl TableCell {
     fn with_item<T>(&self, f: impl FnOnce(*mut ffi::QTableWidgetItem) -> T) -> Option<T> {
+        let _call = dtk_sys::NativeCall::new();
         let item = unsafe { ffi::table_item(self.table.live_ptr(), self.row, self.col) };
         (!item.is_null()).then(|| f(item))
     }
@@ -2270,6 +2470,7 @@ impl PaintDelegate {
         f: impl FnMut(&Painter, &ModelIndex, i32, i32, i32, i32, i32) + 'static,
     ) -> Owned<PaintDelegate> {
         require_application();
+        let _call = dtk_sys::NativeCall::new();
         let parent_ptr = parent.qobject_ptr();
         let mut f = f;
         let id = dtk_sys::register_cb_paint(move |data| {
@@ -2297,12 +2498,14 @@ impl QSocketNotifier {
     /// Watch an fd for readability (Read type); the parent owns the notifier.
     pub fn new(fd: i32, parent: &impl Signal0) -> Owned<QSocketNotifier> {
         require_core_application();
+        let _call = dtk_sys::NativeCall::new();
         Owned::new(Self::from_raw(unsafe {
             ffi::socket_notifier_new(fd, parent.qobject_ptr())
         }))
     }
     /// Stop firing (e.g. a watched fd hit EOF and stays readable).
     pub fn set_enabled(&self, on: bool) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::socket_notifier_set_enabled(self.live_ptr(), on) }
     }
     pub fn on_activated(&self, f: impl FnMut() + 'static) -> usize {
@@ -2314,14 +2517,17 @@ impl QSocketNotifier {
 
 impl widgets::DProgressBar {
     pub fn set_value(&self, value: i32) {
-        unsafe { ffi::progressbar_set_value(self.live_ptr().cast(), value) }
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { ffi::progressbar_set_value(self.widget_ptr(), value) }
     }
     /// (0, 0) = busy/indeterminate mode
     pub fn set_range(&self, minimum: i32, maximum: i32) {
-        unsafe { ffi::progressbar_set_range(self.live_ptr().cast(), minimum, maximum) }
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { ffi::progressbar_set_range(self.widget_ptr(), minimum, maximum) }
     }
     pub fn value(&self) -> i32 {
-        unsafe { ffi::progressbar_value(self.live_ptr().cast()) }
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { ffi::progressbar_value(self.widget_ptr()) }
     }
 }
 
@@ -2345,9 +2551,10 @@ impl widgets::DSwitchButton {
 }
 
 impl widgets::DSearchEdit {
-    /// QLineEdit base-class getter, via the DLineEdit ancestry
+    /// Text of DLineEdit's contained native QLineEdit (not a base-class cast).
     pub fn text(&self) -> String {
-        unsafe { ffi::line_edit_text(self.live_ptr().cast()) }
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { ffi::line_edit_text(self.widget_ptr()) }
     }
 }
 
@@ -2377,6 +2584,7 @@ impl core::DConfig {
     /// if its Rust owner or view escapes.
     pub fn create_generic(name: &str, subpath: &str) -> Option<Owned<Self>> {
         require_core_application();
+        let _call = dtk_sys::NativeCall::new();
         Self::from_created(unsafe { ffi::core_config_create_generic(name, subpath) })
     }
 
@@ -2384,6 +2592,7 @@ impl core::DConfig {
     /// Native DCore transfers ownership even when `is_valid()` is false.
     pub fn create_for_app(app_id: &str, name: &str, subpath: &str) -> Option<Owned<Self>> {
         require_core_application();
+        let _call = dtk_sys::NativeCall::new();
         Self::from_created(unsafe { ffi::core_config_create(app_id, name, subpath) })
     }
 }

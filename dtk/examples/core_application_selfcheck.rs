@@ -24,7 +24,7 @@ impl Drop for ReenterOnDrop {
         expect_panic("only one Qt application", || {
             QCoreApplication::with("reenter", |_| {})
         });
-        expect_panic("QTimer was destroyed", || self.timer.stop());
+        expect_panic("Qt application is closing", || self.timer.stop());
         self.rejected.set(true);
     }
 }

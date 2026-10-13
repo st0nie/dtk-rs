@@ -8,6 +8,7 @@
 #include <memory>
 #include <rust/cxx.h>
 #include "application_runtime.h"
+#include "runtime_borrow.h"
 
 #include <QObject>
 #include <QPointer>
@@ -121,10 +122,13 @@ using QMessageBox = ::QMessageBox;
 // No Q_OBJECT macro needed: the eventFilter only observes ParentChange.
 struct QObjectGuard : QObject {
     explicit QObjectGuard(QObject *object);
+    ~QObjectGuard();
     bool eventFilter(QObject *object, QEvent *event) override;
+    QObject *identity;
     QPointer<QObject> watched;
     std::shared_ptr<const ApplicationRuntimeState> runtime_state;
     bool was_parented;
+    bool deletion_authority = false;
 };
 std::unique_ptr<QObjectGuard> guard_object(QObject *object);
 std::unique_ptr<QObjectGuard> guard_widget(QWidget *widget);
@@ -135,6 +139,13 @@ bool guard_alive(const QObjectGuard &guard);
 // NOT permission to access a QObject. Used for independent deletion witnesses.
 bool guard_native_alive(const QObjectGuard &guard);
 bool guard_was_parented(const QObjectGuard &guard);
+void guard_grant_owned(const QObjectGuard &guard);
+void object_grant_constructor_authority(QObject *object);
+bool guard_can_delete(const QObjectGuard &guard);
+void guard_observe_parent(QObject *child);
+void guard_mark_adopted(QObject *object);
+bool object_can_reparent(QObject *child, QObject *parent);
+bool layout_can_adopt(QLayout *parent, QLayout *child);
 
 // ---- QAction / QMenu (DMenu = QMenu typedef in DTK6) ----
 QAction *action_new(rust::Str text, QObject *parent);
@@ -493,6 +504,7 @@ bool relay_connect_bool(QObject *sender, rust::Str signal, size_t cb_id);
 bool relay_connect_i32_i32(QObject *sender, rust::Str signal, size_t cb_id);
 // disconnect + deleteLater the relay for cb_id (no-op if unknown)
 void relay_disconnect(size_t cb_id);
+void relay_finish_ready(size_t cb_id);
 size_t relay_live_count(); // diagnostic: includes disconnected deferred relays
 
 void widget_set_cursor(QWidget *w, int32_t shape);

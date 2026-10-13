@@ -16,11 +16,14 @@ generated=(
     dtk-sys/cpp/dtk_{gen,core,gui}_shim.cpp
     dtk-sys/include/dtk_{gen,core,gui}_shim.h
     GEN_REPORT.md GEN_CORE_REPORT.md GEN_GUI_REPORT.md
+    OWNERSHIP_WIDGET_REPORT.md OWNERSHIP_CORE_REPORT.md OWNERSHIP_GUI_REPORT.md
+    OWNERSHIP_HAND_REPORT.md
 )
 manifest=$(mktemp)
 trap 'rm -f "$manifest"' EXIT
 sha256sum "${generated[@]}" > "$manifest"
 uv run --no-project python tools/gen.py
+uv run --no-project python tools/audit_hand.py
 sha256sum --check "$manifest"
 cargo fmt --all -- --check
 

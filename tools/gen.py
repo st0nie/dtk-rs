@@ -24,6 +24,13 @@ import sys
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 HDR_DIR = "/usr/include/dtk6/DWidget"
+# Keep one explicit source-backed contract table for all generator backends.
+# Script execution and module execution must resolve the same package.
+if REPO not in sys.path:
+    sys.path.insert(0, REPO)
+from tools.ownership import IMPLICIT_VALUE_CONSTRUCTORS, POINTER_RETURNS, REQUIRED_PARENT_CONSTRUCTORS, pointer_return_contract
+from tools.pointer_inputs import pointer_input_contract
+from tools.native_rules import method_body
 
 # classes bound by hand; the generator skips these
 HAND_BOUND = {"DApplication", "DMainWindow", "DTitlebar", "DLabel", "DSuggestButton", "DPushButton",
@@ -53,6 +60,10 @@ QT_MODEL_BASES = {"QAbstractItemModel", "QAbstractListModel", "QAbstractTableMod
 # installed native headers; values are returned by tiny generated C++ functions
 # rather than guessing the C++ discriminants in Rust.
 TYPED_ENUMS = {
+    "widget": {
+        "Qt::AnchorPoint": ("AnchorPoint", "QtCore/qnamespace.h"),
+        "DPrintPreviewSettingInfo::SettingType": ("PrintSettingType", "/usr/include/dtk6/DWidget/dprintpreviewsettinginfo.h", ("PS_SettingsCount",)),
+    },
     "core": {
         "DStandardPaths::XDG": ("XdgDirectory", "/usr/include/dtk6/DCore/dstandardpaths.h"),
         "DStandardPaths::DSG": ("DsgDirectory", "/usr/include/dtk6/DCore/dstandardpaths.h"),
@@ -128,7 +139,22 @@ RUST_KEYWORDS = {"type", "ref", "self", "mod", "fn", "in", "match", "loop", "mov
 
 
 def snake(name: str) -> str:
-    return re.sub(r"(?<!^)(?=[A-Z])", "_", name).lower()
+    # Native enum members can already contain underscores (PS_Printer).
+    # Inserting an uppercase boundary must not emit C++'s reserved `__`.
+    separated = re.sub(r"(?<!^)(?=[A-Z])", "_", name).lower()
+    return re.sub(r"_+", "_", separated)
+
+
+def enum_getter_name(cpp: str, member: str) -> str:
+    # Normalize the complete identifier too: a member may start with `_`.
+    return re.sub(r"_+", "_", "gen_enum_" + "_".join(snake(piece) for piece in cpp.split("::")) + "_" + snake(member))
+
+
+def rust_enum_variant(member: str) -> str:
+    if "_" not in member:
+        return member
+    return "".join(part.title() if part.isupper() else part[:1].upper() + part[1:]
+                   for part in member.split("_") if part)
 
 
 def enum_members(source: str, name: str) -> list[str]:
@@ -535,11 +561,20 @@ def collect_models(headers, excluded=(), included=None):
             if g is None:
                 skipped.append((raw, why))
             else:
+                if c["name"] == "DFeatureDisplayDialog" and name == "removeItem":
+                    g = ("*mut DFeatureItem", "DFeatureItem *", "ptr", "DFeatureItem", *g[4:])
+                if g[2] in ("ptr", "qtptr"):
+                    pointer_return_contract(c["name"], g[5])
+                if any(a[3] in ("ptr", "qtptr", "valref") for a in g[6]):
+                    pointer_input_contract(c["name"], g[5])
                 gen_methods.append(g)
+        if c["name"] in REQUIRED_PARENT_CONSTRUCTORS:
+            source, reason = REQUIRED_PARENT_CONSTRUCTORS[c["name"]]
+            skipped.append((f"{c['name']}(parent = nullptr)", f"required native parent: {source}: {reason}"))
         classes_out.append({
             "name": c["name"], "kind": kind, "bases": c["bases"], "header": c["header"], "ns": c.get("ns", ""),
             # exactly one all-default ctor: two would make `new X()` ambiguous
-            "ctor_new": c.get("all_default_ctors", 0) == 1 and not c.get("abstract", False), "methods": gen_methods, "skipped": skipped,
+            "ctor_new": (c.get("all_default_ctors", 0) == 1 or c["name"] in IMPLICIT_VALUE_CONSTRUCTORS) and not c.get("abstract", False) and c["name"] not in REQUIRED_PARENT_CONSTRUCTORS, "methods": gen_methods, "skipped": skipped,
         })
     return classes_out
 
@@ -571,12 +606,23 @@ def emit(classes, domain="widget"):
     assert domain in ("widget", "core", "gui")
     stem = "gen" if domain == "widget" else domain
     header = f"dtk_{stem}_shim.h"
-    shim_h, shim_cpp, bridge, wrapper, report = [], [], [], [], []
+    shim_h, shim_cpp, bridge, wrapper, report, ownership_report = [], [], [], [], [], []
+    owned_opaque_types = {c["name"] for c in classes if c["kind"] == "opaque" and c["ctor_new"]}
+    for c in classes:
+        for method in c["methods"]:
+            if method[2] in ("ptr", "qtptr") and pointer_return_contract(c["name"], method[5])[0] == "opaque_transfer":
+                owned_opaque_types.add(method[3])
+    ownership_report.append(f"# DTK6 {domain} pointer/return ownership audit\n\n"
+                            "Generated from explicit native contracts in tools/ownership.py.\n"
+                            "Evidence: matching apt source dtkwidget 6.7.47.1-1, dtkcore/dtkgui 6.7.47; Qt 6.8.0+dfsg-0deepin31.\n"
+                            "All mapped return signatures and emitted constructors appear below. No ownership is inferred from a method name.\n\n"
+                            "| Native API | Native result | Rust ownership | Evidence |\n"
+                            "|---|---|---|---|\n")
     shim_h.append("// auto-generated by tools/gen.py, do not edit\n#pragma once\n#include \"dtk_shim.h\"\n")
-    shim_cpp.append(f'// auto-generated by tools/gen.py, do not edit\n#include "{header}"\n\nnamespace dtkrs {{\n')
+    shim_cpp.append(f'// auto-generated by tools/gen.py, do not edit\n#include "{header}"\n#include "object_relations.h"\n#include "anchor_relations.h"\n#include <algorithm>\n\nnamespace dtkrs {{\n')
     # cxx requires an unsafe extern block when it contains genuinely safe C++
     # helpers (enum getters). Ordinary object methods remain explicitly unsafe.
-    extern_block = 'unsafe extern "C++"' if domain != "widget" else 'extern "C++"'
+    extern_block = 'unsafe extern "C++"' if TYPED_ENUMS.get(domain) else 'extern "C++"'
     bridge.append("// auto-generated by tools/gen.py, do not edit\n"
                   "// Every unsafe declaration has the same contract: pointers must refer to live\n"
                   "// Qt/DTK objects on their owning thread, with the correct dynamic type.\n"
@@ -623,6 +669,7 @@ def emit(classes, domain="widget"):
         bridge.append(f"        type {name};\n")
 
     domain_enums = {}
+    enum_getters = set()
     for cpp, spec in TYPED_ENUMS.get(domain, {}).items():
         rust_name, header_path, *ignored = spec
         ignored_members = set(ignored[0]) if ignored else set()
@@ -637,12 +684,20 @@ def emit(classes, domain="widget"):
             raise ValueError(f"enum {cpp}: excluded members missing from native header")
         members = [name for name in members if name not in ignored_members]
         values = []
+        variants = set()
         for member in members:
-            fn = "gen_enum_" + "_".join(snake(piece) for piece in cpp.split("::")) + "_" + snake(member)
+            fn = enum_getter_name(cpp, member)
+            if fn in enum_getters:
+                raise ValueError(f"enum getter identifier collision: {cpp}::{member} -> {fn}")
+            enum_getters.add(fn)
+            variant = rust_enum_variant(member)
+            if variant in variants or variant in RUST_KEYWORDS or variant == "Self":
+                raise ValueError(f"invalid/colliding Rust enum variant: {cpp}::{member} -> {variant}")
+            variants.add(variant)
             shim_h.append(f"int32_t {fn}();\n")
             shim_cpp.append(f"int32_t {fn}() {{ return static_cast<int32_t>({cpp}::{member}); }}\n")
             bridge.append(f"        fn {fn}() -> i32;\n")
-            values.append((member, fn))
+            values.append((variant, fn))
         domain_enums[cpp] = (rust_name, values)
         wrapper.append(f"#[derive(Clone, Copy, Debug, PartialEq, Eq)]\npub enum {rust_name} {{\n")
         wrapper.extend(f"    {member},\n" for member, _ in values)
@@ -663,15 +718,17 @@ def emit(classes, domain="widget"):
         if c["ctor_new"]:
             fn = f"gen_{sname}_new"
             shim_h.append(f"{name} *{fn}();\n")
-            shim_cpp.append(f"{name} *{fn}() {{ return new {name}; }}\n")
+            allocation = "loading_indicator_new()" if name == "DLoadingIndicator" else f"new {name}{{}}" if name in IMPLICIT_VALUE_CONSTRUCTORS else f"new {name}"
+            shim_cpp.append(f"{name} *{fn}() {{ return {allocation}; }}\n")
             bridge.append(f"        unsafe fn {fn}() -> *mut {name};\n")
-            if c["kind"] == "opaque":
-                # Unlike QObject parent-owned objects, opaque allocations need an
-                # explicit deleter. Only the constructor's OwnedOpaque may call it.
-                delete = f"gen_{sname}_delete"
-                shim_h.append(f"void {delete}({name} *self);\n")
-                shim_cpp.append(f"void {delete}({name} *self) {{ delete self; }}\n")
-                bridge.append(f"        unsafe fn {delete}(self_: *mut {name});\n")
+            ownership_report.append(f"| `{name}()` | `new {name}` | {'unique `OwnedOpaque`' if c['kind'] == 'opaque' else 'constructor `Owned`'} | constructor; `{c['header']}` |\n")
+        if name in owned_opaque_types:
+            # Also emit a deleter for transferred factory results without a
+            # default constructor (DPrintPreviewSettingInfo's destructor is virtual).
+            delete = f"gen_{sname}_delete"
+            shim_h.append(f"void {delete}({name} *self);\n")
+            shim_cpp.append(f"void {delete}({name} *self) {{ delete self; }}\n")
+            bridge.append(f"        unsafe fn {delete}(self_: *mut {name});\n")
         if c["kind"] in ("object", "widget"):
             # C++ static_cast adjusts secondary base pointers; a Rust raw cast
             # is only safe for coincident primary-base layouts. Compute once per
@@ -691,6 +748,22 @@ def emit(classes, domain="widget"):
             shim_cpp.append(f"QAbstractItemModel *{fn}({name} *self) {{ return static_cast<QAbstractItemModel *>(self); }}\n")
             bridge.append(f"        unsafe fn {fn}(self_: *mut {name}) -> *mut QAbstractItemModel;\n")
         for (ret_rs, ret_cpp, ret_kind, ret_cls, is_static, meth, args) in c["methods"]:
+            if ret_kind in ("ptr", "qtptr"):
+                contract, source, evidence = pointer_return_contract(name, meth)
+                ownership_report.append(f"| `{name}::{meth}` | `{ret_cls}*` | `{contract}` | `{source}`: {evidence} |\n")
+            else:
+                contract = "owned heap copy" if ret_kind in ("val", "valcopy") else "owned Rust strings/container" if ret_kind in ("str", "strlist", "strmap", "qba") else "copied scalar / no result"
+                ownership_report.append(f"| `{name}::{meth}` | `{ret_rs}` | {contract} | shim conversion; `{c['header']}` |\n")
+            pointer_args = [a for a in args if a[3] in ("ptr", "qtptr", "valref")]
+            if pointer_args:
+                input_contract, rule = pointer_input_contract(name, meth)
+                params = ", ".join(f"{a[4]}*" for a in pointer_args)
+                ownership_report.append(f"| `{name}::{meth}` parameters | `{params}` | {input_contract} | native `{c['header']}` implementation: {rule} |\n")
+            value_args = [a for a in args if a[3] in ("val", "valmut")]
+            if value_args:
+                params = ", ".join(a[1] for a in value_args)
+                contract = "exclusive mutable value borrow" if any(a[3] == "valmut" for a in value_args) else "call borrow of independently owned Qt value"
+                ownership_report.append(f"| `{name}::{meth}` Qt value inputs | `{params}` | {contract}; no QObject ownership transfer | explicit value mapping; `{c['header']}` native value/reference signature |\n")
             base_fn = f"gen_{sname}_{snake(meth)}"
             if snake(meth) in RUST_KEYWORDS:
                 base_fn += "_"  # same rule as the wrapper side, avoids Rust keywords
@@ -733,6 +806,7 @@ def emit(classes, domain="widget"):
                 invalid = "!self->model()" if meth == "count" else \
                     "!self->model() || self->model()->columnCount() == 0"
                 body = f"if ({invalid}) return {fallback}; {body}"
+            body = method_body(name, meth, args, body, ret_rs)
             shim_h.append(f"{ret_cpp} {fn}({cpp_sig});\n")
             shim_cpp.append(f"{ret_cpp} {fn}({cpp_sig}) {{ {body} }}\n")
             # bridge
@@ -762,14 +836,15 @@ def emit(classes, domain="widget"):
         if owns_opaque:
             # QPrinter requires a GUI application; independent opaque values
             # retain their old no-app behavior, but none may reenter shutdown.
-            ctor_check = f"        crate::{runtime_check}();\n" if name == "DPrinter" else "        dtk_sys::assert_not_closing();\n"
+            ctor_check = f"        crate::{runtime_check}();\n" if name in {"DPrinter", "DBlurEffectGroup"} else "        dtk_sys::assert_not_closing();\n"
             wrapper.append(f"    pub fn new() -> OwnedOpaque<Self> {{\n"
                            f"{ctor_check}"
+                           f"        let _call = dtk_sys::NativeCall::new();\n"
                            f"        let ptr = unsafe {{ genffi::gen_{sname}_new() }};\n"
                            f"        OwnedOpaque::from_owned(Self::from_owned_raw(ptr), "
                            f"|value| unsafe {{ genffi::gen_{sname}_delete(value.ptr) }})\n    }}\n")
         elif c["ctor_new"]:
-            wrapper.append(f"    pub fn new() -> Owned<Self> {{\n        crate::{runtime_check}();\n        "
+            wrapper.append(f"    pub fn new() -> Owned<Self> {{\n        crate::{runtime_check}();\n        let _call = dtk_sys::NativeCall::new();\n        "
                            f"Owned::new(Self::from_raw(unsafe {{ genffi::gen_{sname}_new() }}))\n    }}\n")
         used = {}
         # widget_wrapper macro already provides these; skip to avoid duplicate definitions
@@ -789,7 +864,8 @@ def emit(classes, domain="widget"):
             for rs, _cpp, _call, pkind, pcls in args:
                 pname, ptype = rs.split(": ", 1)
                 if pkind == "ptr":
-                    wr_args.append(f"{pname}: &{pcls}")
+                    output = name == "DFloatingWidget" and meth == "initStyleOption" and pcls == "DStyleOptionFloatingWidget"
+                    wr_args.append(f"{pname}: &mut OwnedOpaque<{pcls}>" if output else f"{pname}: &{pcls}")
                     call_args.append(f"{pname}.live_ptr()")
                 elif pkind == "qtptr":
                     wr_args.append(f"{pname}: &{pcls}")
@@ -822,7 +898,17 @@ def emit(classes, domain="widget"):
             # still parented to the view that native code destroys on the
             # next event turn. Only individually audited methods may hand
             # ownership to Rust (QMainWindow::takeCentralWidget is bound by hand).
-            if ret_kind == "ptr":
+            return_contract = pointer_return_contract(name, meth)[0] if ret_kind in ("ptr", "qtptr") else None
+            if return_contract == "object_transfer":
+                ret_decl = f" -> Option<Owned<{ret_cls}>>"
+                expr = (f"{{ let ptr = unsafe {{ genffi::{fn_name}({calls}) }}; "
+                        f"(!ptr.is_null()).then(|| Owned::new({ret_cls}::from_raw(ptr))) }}")
+            elif return_contract == "opaque_transfer":
+                ret_decl = f" -> Option<OwnedOpaque<{ret_cls}>>"
+                expr = (f"{{ let ptr = unsafe {{ genffi::{fn_name}({calls}) }}; "
+                        f"(!ptr.is_null()).then(|| OwnedOpaque::from_owned({ret_cls}::from_owned_raw(ptr), "
+                        f"|value| unsafe {{ genffi::gen_{snake(ret_cls)}_delete(value.ptr) }})) }}")
+            elif ret_kind == "ptr":
                 ret_decl = f" -> Option<{ret_cls}>"
                 expr = (f"{{ let ptr = unsafe {{ genffi::{fn_name}({calls}) }}; "
                         f"(!ptr.is_null()).then(|| {ret_cls}::from_raw(ptr)) }}")
@@ -851,20 +937,19 @@ def emit(classes, domain="widget"):
                         if is_static and not pre_app_call and (
                             c["kind"] in ("widget", "object") or ret_kind == "ptr"
                         ) else "        dtk_sys::assert_not_closing();\n" if is_static and c["kind"] == "opaque" else "")
-            # Non-QObject borrows carry a scope guard, not a native QPointer:
-            # application exit invalidates them, but native deletion within a
-            # live scope still needs the caller's audited ownership/lifetime.
-            # Its native ownership may be borrowed OR transferred, depending
-            # on the specific DTK method; don't infer from spelling. Neither
-            # access nor destruction can be promised by a safe Rust method.
-            unguarded_return = ret_kind == "ptr" and kind_by_name.get(ret_cls) == "opaque"
+            # Process-static opaque returns are source-proven borrows with
+            # scope invalidation; factory allocations are unique owners above.
+            # Only genuinely foreign implementation-defined factories retain
+            # an unsafe contract. Never infer any of these from spelling.
+            unguarded_return = return_contract == "implementation_defined"
             safety = ("    /// # Safety\n"
-                      "    /// This non-QObject borrow is invalidated at application scope exit,\n"
-                      "    /// but has no native liveness guard. The caller must verify this\n"
-                      "    /// DTK method's ownership contract, keep the native\n"
-                      "    /// allocation live for every access, and arrange deletion only if\n"
-                      "    /// ownership was explicitly transferred by native code.\n"
+                      "    /// This pure virtual factory has no uniform native ownership contract.\n"
+                      "    /// Audit the foreign implementation's allocation/ownership rules; this\n"
+                      "    /// result is a borrowed checked view, not a deletion capability.\n"
                       if unguarded_return else "")
+            if return_contract and not unguarded_return:
+                _contract, source, evidence = pointer_return_contract(name, meth)
+                safety = f"    /// Native ownership: `{return_contract}`.\n    /// Evidence: `{source}`: {evidence}.\n"
             # New DCore/DGui surfaces must not accept arbitrary i32 C++ enum
             # discriminants as safe Rust. Until a typed enum is generated,
             # callers must validate those arguments explicitly.
@@ -883,7 +968,9 @@ def emit(classes, domain="widget"):
                 safety += ("    /// Must run before any QCoreApplication is created, without a\n"
                            "    /// concurrent Qt application construction on another thread.\n")
             marker = "unsafe " if unguarded_return or domain_enum_args or pre_app_call else ""
-            wrapper.append(f"{safety}    pub {marker}fn {mname}({sig}){ret_decl} {{\n{precheck}        {expr}\n    }}\n")
+            if not is_static and name in {"DPrinter", "DBlurEffectGroup"}:
+                precheck = f"        crate::{runtime_check}();\n"
+            wrapper.append(f"{safety}    pub {marker}fn {mname}({sig}){ret_decl} {{\n{precheck}        let _call = dtk_sys::NativeCall::new();\n        {expr}\n    }}\n")
         wrapper.append("}\n\n")
         total_skip_n = len(c["skipped"])
         total_skip += total_skip_n
@@ -915,6 +1002,7 @@ def emit(classes, domain="widget"):
          rustfmt_text("".join(wrapper))),
         ({"widget": "GEN_REPORT.md", "core": "GEN_CORE_REPORT.md", "gui": "GEN_GUI_REPORT.md"}[domain],
          "".join(report)),
+        (f"OWNERSHIP_{domain.upper()}_REPORT.md", "".join(ownership_report)),
     ]:
         write(os.path.join(REPO, path), content)
     print(f"{domain}: classes {len(classes)}, methods generated {total_ok}, skipped {total_skip}")

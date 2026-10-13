@@ -164,14 +164,17 @@ opaque_wrapper!(DStandardPaths, genffi::DStandardPaths);
 impl DStandardPaths {
     pub fn writable_location(type_: StandardLocation) -> String {
         dtk_sys::assert_not_closing();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_standard_paths_writable_location(type_.native_value()) }
     }
     pub fn standard_locations(type_: StandardLocation) -> Vec<String> {
         dtk_sys::assert_not_closing();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_standard_paths_standard_locations(type_.native_value()) }
     }
     pub fn locate(type_: StandardLocation, fileName: &str, options: LocateOption) -> String {
         dtk_sys::assert_not_closing();
+        let _call = dtk_sys::NativeCall::new();
         unsafe {
             genffi::gen_d_standard_paths_locate(
                 type_.native_value(),
@@ -186,6 +189,7 @@ impl DStandardPaths {
         options: LocateOption,
     ) -> Vec<String> {
         dtk_sys::assert_not_closing();
+        let _call = dtk_sys::NativeCall::new();
         unsafe {
             genffi::gen_d_standard_paths_locate_all(
                 type_.native_value(),
@@ -196,6 +200,7 @@ impl DStandardPaths {
     }
     pub fn find_executable(executableName: &str, paths: Vec<String>) -> String {
         dtk_sys::assert_not_closing();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_standard_paths_find_executable(executableName, paths) }
     }
     /// # Safety
@@ -203,34 +208,42 @@ impl DStandardPaths {
     /// corresponding native Qt/DTK type.
     pub unsafe fn set_mode(mode: i32) {
         dtk_sys::assert_not_closing();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_standard_paths_set_mode(mode) }
     }
     pub fn home_path() -> String {
         dtk_sys::assert_not_closing();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_standard_paths_home_path() }
     }
     pub fn home_path_2(uid: u32) -> String {
         dtk_sys::assert_not_closing();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_standard_paths_home_path_2(uid) }
     }
     pub fn path(type_: XdgDirectory) -> String {
         dtk_sys::assert_not_closing();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_standard_paths_path(type_.native_value()) }
     }
     pub fn path_2(type_: DsgDirectory) -> String {
         dtk_sys::assert_not_closing();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_standard_paths_path_2(type_.native_value()) }
     }
     pub fn paths(type_: DsgDirectory) -> Vec<String> {
         dtk_sys::assert_not_closing();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_standard_paths_paths(type_.native_value()) }
     }
     pub fn file_path(type_: XdgDirectory, fileName: &str) -> String {
         dtk_sys::assert_not_closing();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_standard_paths_file_path(type_.native_value(), fileName) }
     }
     pub fn file_path_2(type_: DsgDirectory, fileName: &str) -> String {
         dtk_sys::assert_not_closing();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_standard_paths_file_path_2(type_.native_value(), fileName) }
     }
 }
@@ -239,58 +252,72 @@ opaque_wrapper!(DSysInfo, genffi::DSysInfo);
 impl DSysInfo {
     pub fn is_deepin() -> bool {
         dtk_sys::assert_not_closing();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_sys_info_is_deepin() }
     }
     pub fn is_d_d_e() -> bool {
         dtk_sys::assert_not_closing();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_sys_info_is_d_d_e() }
     }
     pub fn deepin_type() -> i32 {
         dtk_sys::assert_not_closing();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_sys_info_deepin_type() }
     }
     pub fn deepin_version() -> String {
         dtk_sys::assert_not_closing();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_sys_info_deepin_version() }
     }
     pub fn deepin_edition() -> String {
         dtk_sys::assert_not_closing();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_sys_info_deepin_edition() }
     }
     pub fn deepin_copyright() -> String {
         dtk_sys::assert_not_closing();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_sys_info_deepin_copyright() }
     }
     pub fn uos_type() -> i32 {
         dtk_sys::assert_not_closing();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_sys_info_uos_type() }
     }
     pub fn uos_edition_type() -> i32 {
         dtk_sys::assert_not_closing();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_sys_info_uos_edition_type() }
     }
     pub fn sp_version() -> String {
         dtk_sys::assert_not_closing();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_sys_info_sp_version() }
     }
     pub fn udpate_version() -> String {
         dtk_sys::assert_not_closing();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_sys_info_udpate_version() }
     }
     pub fn major_version() -> String {
         dtk_sys::assert_not_closing();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_sys_info_major_version() }
     }
     pub fn minor_version() -> String {
         dtk_sys::assert_not_closing();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_sys_info_minor_version() }
     }
     pub fn build_version() -> String {
         dtk_sys::assert_not_closing();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_sys_info_build_version() }
     }
     pub fn distribution_info_path() -> String {
         dtk_sys::assert_not_closing();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_sys_info_distribution_info_path() }
     }
     /// # Safety
@@ -298,6 +325,7 @@ impl DSysInfo {
     /// corresponding native Qt/DTK type.
     pub unsafe fn distribution_info_section_name(type_: i32) -> String {
         dtk_sys::assert_not_closing();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_sys_info_distribution_info_section_name(type_) }
     }
     /// # Safety
@@ -305,54 +333,67 @@ impl DSysInfo {
     /// corresponding native Qt/DTK type.
     pub unsafe fn distribution_org_logo(orgType: i32, type_: i32, fallback: &str) -> String {
         dtk_sys::assert_not_closing();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_sys_info_distribution_org_logo(orgType, type_, fallback) }
     }
     pub fn operating_system_name() -> String {
         dtk_sys::assert_not_closing();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_sys_info_operating_system_name() }
     }
     pub fn product_type() -> i32 {
         dtk_sys::assert_not_closing();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_sys_info_product_type() }
     }
     pub fn product_type_string() -> String {
         dtk_sys::assert_not_closing();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_sys_info_product_type_string() }
     }
     pub fn product_version() -> String {
         dtk_sys::assert_not_closing();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_sys_info_product_version() }
     }
     pub fn is_community_edition() -> bool {
         dtk_sys::assert_not_closing();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_sys_info_is_community_edition() }
     }
     pub fn computer_name() -> String {
         dtk_sys::assert_not_closing();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_sys_info_computer_name() }
     }
     pub fn cpu_model_name() -> String {
         dtk_sys::assert_not_closing();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_sys_info_cpu_model_name() }
     }
     pub fn memory_installed_size() -> i64 {
         dtk_sys::assert_not_closing();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_sys_info_memory_installed_size() }
     }
     pub fn memory_total_size() -> i64 {
         dtk_sys::assert_not_closing();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_sys_info_memory_total_size() }
     }
     pub fn system_disk_size() -> i64 {
         dtk_sys::assert_not_closing();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_sys_info_system_disk_size() }
     }
     pub fn uptime() -> i64 {
         dtk_sys::assert_not_closing();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_sys_info_uptime() }
     }
     pub fn arch() -> i32 {
         dtk_sys::assert_not_closing();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_sys_info_arch() }
     }
 }
@@ -363,38 +404,49 @@ impl DConfig {
     /// Must run before any QCoreApplication is created, without a
     /// concurrent Qt application construction on another thread.
     pub unsafe fn set_app_id(appId: &str) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_config_set_app_id(appId) }
     }
     pub fn backend_name(&self) -> String {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_config_backend_name(self.live_ptr()) }
     }
     pub fn key_list(&self) -> Vec<String> {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_config_key_list(self.live_ptr()) }
     }
     pub fn is_valid(&self) -> bool {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_config_is_valid(self.live_ptr()) }
     }
     pub fn is_default_value(&self, key: &str) -> bool {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_config_is_default_value(self.live_ptr(), key) }
     }
     pub fn value(&self, key: &str, fallback: &QVariant) -> QVariant {
+        let _call = dtk_sys::NativeCall::new();
         QVariant::from_raw(unsafe {
             genffi::gen_d_config_value(self.live_ptr(), key, fallback.ptr as _)
         } as _)
     }
     pub fn set_value(&self, key: &str, value: &QVariant) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_config_set_value(self.live_ptr(), key, value.ptr as _) }
     }
     pub fn reset(&self, key: &str) {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_config_reset(self.live_ptr(), key) }
     }
     pub fn is_read_only(&self, key: &str) -> bool {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_config_is_read_only(self.live_ptr(), key) }
     }
     pub fn name(&self) -> String {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_config_name(self.live_ptr()) }
     }
     pub fn subpath(&self) -> String {
+        let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_config_subpath(self.live_ptr()) }
     }
 }

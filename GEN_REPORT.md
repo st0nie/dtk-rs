@@ -1,12 +1,13 @@
 # DTK6 widget binding coverage report
 
-classes: 146, methods generated: 986, skipped: 202
+classes: 146, methods generated: 986, skipped: 203
 
 Qt ancestry: 85 widgets, 26 QObjects, 35 opaque types
 
 ## skip reasons
 - unsupported param type: 145
 - unsupported return type: 57
+- required native parent: 1
 
 ## DAboutDialog — 19 methods generated, 0 skipped
 
@@ -419,10 +420,11 @@ Qt ancestry: 85 widgets, 26 QObjects, 35 opaque types
 
 ## DViewItemAction — 16 methods generated, 0 skipped
 
-## DStyledItemDelegate — 8 methods generated, 3 skipped
+## DStyledItemDelegate — 8 methods generated, 4 skipped
 - `void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIn` ← unsupported param type: QPainter *
 - `QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) con` ← unsupported param type: const QStyleOptionViewItem &
 - `void updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, c` ← unsupported param type: const QStyleOptionViewItem &
+- `DStyledItemDelegate(parent = nullptr)` ← required native parent: dtkwidget/src/widgets/dstyleditemdelegate.cpp: constructor requires a live QAbstractItemView; nullptr default is dereferenced
 
 ## DStandardItem — 12 methods generated, 5 skipped
 - `void setActionList(Qt::Edge edge, const DViewItemActionList &list);` ← unsupported param type: const DViewItemActionList &

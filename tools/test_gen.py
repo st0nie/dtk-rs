@@ -5,10 +5,30 @@ import re
 import unittest
 from pathlib import Path
 
-from tools.gen import HAND_BOUND, HDR_DIR, REPO, METHOD_RE, classify_class, enum_members, parse_header, Ctx
+from tools.gen import HAND_BOUND, HDR_DIR, REPO, METHOD_RE, classify_class, enum_members, enum_getter_name, parse_header, rust_enum_variant, snake, Ctx
 
 
 class QtAncestryTests(unittest.TestCase):
+    def test_cpp_identifiers_with_native_underscores(self):
+        for name, expected in (("PS_Printer", "p_s_printer"), ("PS_PageRange", "p_s_page_range"),
+                               ("DComboBox", "d_combo_box"), ("_Printer", "_printer")):
+            with self.subTest(name=name):
+                self.assertEqual(snake(name), expected)
+        self.assertEqual(enum_getter_name("DPrintPreviewSettingInfo::SettingType", "PS_Printer"),
+                         "gen_enum_d_print_preview_setting_info_setting_type_p_s_printer")
+        self.assertNotIn("__", enum_getter_name("SomeClass::Kind", "_Printer"))
+        self.assertEqual(rust_enum_variant("PS_Printer"), "PsPrinter")
+        self.assertEqual(rust_enum_variant("PS_NUpPrinting"), "PsNUpPrinting")
+        self.assertEqual(rust_enum_variant("ConfigHome"), "ConfigHome")
+        for stem in ("gen", "core", "gui"):
+            bridge = Path(REPO, f"dtk-sys/src/{stem}_ffi.rs").read_text()
+            identifiers = re.findall(r"\b(?:fn|type)\s+(\w+)", bridge)
+            self.assertTrue(identifiers)
+            for identifier in identifiers:
+                with self.subTest(bridge=stem, identifier=identifier):
+                    self.assertNotIn("__", identifier)
+                    self.assertFalse(re.match(r"_[A-Z]", identifier))
+
     def test_native_enum_members_exclude_dtk5_alias(self):
         source = '''enum class XDG {\nDataHome,\nConfigHome,\n#if DTK_VERSION < DTK_VERSION_CHECK(6, 0, 0, 0)\nLegacy [[deprecated]] = ConfigHome,\n#endif\nStateHome\n};'''
         self.assertEqual(enum_members(source, "XDG"), ["DataHome", "ConfigHome", "StateHome"])
@@ -32,7 +52,7 @@ class QtAncestryTests(unittest.TestCase):
         self.assertIn("opaque_wrapper!(DSysInfo, genffi::DSysInfo);", core)
         self.assertIn("core_object_wrapper!(DConfig, genffi::DConfig", core)
         self.assertNotIn("crate::require_application()", core)
-        self.assertRegex(core, r"pub unsafe fn set_app_id\(appId: &str\) \{\s*unsafe")
+        self.assertRegex(core, r"pub unsafe fn set_app_id\(appId: &str\) \{\s*let _call = dtk_sys::NativeCall::new\(\);\s*unsafe")
         self.assertIn("pub fn is_valid(&self) -> bool", core)
         self.assertIn("pub fn key_list(&self) -> Vec<String>", core)
         self.assertIn("core_config_create_generic", (root / "dtk/src/lib.rs").read_text())
@@ -130,24 +150,79 @@ class QtAncestryTests(unittest.TestCase):
         self.assertIn("opaque_wrapper!(DPrinter, genffi::DPrinter);", generated)
         self.assertIn("impl Default for OwnedOpaque<DPrinter>", generated)
         self.assertIn("void gen_d_printer_delete(DPrinter *self) { delete self; }", cpp)
-        self.assertIn("pub unsafe fn global_provider() -> Option<DFileIconProvider>", generated)
+        self.assertIn("pub fn global_provider() -> Option<DFileIconProvider>", generated)
         self.assertIn("opaque_wrapper!(DFileIconProvider, genffi::DFileIconProvider);", generated)
-        self.assertTrue(
-            re.search(
-                r"pub unsafe fn create_dialog_setting_info\(\s*&self,\s*type_: i32,\s*\) -> Option<DPrintPreviewSettingInfo>",
-                generated,
-            ),
-            "unguarded DPrintPreviewSettingInfo getter must require unsafe",
-        )
-        self.assertIn("pub unsafe fn instance() -> Option<DFontSizeManager>", generated)
+        self.assertRegex(generated, r"pub fn create_dialog_setting_info\(\s*&self,\s*type_: PrintSettingType,\s*\) -> Option<OwnedOpaque<DPrintPreviewSettingInfo>>")
+        self.assertIn("void gen_d_print_preview_setting_info_delete(DPrintPreviewSettingInfo *self) { delete self; }", cpp)
+        self.assertIn("pub fn instance() -> Option<DFontSizeManager>", generated)
+        self.assertIn("pub unsafe fn create_view(&self)", generated)
+        self.assertIn("pub unsafe fn create_placeholder_view(&self)", generated)
+        self.assertNotIn("gen_d_styled_item_delegate_new()", cpp)
+
+    def test_retained_pointer_rules_and_new_contracts_fail_closed(self):
+        from tools.pointer_inputs import pointer_input_contract
+        from tools.audit_hand import render
+        with self.assertRaisesRegex(ValueError, "unaudited pointer input"):
+            pointer_input_contract("NewContainer", "setWidget")
+        self.assertEqual(render(), Path(REPO, "OWNERSHIP_HAND_REPORT.md").read_text())
+        cpp = Path(REPO, "dtk-sys/cpp/dtk_gen_shim.cpp").read_text()
+        self.assertIn("return loading_indicator_new();", cpp)
+        self.assertIn("loading_indicator_set_widget(self, widgetSource)", cpp)
+        self.assertIn("return drawer_group_checked(self);", cpp)
+        self.assertIn("return feature_dialog_take(self, item);", cpp)
+        self.assertIn("!layout_can_adopt(self, layout)", cpp)
+        self.assertIn("anchors_clear(w);", cpp)
+        self.assertIn("return anchors_set(w, p, target, point);", cpp)
+        self.assertIn("return anchors_fill(self, fill, false);", cpp)
+        self.assertIn("self->transition()->animation()->stop(); self->clear();", cpp)
+        self.assertIn("feature_dialog_clear(self);", cpp)
+        generated = Path(REPO, "dtk/src/widgets.rs").read_text()
+        self.assertIn("pub enum AnchorPoint", generated)
+        self.assertIn("pub fn remove_item(&self, item: &DFeatureItem) -> Option<Owned<DFeatureItem>>", generated)
+
+    def test_every_generated_operation_brackets_native_call_and_return_wrapping(self):
+        for domain in ("widgets", "core", "gui"):
+            generated = Path(REPO, f"dtk/src/{domain}.rs").read_text()
+            # Only native enum discriminant getters are truly independent
+            # scalar operations. Every emitted constructor/method has a guard.
+            methods = re.findall(r"pub (?:unsafe )?fn [^{]+\{(.*?)(?=\n    \}|\Z)", generated, re.S)
+            self.assertTrue(methods)
+            for body in methods:
+                self.assertIn("let _call = dtk_sys::NativeCall::new();", body)
+                self.assertLess(body.index("NativeCall::new()"), body.index("unsafe"))
+
+    def test_output_pointer_requires_exclusive_owned_opaque_view(self):
+        generated = Path(REPO, "dtk/src/widgets.rs").read_text()
+        hand = Path(REPO, "dtk/src/lib.rs").read_text()
+        self.assertIn("pub fn init_style_option(&self, option: &mut OwnedOpaque<DStyleOptionFloatingWidget>)", generated)
+        self.assertNotIn("std::ops::DerefMut for OwnedOpaque", hand)
+        self.assertIn("new DStyleOptionFloatingWidget{}", Path(REPO, "dtk-sys/cpp/dtk_gen_shim.cpp").read_text())
+        self.assertNotRegex(hand + generated, r"(?:new_unchecked|transmute)[^\n]*Pin")
+
+    def test_pointer_contracts_fail_closed_and_reports_cover_all_methods(self):
+        from tools.ownership import POINTER_RETURNS, pointer_return_contract
+        with self.assertRaisesRegex(ValueError, "unaudited pointer return"):
+            pointer_return_contract("UnknownFactory", "getThing")
+        for domain in ("WIDGET", "CORE", "GUI"):
+            report = Path(REPO, f"OWNERSHIP_{domain}_REPORT.md").read_text()
+            self.assertIn("matching apt source", report)
+            self.assertIn("copied scalar / no result", report)
+        report = Path(REPO, "OWNERSHIP_WIDGET_REPORT.md").read_text()
+        for (cls, method), (contract, source, _) in POINTER_RETURNS.items():
+            if cls == "DGuiApplicationHelper":
+                continue
+            with self.subTest(api=f"{cls}::{method}"):
+                self.assertIn(f"`{cls}::{method}`", report)
+                self.assertIn(f"`{source}`", report)
+                self.assertIn(f"`{contract}`", report)
 
     def test_opaque_borrows_expire_but_owned_copies_remain_independent(self):
         root = Path(REPO)
         generated = (root / "dtk/src/widgets.rs").read_text()
         self.assertIn("OwnedOpaque::from_owned(Self::from_owned_raw(ptr)", generated)
         self.assertIn("OwnedOpaque::from_owned(WaterMarkData::from_owned_raw(ptr)", generated)
-        self.assertRegex(generated, r"pub unsafe fn instance\(\) -> Option<DFontSizeManager> \{\s*crate::require_application\(\);")
-        self.assertRegex(generated, r"pub unsafe fn global_provider\(\) -> Option<DFileIconProvider> \{\s*crate::require_application\(\);")
+        self.assertRegex(generated, r"pub fn instance\(\) -> Option<DFontSizeManager> \{\s*crate::require_application\(\);")
+        self.assertRegex(generated, r"pub fn global_provider\(\) -> Option<DFileIconProvider> \{\s*crate::require_application\(\);")
         self.assertIn("genffi::gen_d_font_size_manager_font_pixel_size(self.live_ptr(), type_)", generated)
         self.assertNotIn("genffi::gen_d_font_size_manager_font_pixel_size(self.ptr,", generated)
         self.assertRegex(generated, r"impl DPrinter \{\s*pub fn new\(\) -> OwnedOpaque<Self> \{\s*crate::require_application\(\);")
@@ -164,6 +239,7 @@ class QtAncestryTests(unittest.TestCase):
         generated = Path(REPO, "dtk/src/widgets.rs").read_text()
         self.assertIn(
             "pub fn new() -> Owned<Self> {\n        crate::require_application();\n        "
+            "let _call = dtk_sys::NativeCall::new();\n        "
             "Owned::new(Self::from_raw(unsafe { genffi::gen_d_list_view_new() }))",
             generated,
         )
@@ -264,6 +340,14 @@ class QtAncestryTests(unittest.TestCase):
         self.assertIn("pub fn add_items(&self, datas: &QVariantList)", generated)
         self.assertNotIn("unsupported param type: const QVariant &", report)
         self.assertNotIn("unsupported param type: const QVariantList &", report)
+
+    def test_hand_dtk_line_edit_is_a_container_not_qlineedit_cast(self):
+        cpp = Path(REPO, "dtk-sys/cpp/shim.cpp").read_text()
+        hand = Path(REPO, "dtk/src/lib.rs").read_text()
+        self.assertNotIn("static_cast<QLineEdit *>(w)->text()", cpp)
+        self.assertIn("qobject_cast<Dtk::Widget::DLineEdit *>(w)", cpp)
+        self.assertIn("ffi::line_edit_text(self.widget_ptr())", hand)
+        self.assertIn("ffi::progressbar_value(self.widget_ptr())", hand)
 
     def test_qobject_casts_use_cpp_and_methods_validate_liveness(self):
         generated = Path(REPO, "dtk/src/widgets.rs").read_text()

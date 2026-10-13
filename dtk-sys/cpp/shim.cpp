@@ -1,5 +1,7 @@
 #include "dtk_shim.h"
 #include "relay.h"
+#include "object_relations.h"
+#include <DLineEdit>
 #include "dtk-sys/src/lib.rs.h" // Rust callback declarations (dtk_cb0/dtk_cb_i32)
 
 #include <QCoreApplication>
@@ -42,13 +44,71 @@ public:
 #include <string>
 #include <utility>
 #include <vector>
+#include <unordered_map>
+#include <unordered_set>
 
 namespace dtkrs {
 
+static thread_local std::unordered_map<QObject *, std::unordered_set<QObjectGuard *>> object_guards;
+
 QObjectGuard::QObjectGuard(QObject *object)
-    : watched(object), runtime_state(application_runtime_guard_state()),
+    : identity(object), watched(object), runtime_state(application_runtime_guard_state()),
       was_parented(object->parent() != nullptr) {
+    object_guards[identity].insert(this);
     object->installEventFilter(this);
+}
+QObjectGuard::~QObjectGuard() {
+    auto found = object_guards.find(identity);
+    if (found != object_guards.end()) {
+        found->second.erase(this);
+        if (found->second.empty())
+            object_guards.erase(found);
+    }
+}
+void guard_mark_adopted(QObject *object) {
+    const auto found = object_guards.find(object);
+    if (found != object_guards.end()) {
+        for (auto *guard : found->second) {
+            if (guard->watched.data() == object)
+                guard->was_parented = true;
+        }
+    }
+}
+void guard_observe_parent(QObject *child) {
+    if (child && child->parent())
+        guard_mark_adopted(child);
+}
+void guard_grant_owned(const QObjectGuard &guard) {
+    const_cast<QObjectGuard &>(guard).deletion_authority = true;
+}
+void object_grant_constructor_authority(QObject *object) {
+    object_note_constructor(object);
+    const auto found = object_guards.find(object);
+    if (found != object_guards.end()) {
+        for (auto *guard : found->second) {
+            if (guard->watched.data() == object)
+                guard_grant_owned(*guard);
+        }
+    }
+}
+bool guard_can_delete(const QObjectGuard &guard) {
+    if (!guard_alive(guard) || !guard.deletion_authority)
+        return false;
+    // Explicitly constructed timers/notifiers can be cancelled independently;
+    // their Qt parent stores no raw native control pointer requiring retention.
+    if (qobject_cast<QTimer *>(guard.watched.data()) || qobject_cast<QSocketNotifier *>(guard.watched.data()))
+        return true;
+    return !guard.was_parented && !guard.watched->parent();
+}
+bool object_can_reparent(QObject *child, QObject *parent) {
+    for (auto *ancestor = parent; ancestor; ancestor = ancestor->parent()) {
+        if (ancestor == child)
+            return false;
+    }
+    return true;
+}
+bool layout_can_adopt(QLayout *parent, QLayout *child) {
+    return parent && child && !child->parent() && object_can_adopt(parent, child);
 }
 bool QObjectGuard::eventFilter(QObject *object, QEvent *event) {
     if (object == watched && event->type() == QEvent::ParentChange && object->parent()) {
@@ -57,7 +117,8 @@ bool QObjectGuard::eventFilter(QObject *object, QEvent *event) {
     return false; // never change native DTK/Qt event behavior
 }
 std::unique_ptr<QObjectGuard> guard_object(QObject *object) {
-    return std::make_unique<QObjectGuard>(object);
+    return object && object->thread() == QThread::currentThread()
+        ? std::make_unique<QObjectGuard>(object) : nullptr;
 }
 std::unique_ptr<QObjectGuard> guard_widget(QWidget *widget) {
     return guard_object(widget); // C++ adjusts QWidget* to its QObject base
@@ -94,6 +155,7 @@ protected:
         DMainWindow::showEvent(e);
     }
     void closeEvent(QCloseEvent *e) override {
+        SynchronousBorrow borrow;
         if (m_close_id && !dtk_cb_guard(m_close_id)) {
             e->ignore();
             return;
@@ -126,6 +188,7 @@ public:
         style->drawControl(QStyle::CE_ItemViewItem, &base, p, base.widget);
 
         // Rust callback draws the overlay (icon + text) on top.
+        SynchronousBorrow borrow;
         dtk_cb_paint(m_cb_id, p, const_cast<QModelIndex *>(&idx), opt.rect.x(), opt.rect.y(),
                      opt.rect.width(), opt.rect.height(), static_cast<int32_t>(opt.state));
     }
@@ -231,6 +294,7 @@ public:
 
 protected:
     void paintEvent(QPaintEvent *) override {
+        SynchronousBorrow borrow;
         QPainter p(this);
         dtk_cb_pw_paint(m_cb_id, this, &p, width(), height());
     }
@@ -410,7 +474,12 @@ void tabbar_flush_layout(QWidget *tb) {
         lay->activate();
     }
 }
-void widget_set_parent(QWidget *child, QWidget *parent) { child->setParent(parent); }
+void widget_set_parent(QWidget *child, QWidget *parent) {
+    if (!object_can_adopt(parent, child))
+        return;
+    guard_mark_adopted(child);
+    child->setParent(parent);
+}
 QWidget *scrollbar_new(QWidget *parent) { return new QScrollBar(Qt::Vertical, parent); }
 void scrollbar_set_range(QWidget *sb, int minimum, int maximum) {
     static_cast<QScrollBar *>(sb)->setRange(minimum, maximum);
@@ -427,9 +496,10 @@ void paint_widget_set_ime_rect(QWidget *w, int x, int y, int width, int height) 
 }
 void main_window_titlebar_set_tabbar(QWidget *w, QWidget *tabbar) {
     auto *mw = qobject_cast<DMainWindow *>(w);
-    if (!mw || !mw->titlebar()) {
+    if (!mw || !mw->titlebar() || !object_can_adopt(mw->titlebar(), tabbar)) {
         return;
     }
+    object_mark_native_adopted(mw->titlebar(), tabbar);
     // mirrors deepin-terminal's TitleBar: zero-margin hbox, vertically centered
     auto *container = new QWidget;
     auto *lay = new QHBoxLayout(container);
@@ -441,6 +511,8 @@ void main_window_titlebar_set_tabbar(QWidget *w, QWidget *tabbar) {
 void main_window_titlebar_add_widget(QWidget *w, QWidget *child) {
     if (auto *mw = qobject_cast<DMainWindow *>(w)) {
         if (auto *tb = mw->titlebar()) {
+            if (!object_can_adopt(tb, child)) return;
+            object_mark_native_adopted(tb, child);
             tb->addWidget(child, Qt::AlignLeft);
         }
     }
@@ -475,7 +547,10 @@ void widget_set_focus_policy(QWidget *w, int32_t policy) {
 void widget_set_font(QWidget *w, QFont *font) { w->setFont(*font); }
 QPalette *widget_palette(QWidget *w) { return new QPalette(w->palette()); }
 void widget_set_palette(QWidget *w, QPalette *pal) { w->setPalette(*pal); }
-void object_delete_later(QObject *o) { o->deleteLater(); }
+void object_delete_later(QObject *o) {
+    object_note_deletion_requested(o);
+    o->deleteLater();
+}
 bool object_has_parent(QObject *o) { return o->parent() != nullptr; }
 
 // ---- QProgressBar common ----
@@ -484,7 +559,11 @@ void progressbar_set_value(QWidget *w, int32_t value) {
 }
 
 rust::String line_edit_text(QWidget *w) {
-    return to_rust_string(static_cast<QLineEdit *>(w)->text());
+    // DTK DLineEdit/DSearchEdit is a QWidget container, not QLineEdit's
+    // subclass. A successful QPointer check cannot justify that downcast.
+    if (auto *line = qobject_cast<QLineEdit *>(w)) return to_rust_string(line->text());
+    if (auto *line = qobject_cast<Dtk::Widget::DLineEdit *>(w)) return to_rust_string(line->text());
+    return rust::String();
 }
 void progressbar_set_range(QWidget *w, int32_t minimum, int32_t maximum) {
     static_cast<QProgressBar *>(w)->setRange(minimum, maximum);
@@ -497,8 +576,18 @@ DMainWindow *mainwindow_new_ex(size_t show_cb_id, size_t close_cb_id) {
     return new DtkMainWindowEx(show_cb_id, close_cb_id);
 }
 DTitlebar *mainwindow_titlebar(DMainWindow *w) { return w->titlebar(); }
-void mainwindow_set_central_widget(DMainWindow *w, QWidget *central) { w->setCentralWidget(central); }
-QWidget *mainwindow_take_central_widget(DMainWindow *w) { return w->takeCentralWidget(); }
+void mainwindow_set_central_widget(DMainWindow *w, QWidget *central) {
+    if (w->centralWidget() == central) return;
+    if (object_can_adopt(w, central)) {
+        object_mark_native_adopted(w, central);
+        w->setCentralWidget(central);
+    }
+}
+QWidget *mainwindow_take_central_widget(DMainWindow *w) {
+    auto *result = w->takeCentralWidget();
+    if (result) object_release_native_adoption(result);
+    return result;
+}
 void mainwindow_set_window_radius(DMainWindow *w, int32_t radius) { w->setWindowRadius(radius); }
 void mainwindow_set_enable_blur(DMainWindow *w, bool enable) { w->setEnableBlurWindow(enable); }
 
@@ -583,8 +672,12 @@ void qmessagebox_about(QWidget *parent, rust::Str title, rust::Str text) {
 QVBoxLayout *vbox_new(QWidget *parent) { return new QVBoxLayout(parent); }
 QHBoxLayout *hbox_new(QWidget *parent) { return new QHBoxLayout(parent); }
 QWidget *widget_new(QWidget *parent) { return new QWidget(parent); }
-void layout_add_widget(QLayout *l, QWidget *w) { l->addWidget(w); }
+void layout_add_widget(QLayout *l, QWidget *w) {
+    if (!layout_prepare_widget(l, w)) return;
+    l->addWidget(w);
+}
 void layout_add_widget_ex(QLayout *l, QWidget *w, int32_t stretch, int32_t alignment) {
+    if (!layout_prepare_widget(l, w)) return;
     // ponytail: stretch/alignment only exist on QBoxLayout; other layouts fall back to plain add
     if (auto *box = qobject_cast<QBoxLayout *>(l))
         box->addWidget(w, stretch, Qt::Alignment::fromInt(alignment));
@@ -596,6 +689,9 @@ void layout_add_stretch(QLayout *l, int32_t stretch) {
         box->addStretch(stretch);
 }
 void layout_add_layout(QLayout *l, QLayout *child) {
+    if (!layout_can_adopt(l, child))
+        return;
+    guard_mark_adopted(child);
     // ponytail: QLayout::addItem() leaves child layouts inactive/zero-height; QBoxLayout::addLayout works
     if (auto *box = qobject_cast<QBoxLayout *>(l))
         box->addLayout(child);
@@ -700,7 +796,9 @@ void standard_item_model_set_column_count(QStandardItemModel *model, int32_t cou
 QAbstractItemModel *standard_item_model_as_model(QStandardItemModel *model) {
     return static_cast<QAbstractItemModel *>(model);
 }
-void model_set_parent(QAbstractItemModel *model, QObject *parent) { model->setParent(parent); }
+void model_set_parent(QAbstractItemModel *model, QObject *parent) {
+    if (object_can_adopt(parent, model)) model->setParent(parent);
+}
 int32_t model_row_count(QAbstractItemModel *model) { return model->rowCount(); }
 int32_t model_column_count(QAbstractItemModel *model) { return model->columnCount(); }
 QVariant *model_data(QAbstractItemModel *model, int32_t row, int32_t col, int32_t role) {
@@ -796,7 +894,9 @@ void dpalette_delete(DPalette *pal) { delete pal; }
 QPixmap *pixmap_new(rust::Str path) { return new QPixmap(from_rust_str(path)); }
 void pixmap_delete(QPixmap *pm) { delete pm; }
 QImage *image_new(int32_t width, int32_t height) {
-    return new QImage(width, height, QImage::Format_ARGB32);
+    auto *image = new QImage(width, height, QImage::Format_ARGB32);
+    image->fill(Qt::transparent); // safe pixel reads never observe uninitialized bytes
+    return image;
 }
 QImage *image_from_file(rust::Str path) { return new QImage(from_rust_str(path)); }
 bool image_is_null(QImage *image) { return image->isNull(); }
@@ -869,7 +969,9 @@ void icon_delete(QIcon *icon) { delete icon; }
 QSocketNotifier *socket_notifier_new(int32_t fd, QObject *parent) {
     return new QSocketNotifier(fd, QSocketNotifier::Read, parent);
 }
-void socket_notifier_set_enabled(QSocketNotifier *n, bool on) { n->setEnabled(on); }
+void socket_notifier_set_enabled(QSocketNotifier *n, bool on) {
+    DtkRelay::setNotifierEnabled(n, on);
+}
 
 // ---- generic paint delegate ----
 QStyledItemDelegate *rust_delegate_new(size_t paint_cb_id, QObject *parent) {
@@ -987,6 +1089,7 @@ bool relay_connect_i32_i32(QObject *sender, rust::Str signal, size_t cb_id) {
 }
 
 void relay_disconnect(size_t cb_id) { DtkRelay::disconnectId(cb_id); }
+void relay_finish_ready(size_t cb_id) { DtkRelay::finishReady(cb_id); }
 size_t relay_live_count() { return DtkRelay::liveCount(); }
 
 void widget_set_cursor(QWidget *w, int32_t shape) {

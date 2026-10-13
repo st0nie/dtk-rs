@@ -28,6 +28,9 @@ fn main() {
     build
         .file("cpp/shim.cpp")
         .file("cpp/application_runtime.cpp")
+        .file("cpp/runtime_borrow.cpp")
+        .file("cpp/object_relations.cpp")
+        .file("cpp/anchor_relations.cpp")
         .file("cpp/runtime_worker_probe.cpp")
         .file("cpp/relay.cpp")
         .file("cpp/dtk_gen_shim.cpp")
@@ -66,6 +69,12 @@ fn main() {
     println!("cargo:rerun-if-changed=cpp/shim.cpp");
     println!("cargo:rerun-if-changed=cpp/application_runtime.cpp");
     println!("cargo:rerun-if-changed=include/application_runtime.h");
+    println!("cargo:rerun-if-changed=cpp/runtime_borrow.cpp");
+    println!("cargo:rerun-if-changed=include/runtime_borrow.h");
+    println!("cargo:rerun-if-changed=cpp/object_relations.cpp");
+    println!("cargo:rerun-if-changed=include/object_relations.h");
+    println!("cargo:rerun-if-changed=cpp/anchor_relations.cpp");
+    println!("cargo:rerun-if-changed=include/anchor_relations.h");
     println!("cargo:rerun-if-changed=cpp/runtime_worker_probe.cpp");
     println!("cargo:rerun-if-changed=include/runtime_worker_probe.h");
     println!("cargo:rerun-if-changed=cpp/relay.cpp");

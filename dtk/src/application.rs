@@ -53,8 +53,10 @@ fn exec(runtime: *mut ffi::ApplicationRuntime, name: &str) -> i32 {
 /// singletons that native code keeps alive across applications. Borrowed
 /// singletons are not deleted; their binding-owned connections are reclaimed.
 /// `exec()` exit alone does not close the scope: objects remain usable until
-/// the outer closure returns. Native reentrant deletion during ordinary Qt
-/// method calls and non-QObject borrowed lifetimes still need separate audits.
+/// the outer closure returns. Runtime transactions protect ordinary native
+/// method/event frames and result wrapping; synchronous painter/return-value
+/// callbacks reject QObject reentry. Ownership contracts are recorded in
+/// `RUNTIME_SAFETY_AUDIT.md` and the generated ownership reports.
 ///
 /// ```no_run
 /// use dtk::{DApplication, DMainWindow, QTimer};
@@ -149,39 +151,47 @@ impl DApplication {
     /// Request exit on the owning GUI thread without capturing the scope token.
     pub fn quit() {
         require_application();
+        let _call = dtk_sys::NativeCall::control();
         unsafe { ffi::application_quit() }
     }
     pub fn set_quit_on_last_window_closed(quit: bool) {
         require_application();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::application_set_quit_on_last_window_closed(quit) }
     }
     pub fn set_application_display_name(name: &str) {
         require_application();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::application_set_application_display_name(name) }
     }
     /// DTK translations (zh_CN etc.); false on failure.
     pub fn load_translator(&self) -> bool {
         require_application();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::application_load_translator(self.ptr) }
     }
     pub fn has_arg(arg: &str) -> bool {
         require_application();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::application_has_arg(arg) }
     }
     /// True while a modal dialog or popup menu is active.
     pub fn popup_active() -> bool {
         require_application();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::app_popup_active() }
     }
     /// QPalette::Window as (r, g, b), for light/dark theme detection.
     pub fn palette_window_rgb() -> (u8, u8, u8) {
         require_application();
+        let _call = dtk_sys::NativeCall::new();
         let rgb = unsafe { ffi::app_palette_window_rgb() };
         ((rgb >> 16) as u8, (rgb >> 8) as u8, rgb as u8)
     }
     /// DPalette::Highlight as (r, g, b), the theme accent color.
     pub fn palette_highlight_rgb() -> (u8, u8, u8) {
         require_application();
+        let _call = dtk_sys::NativeCall::new();
         let rgb = unsafe { ffi::app_palette_highlight_rgb() };
         ((rgb >> 16) as u8, (rgb >> 8) as u8, rgb as u8)
     }
@@ -250,10 +260,12 @@ impl QCoreApplication {
     /// Request exit on the owning thread without capturing the scope token.
     pub fn quit() {
         require_core_application();
+        let _call = dtk_sys::NativeCall::control();
         unsafe { ffi::application_quit() };
     }
     pub fn has_arg(arg: &str) -> bool {
         require_core_application();
+        let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::application_has_arg(arg) }
     }
 }

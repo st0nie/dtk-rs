@@ -25,12 +25,8 @@ fn main() {
     });
     expect_panic("create DApplication", DMessageManager::instance);
     expect_panic("create DApplication", DPrinter::new);
-    expect_panic("create DApplication", || unsafe {
-        DFontSizeManager::instance()
-    });
-    expect_panic("create DApplication", || unsafe {
-        DFileIconProvider::global_provider()
-    });
+    expect_panic("create DApplication", DFontSizeManager::instance);
+    expect_panic("create DApplication", DFileIconProvider::global_provider);
     expect_panic("create DApplication", || QTableWidget::new(0, 0));
     expect_panic("create DApplication", Clipboard::text);
     expect_panic("create DApplication", || QPixmap::new(""));
@@ -63,7 +59,7 @@ fn main() {
             expect_panic("GUI thread", DImageHandler::new);
             expect_panic("GUI thread", DFontManager::new);
             expect_panic("GUI thread", DPrinter::new);
-            expect_panic("GUI thread", || unsafe { DFontSizeManager::instance() });
+            expect_panic("GUI thread", DFontSizeManager::instance);
             expect_panic("owning Qt thread", || {
                 DConfig::create_generic("missing", "")
             });

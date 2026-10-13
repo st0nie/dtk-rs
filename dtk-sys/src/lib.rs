@@ -7,6 +7,8 @@ use std::marker::PhantomData;
 pub mod core_ffi;
 pub mod gen_ffi;
 pub mod gui_ffi;
+mod runtime;
+pub use runtime::{NativeCall, defer_cleanup};
 
 // All raw FFI functions share one safety contract: pointers must be live Qt/DTK
 // objects with the stated dynamic type, accessed on their owning Qt thread.
@@ -21,6 +23,15 @@ pub mod ffi {
         type QObject;
         type QWidget;
         type QObjectGuard;
+        type NativeCallFrame;
+        unsafe fn runtime_call_new(control: bool) -> UniquePtr<NativeCallFrame>;
+        unsafe fn runtime_call_allowed(control: bool) -> bool;
+        unsafe fn runtime_native_borrow_active() -> bool;
+        unsafe fn runtime_can_dispatch_callbacks() -> bool;
+        unsafe fn runtime_can_finish_call() -> bool;
+        unsafe fn runtime_can_close(object: *mut QObject) -> bool;
+        unsafe fn runtime_schedule_callbacks();
+        unsafe fn runtime_borrow_end_scope();
         /// Construct a Qt guarded pointer from a *live*, owning-thread QObject.
         unsafe fn guard_object(object: *mut QObject) -> UniquePtr<QObjectGuard>;
         /// Same for QWidget; C++ performs the correct base-class pointer adjustment.
@@ -33,6 +44,11 @@ pub mod ffi {
         unsafe fn guard_native_alive(guard: &QObjectGuard) -> bool;
         /// True once Qt has parented the object, even if it was later detached.
         unsafe fn guard_was_parented(guard: &QObjectGuard) -> bool;
+        unsafe fn object_grant_constructor_authority(object: *mut QObject);
+        unsafe fn guard_can_delete(guard: &QObjectGuard) -> bool;
+        unsafe fn guard_mark_adopted(object: *mut QObject);
+        unsafe fn object_can_reparent(child: *mut QObject, parent: *mut QObject) -> bool;
+        unsafe fn layout_can_adopt(parent: *mut QLayout, child: *mut QLayout) -> bool;
         type QAbstractButton;
         type QLayout;
         type QBoxLayout;
@@ -163,7 +179,7 @@ pub mod ffi {
 
         // QProgressBar common
         unsafe fn progressbar_set_value(w: *mut QWidget, value: i32);
-        /// QLineEdit base-class getter (DLineEdit etc.); cast is the caller's responsibility
+        /// QLineEdit or DTK DLineEdit-container getter; native dynamic type verified
         unsafe fn line_edit_text(w: *mut QWidget) -> String;
         unsafe fn progressbar_set_range(w: *mut QWidget, minimum: i32, maximum: i32);
         unsafe fn progressbar_value(w: *mut QWidget) -> i32;
@@ -529,6 +545,7 @@ pub mod ffi {
         unsafe fn relay_connect_i32_i32(sender: *mut QObject, signal: &str, cb_id: usize) -> bool;
         /// disconnect + schedule deletion of the relay for cb_id (no-op if unknown)
         unsafe fn relay_disconnect(cb_id: usize);
+        unsafe fn relay_finish_ready(cb_id: usize);
         /// Owning-thread diagnostic, including disconnected deferred relays.
         unsafe fn relay_live_count() -> usize;
 
@@ -544,8 +561,13 @@ pub mod ffi {
         fn dtk_callbacks_begin_scope(quit_guard_id: usize);
         fn dtk_callbacks_end_scope();
         fn dtk_callbacks_finish_scope();
+        fn dtk_callbacks_drain();
         fn dtk_cb_dispose(id: usize);
         fn dtk_cb0(id: usize);
+        fn dtk_cb_ready(id: usize);
+        fn dtk_cb_ready_i32(id: usize, value: i32);
+        fn dtk_cb_ready_bool(id: usize, value: bool);
+        fn dtk_cb_ready_i32_i32(id: usize, a: i32, b: i32);
         fn dtk_cb_i32(id: usize, v: i32);
         fn dtk_cb_bool(id: usize, v: bool);
         fn dtk_cb_i32_i32(id: usize, a: i32, b: i32);
@@ -642,6 +664,16 @@ impl ObjectGuard {
         self.inner
             .as_ref()
             .is_some_and(|guard| unsafe { ffi::guard_native_alive(guard) })
+    }
+
+    /// Destruction requests require constructor/transfer provenance, not just
+    /// an earlier successful QPointer check. Qt adoption revokes this authority.
+    pub fn request_deletion(&self) {
+        let guard = self.inner.as_ref().expect("missing Qt guard");
+        assert!(
+            unsafe { ffi::guard_can_delete(guard) },
+            "borrowed or Qt-adopted handles have no deletion authority"
+        );
     }
 
     pub fn was_parented(&self) -> bool {
@@ -767,12 +799,20 @@ fn dtk_callbacks_begin_scope(quit_guard_id: usize) {
     });
 }
 
+fn dtk_callbacks_drain() {
+    runtime::drain_pending();
+}
+
 fn dtk_callbacks_end_scope() {
     // Release all RefCell borrows before dropping captures: Drop may reenter
     // (unregister other ids, try constructors, or panic). Closing also blocks
     // all dispatch, including destructor-induced signals on native objects.
     let previous = CALLBACK_SCOPE
         .with(|scope| std::mem::replace(&mut *scope.borrow_mut(), CallbackScope::Closing));
+    // Closing is visible BEFORE any native callback-pump destruction or
+    // capture retirement. State-only forgotten tokens cannot strand cleanup.
+    unsafe { ffi::runtime_borrow_end_scope() };
+    runtime::end_scope();
     if let CallbackScope::Open(ids) = previous {
         for id in ids {
             unregister_cb(id);
@@ -804,7 +844,8 @@ pub unsafe fn register_qt_relay(id: usize) {
 /// Owning-thread diagnostic for shutdown regression tests. Includes closures,
 /// checked-out dispatches, relay ids and copied pending events, not just slots.
 pub fn callback_registry_is_empty() -> bool {
-    CALLBACKS.with(|c| c.borrow().is_empty())
+    runtime::is_empty()
+        && CALLBACKS.with(|c| c.borrow().is_empty())
         && IN_FLIGHT.with(|c| c.borrow().is_empty())
         && RELAY_IDS.with(|c| c.borrow().is_empty())
         && SIGNAL_QUEUED.with(|c| c.borrow().is_empty())
@@ -873,10 +914,14 @@ fn drop_callback(id: usize, cb: Cb) {
     }
 }
 
-fn remove_callback(id: usize) -> bool {
+fn remove_callback(id: usize, native_disposal: bool) -> bool {
     forget_scoped_callback(id);
     if let Some(cb) = CALLBACKS.with(|c| c.borrow_mut().remove(&id)) {
-        drop_callback(id, cb);
+        if native_disposal && !callbacks_closing() && unsafe { ffi::application_is_core() } {
+            runtime::retire_callback(id, cb);
+        } else {
+            drop_callback(id, cb);
+        }
         true
     } else {
         IN_FLIGHT.with(|active| {
@@ -896,7 +941,7 @@ fn dtk_cb_dispose(id: usize) {
     RELAY_IDS.with(|relays| {
         relays.borrow_mut().remove(&id);
     });
-    remove_callback(id);
+    remove_callback(id, true);
 }
 
 /// Remove a callback and disconnect its Qt-side relay. Returns false for an
@@ -904,7 +949,7 @@ fn dtk_cb_dispose(id: usize) {
 /// does not touch Qt; disconnect that callback on its owning app thread.
 /// Safe to call from inside the callback itself.
 pub fn unregister_cb(id: usize) -> bool {
-    let removed = remove_callback(id);
+    let removed = remove_callback(id, false);
     if RELAY_IDS.with(|relays| relays.borrow_mut().remove(&id)) {
         // This id was registered through Qt on *this* thread; only now may
         // we touch DtkRelay's GUI-thread-only global QHash.
@@ -1030,10 +1075,22 @@ fn dispatch_signal(id: usize, event: SignalEvent) {
 }
 
 fn dtk_cb0(id: usize) {
-    dispatch_signal(id, SignalEvent::Zero);
+    runtime::emit_signal(id, SignalEvent::Zero);
+}
+fn dtk_cb_ready(id: usize) {
+    runtime::emit_ready(id, SignalEvent::Zero);
+}
+fn dtk_cb_ready_i32(id: usize, value: i32) {
+    runtime::emit_ready(id, SignalEvent::I32(value));
+}
+fn dtk_cb_ready_bool(id: usize, value: bool) {
+    runtime::emit_ready(id, SignalEvent::Bool(value));
+}
+fn dtk_cb_ready_i32_i32(id: usize, a: i32, b: i32) {
+    runtime::emit_ready(id, SignalEvent::I32I32(a, b));
 }
 fn dtk_cb_i32(id: usize, v: i32) {
-    dispatch_signal(id, SignalEvent::I32(v));
+    runtime::emit_signal(id, SignalEvent::I32(v));
 }
 
 thread_local! {
@@ -1091,7 +1148,7 @@ unsafe fn dtk_cb_pw_paint(
     w: i32,
     h: i32,
 ) {
-    dispatch_pw(
+    runtime::emit_widget(
         id,
         PwEvent::Paint {
             widget,
@@ -1103,7 +1160,7 @@ unsafe fn dtk_cb_pw_paint(
 }
 
 fn dtk_cb_pw_key(id: usize, key: i32, mods: i32, text: String, press: bool, autorepeat: bool) {
-    dispatch_pw(
+    runtime::emit_widget(
         id,
         PwEvent::Key {
             key,
@@ -1116,7 +1173,7 @@ fn dtk_cb_pw_key(id: usize, key: i32, mods: i32, text: String, press: bool, auto
 }
 
 fn dtk_cb_pw_mouse(id: usize, kind: i32, button: i32, x: i32, y: i32, mods: i32) {
-    dispatch_pw(
+    runtime::emit_widget(
         id,
         PwEvent::Mouse {
             kind,
@@ -1129,26 +1186,26 @@ fn dtk_cb_pw_mouse(id: usize, kind: i32, button: i32, x: i32, y: i32, mods: i32)
 }
 
 fn dtk_cb_pw_wheel(id: usize, dy: i32, x: i32, y: i32, mods: i32) {
-    dispatch_pw(id, PwEvent::Wheel { dy, x, y, mods });
+    runtime::emit_widget(id, PwEvent::Wheel { dy, x, y, mods });
 }
 
 fn dtk_cb_pw_ime(id: usize, commit: String, preedit: String) {
-    dispatch_pw(id, PwEvent::Ime { commit, preedit });
+    runtime::emit_widget(id, PwEvent::Ime { commit, preedit });
 }
 
 fn dtk_cb_pw_resize(id: usize, w: i32, h: i32) {
-    dispatch_pw(id, PwEvent::Resize { w, h });
+    runtime::emit_widget(id, PwEvent::Resize { w, h });
 }
 
 fn dtk_cb_pw_focus(id: usize, focus_in: bool) {
-    dispatch_pw(id, PwEvent::Focus(focus_in));
+    runtime::emit_widget(id, PwEvent::Focus(focus_in));
 }
 
 fn dtk_cb_bool(id: usize, v: bool) {
-    dispatch_signal(id, SignalEvent::Bool(v));
+    runtime::emit_signal(id, SignalEvent::Bool(v));
 }
 fn dtk_cb_i32_i32(id: usize, a: i32, b: i32) {
-    dispatch_signal(id, SignalEvent::I32I32(a, b));
+    runtime::emit_signal(id, SignalEvent::I32I32(a, b));
 }
 
 fn dtk_cb_guard(id: usize) -> bool {

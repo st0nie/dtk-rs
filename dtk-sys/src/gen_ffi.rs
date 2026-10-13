@@ -4,7 +4,7 @@
 #[allow(clippy::missing_safety_doc, clippy::too_many_arguments)]
 #[cxx::bridge(namespace = "dtkrs")]
 pub mod genffi {
-    extern "C++" {
+    unsafe extern "C++" {
         include!("dtk_gen_shim.h");
         type QObject;
         type QAbstractButton;
@@ -177,6 +177,24 @@ pub mod genffi {
         type DWindowMinButton;
         type DWindowOptionButton;
         type DWindowQuitFullButton;
+        fn gen_enum_qt_anchor_point_anchor_left() -> i32;
+        fn gen_enum_qt_anchor_point_anchor_horizontal_center() -> i32;
+        fn gen_enum_qt_anchor_point_anchor_right() -> i32;
+        fn gen_enum_qt_anchor_point_anchor_top() -> i32;
+        fn gen_enum_qt_anchor_point_anchor_vertical_center() -> i32;
+        fn gen_enum_qt_anchor_point_anchor_bottom() -> i32;
+        fn gen_enum_d_print_preview_setting_info_setting_type_p_s_printer() -> i32;
+        fn gen_enum_d_print_preview_setting_info_setting_type_p_s_copies() -> i32;
+        fn gen_enum_d_print_preview_setting_info_setting_type_p_s_page_range() -> i32;
+        fn gen_enum_d_print_preview_setting_info_setting_type_p_s_orientation() -> i32;
+        fn gen_enum_d_print_preview_setting_info_setting_type_p_s_paper_size() -> i32;
+        fn gen_enum_d_print_preview_setting_info_setting_type_p_s_print_duplex() -> i32;
+        fn gen_enum_d_print_preview_setting_info_setting_type_p_s_n_up_printing() -> i32;
+        fn gen_enum_d_print_preview_setting_info_setting_type_p_s_page_order() -> i32;
+        fn gen_enum_d_print_preview_setting_info_setting_type_p_s_color_mode() -> i32;
+        fn gen_enum_d_print_preview_setting_info_setting_type_p_s_paper_margins() -> i32;
+        fn gen_enum_d_print_preview_setting_info_setting_type_p_s_scaling() -> i32;
+        fn gen_enum_d_print_preview_setting_info_setting_type_p_s_watermark() -> i32;
 
         unsafe fn gen_d_about_dialog_new() -> *mut DAboutDialog;
         unsafe fn gen_d_about_dialog_as_qobject(self_: *mut DAboutDialog) -> *mut QObject;
@@ -891,7 +909,7 @@ pub mod genffi {
         unsafe fn gen_d_feature_display_dialog_remove_item(
             self_: *mut DFeatureDisplayDialog,
             item: *mut DFeatureItem,
-        );
+        ) -> *mut DFeatureItem;
         unsafe fn gen_d_feature_display_dialog_clear_items(self_: *mut DFeatureDisplayDialog);
         unsafe fn gen_d_feature_display_dialog_set_link_button_visible(
             self_: *mut DFeatureDisplayDialog,
@@ -1641,6 +1659,7 @@ pub mod genffi {
             self_: *mut DPrintPreviewDialog,
             info: *mut DPrintPreviewSettingInfo,
         );
+        unsafe fn gen_d_print_preview_setting_info_delete(self_: *mut DPrintPreviewSettingInfo);
         unsafe fn gen_d_print_preview_setting_info_type_(
             self_: *mut DPrintPreviewSettingInfo,
         ) -> i32;
@@ -2138,7 +2157,6 @@ pub mod genffi {
             dciIcon: *mut DDciIcon,
         );
         unsafe fn gen_d_view_item_action_dci_icon(self_: *mut DViewItemAction) -> *mut DDciIcon;
-        unsafe fn gen_d_styled_item_delegate_new() -> *mut DStyledItemDelegate;
         unsafe fn gen_d_styled_item_delegate_as_qobject(
             self_: *mut DStyledItemDelegate,
         ) -> *mut QObject;
@@ -2199,6 +2217,8 @@ pub mod genffi {
             self_: *mut DStyleOptionBackgroundGroup,
             widget: *mut QWidget,
         );
+        unsafe fn gen_d_style_option_floating_widget_new() -> *mut DStyleOptionFloatingWidget;
+        unsafe fn gen_d_style_option_floating_widget_delete(self_: *mut DStyleOptionFloatingWidget);
         unsafe fn gen_d_font_size_manager_instance() -> *mut DFontSizeManager;
         unsafe fn gen_d_font_size_manager_bind(
             self_: *mut DFontSizeManager,

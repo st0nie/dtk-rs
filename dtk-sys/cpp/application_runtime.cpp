@@ -1,4 +1,6 @@
 #include "application_runtime.h"
+#include "runtime_borrow.h"
+#include "dtk_shim.h"
 #include "dtk-sys/src/lib.rs.h"
 #include <DApplication>
 #include <DConfig>
@@ -74,14 +76,42 @@ public:
             QObject::connect(this, &QObject::destroyed, [guard_id] { dtk_cb_dispose(guard_id); });
     }
 
-    bool event(QEvent *event) override {
-        if (event->type() == QEvent::Quit && quit_guard_id && !dtk_cb_guard(quit_guard_id))
+    bool notify(QObject *receiver, QEvent *event) override {
+        if (!application_is_main_thread() || runtime_is_callback_event(receiver, event))
+            return DApplication::notify(receiver, event);
+        if (runtime_hold_deferred_delete(receiver, event))
             return true;
+        NativeCallFrame frame; // includes native-only event handlers and their nested loops
+        if (event->type() == QEvent::ChildAdded)
+            guard_observe_parent(static_cast<QChildEvent *>(event)->child());
+        return DApplication::notify(receiver, event);
+    }
+    bool event(QEvent *event) override {
+        if (event->type() == QEvent::Quit && quit_guard_id) {
+            SynchronousBorrow borrow;
+            if (!dtk_cb_guard(quit_guard_id))
+                return true;
+        }
         return DApplication::event(event);
     }
 
 private:
     size_t quit_guard_id;
+};
+
+class ScopedCoreApplication : public QCoreApplication {
+public:
+    using QCoreApplication::QCoreApplication;
+    bool notify(QObject *receiver, QEvent *event) override {
+        if (!application_is_main_thread() || runtime_is_callback_event(receiver, event))
+            return QCoreApplication::notify(receiver, event);
+        if (runtime_hold_deferred_delete(receiver, event))
+            return true;
+        NativeCallFrame frame;
+        if (event->type() == QEvent::ChildAdded)
+            guard_observe_parent(static_cast<QChildEvent *>(event)->child());
+        return QCoreApplication::notify(receiver, event);
+    }
 };
 
 struct ApplicationRuntime::Impl {
@@ -124,7 +154,7 @@ ApplicationRuntime::ApplicationRuntime(rust::Str name, rust::Vec<uint8_t> bytes,
     if (gui)
         impl->app = std::make_unique<ScopedDApplication>(impl->argc, impl->argv.data(), guard_id);
     else
-        impl->app = std::make_unique<QCoreApplication>(impl->argc, impl->argv.data());
+        impl->app = std::make_unique<ScopedCoreApplication>(impl->argc, impl->argv.data());
     impl->app->setApplicationName(QString::fromUtf8(name.data(), static_cast<qsizetype>(name.size())));
     if (gui)
         native_config_thread = Dtk::Core::DConfig::globalThread();
@@ -134,6 +164,7 @@ ApplicationRuntime::ApplicationRuntime(rust::Str name, rust::Vec<uint8_t> bytes,
     if (native_config_thread && !native_config_thread->isRunning())
         native_config_thread->start();
     impl->state->closing = false;
+    runtime_borrow_begin_scope(impl->app.get());
 }
 
 ApplicationRuntime::~ApplicationRuntime() {
@@ -143,7 +174,7 @@ ApplicationRuntime::~ApplicationRuntime() {
     // Disable dispatch and release Rust captures BEFORE any native destructor
     // can emit signals/focus/paint events. This includes callbacks on surviving
     // borrowed DTK singletons. Capture Drop reentry sees a closing runtime.
-    dtk_callbacks_end_scope();
+    dtk_callbacks_end_scope(); // closes dispatch, then releases borrow/pump state
     if (native_config_thread) {
         // A FIFO stop marker completes accepted config MetaCalls before exit;
         // direct quit() could strand updates until the next application. Join

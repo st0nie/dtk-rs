@@ -73,9 +73,7 @@ impl Drop for ReenterOnDrop {
         expect_panic("create DApplication", || QWidget::new(None));
         expect_panic("create DApplication", DMessageManager::instance);
         expect_panic("create DApplication", DGuiApplicationHelper::instance);
-        expect_panic("create DApplication", || unsafe {
-            DFontSizeManager::instance()
-        });
+        expect_panic("create DApplication", DFontSizeManager::instance);
         expect_panic("Qt application is closing", DStyleOptionButton::new);
         expect_panic("create DApplication", || {
             DApplication::set_application_display_name("closing")
@@ -95,8 +93,8 @@ impl Drop for ReenterOnDrop {
         expect_panic("only one Qt application", || {
             QCoreApplication::with("reenter-core", |_| {})
         });
-        expect_panic("QTimer was destroyed", || self.timer.stop());
-        expect_panic("DFontManager was destroyed", || {
+        expect_panic("Qt application is closing", || self.timer.stop());
+        expect_panic("Qt application is closing", || {
             self.font.font_pixel_size(FontSizeType::T6)
         });
         assert!(!unregister_callback(usize::MAX)); // unregister reentry is harmless
@@ -414,8 +412,8 @@ fn main() {
             let _ = &marker;
         });
         // These APIs return borrowed process singletons: never delete them.
-        let font_size = unsafe { DFontSizeManager::instance() }.unwrap();
-        let provider = unsafe { DFileIconProvider::global_provider() }.unwrap();
+        let font_size = DFontSizeManager::instance().unwrap();
+        let provider = DFileIconProvider::global_provider().unwrap();
         assert!(font_size.is_alive() && provider.is_alive());
         let independent = WaterMarkData::new();
         independent.set_text("owned value survives app");
@@ -560,7 +558,7 @@ fn main() {
             );
             let fresh = DGuiApplicationHelper::instance().unwrap();
             assert!(fresh.is_alive() && fresh.font_manager().unwrap().is_alive());
-            let fresh_font_size = unsafe { DFontSizeManager::instance() }.unwrap();
+            let fresh_font_size = DFontSizeManager::instance().unwrap();
             assert!(fresh_font_size.is_alive() && fresh_font_size.font_pixel_size(0) > 0);
             assert!(!pending.3.is_alive() && !pending.4.is_alive());
             expect_panic("DFontSizeManager application scope has closed", || {
