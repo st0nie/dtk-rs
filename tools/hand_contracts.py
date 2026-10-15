@@ -65,14 +65,13 @@ RECEIVER_TYPES = {
     "QTableWidget", "QTimer", "QSocketNotifier", "QStyledItemDelegate",
 }
 VALUE_TYPES = {
-    "QVariant", "QVariantList", "QColor", "QFont", "QPalette", "DPalette", "QPixmap", "QImage",
-    "QBrush", "QPainterPath", "QKeySequence", "QUrl", "QMargins", "DDciIcon", "QSize", "QPoint", "QRect", "QIcon",
+    "QVariant", "QVariantList", "QFont", "QPalette", "DPalette", "QPixmap", "QImage",
+    "QBrush", "QPainterPath", "QKeySequence", "DDciIcon", "QIcon", "QPersistentModelIndex",
 }
 UNIQUE_DELETERS = {
-    "variant_delete", "variant_list_delete", "color_delete", "font_delete", "palette_delete",
+    "variant_delete", "variant_list_delete", "font_delete", "palette_delete",
     "dpalette_delete", "pixmap_delete", "image_delete", "painter_path_delete", "brush_delete",
-    "key_sequence_delete", "url_delete", "margins_delete", "ddci_icon_delete", "size_delete",
-    "point_delete", "rect_delete", "icon_delete",
+    "key_sequence_delete", "ddci_icon_delete", "icon_delete", "persistent_index_delete",
 }
 
 

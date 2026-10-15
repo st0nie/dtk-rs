@@ -26,9 +26,9 @@ int32_t gen_enum_d_font_manager_size_type_t10() { return static_cast<int32_t>(DF
 int32_t gen_enum_d_font_manager_size_type_t11() { return static_cast<int32_t>(DFontManager::SizeType::T11); }
 QObject *gen_d_gui_application_helper_as_qobject(DGuiApplicationHelper *self) { return static_cast<QObject *>(self); }
 DGuiApplicationHelper * gen_d_gui_application_helper_instance() { return const_cast<DGuiApplicationHelper *>(DGuiApplicationHelper::instance()); }
-QColor * gen_d_gui_application_helper_adjust_color(QColor * base, int8_t hueFloat, int8_t saturationFloat, int8_t lightnessFloat, int8_t redFloat, int8_t greenFloat, int8_t blueFloat, int8_t alphaFloat) { return new QColor(DGuiApplicationHelper::adjustColor(*base, hueFloat, saturationFloat, lightnessFloat, redFloat, greenFloat, blueFloat, alphaFloat)); }
+QColor gen_d_gui_application_helper_adjust_color(const QColor &base, int8_t hueFloat, int8_t saturationFloat, int8_t lightnessFloat, int8_t redFloat, int8_t greenFloat, int8_t blueFloat, int8_t alphaFloat) { return DGuiApplicationHelper::adjustColor(base, hueFloat, saturationFloat, lightnessFloat, redFloat, greenFloat, blueFloat, alphaFloat); }
 QImage * gen_d_gui_application_helper_adjust_color_2(QImage * base, int8_t hueFloat, int8_t saturationFloat, int8_t lightnessFloat, int8_t redFloat, int8_t greenFloat, int8_t blueFloat, int8_t alphaFloat) { return new QImage(DGuiApplicationHelper::adjustColor(*base, hueFloat, saturationFloat, lightnessFloat, redFloat, greenFloat, blueFloat, alphaFloat)); }
-QColor * gen_d_gui_application_helper_blend_color(QColor * substrate, QColor * superstratum) { return new QColor(DGuiApplicationHelper::blendColor(*substrate, *superstratum)); }
+QColor gen_d_gui_application_helper_blend_color(const QColor &substrate, const QColor &superstratum) { return DGuiApplicationHelper::blendColor(substrate, superstratum); }
 DPalette * gen_d_gui_application_helper_standard_palette(int32_t type_) { return new DPalette(DGuiApplicationHelper::standardPalette(static_cast<DGuiApplicationHelper::ColorType>(type_))); }
 void gen_d_gui_application_helper_generate_palette_color(DPalette * base, int32_t role, int32_t type_) { DGuiApplicationHelper::generatePaletteColor(*base, static_cast<DPalette::ColorType>(role), static_cast<DGuiApplicationHelper::ColorType>(type_)); }
 void gen_d_gui_application_helper_generate_palette(DPalette * base, int32_t type_) { DGuiApplicationHelper::generatePalette(*base, static_cast<DGuiApplicationHelper::ColorType>(type_)); }
@@ -41,7 +41,7 @@ DPalette * gen_d_gui_application_helper_application_palette(DGuiApplicationHelpe
 DPalette * gen_d_gui_application_helper_application_palette_2(DGuiApplicationHelper *self, int32_t paletteType) { return new DPalette(self->applicationPalette(static_cast<DGuiApplicationHelper::ColorType>(paletteType))); }
 void gen_d_gui_application_helper_set_application_palette(DGuiApplicationHelper *self, DPalette * palette) { self->setApplicationPalette(*palette); }
 DFontManager * gen_d_gui_application_helper_font_manager(DGuiApplicationHelper *self) { return const_cast<DFontManager *>(self->fontManager()); }
-int32_t gen_d_gui_application_helper_to_color_type(QColor * color) { return static_cast<int32_t>(DGuiApplicationHelper::toColorType(*color)); }
+int32_t gen_d_gui_application_helper_to_color_type(const QColor &color) { return static_cast<int32_t>(DGuiApplicationHelper::toColorType(color)); }
 int32_t gen_d_gui_application_helper_to_color_type_2(QPalette * palette) { return static_cast<int32_t>(DGuiApplicationHelper::toColorType(*palette)); }
 int32_t gen_d_gui_application_helper_theme_type(DGuiApplicationHelper *self) { return static_cast<int32_t>(self->themeType()); }
 int32_t gen_d_gui_application_helper_palette_type(DGuiApplicationHelper *self) { return static_cast<int32_t>(self->paletteType()); }
@@ -60,9 +60,9 @@ QObject *gen_d_image_handler_as_qobject(DImageHandler *self) { return static_cas
 void gen_d_image_handler_set_file_name(DImageHandler *self, rust::Str fileName) { self->setFileName(from_rust_str(fileName)); }
 rust::String gen_d_image_handler_file_name(DImageHandler *self) { return to_rust_string(self->fileName()); }
 QImage * gen_d_image_handler_read_image(DImageHandler *self) { return new QImage(self->readImage()); }
-QImage * gen_d_image_handler_thumbnail(DImageHandler *self, QSize * size, int32_t mode) { return new QImage(self->thumbnail(*size, static_cast<Qt::AspectRatioMode>(mode))); }
+QImage * gen_d_image_handler_thumbnail(DImageHandler *self, const QSize &size, int32_t mode) { return new QImage(self->thumbnail(size, static_cast<Qt::AspectRatioMode>(mode))); }
 rust::String gen_d_image_handler_image_format(DImageHandler *self) { return to_rust_string(self->imageFormat()); }
-QSize * gen_d_image_handler_image_size(DImageHandler *self) { return new QSize(self->imageSize()); }
+QSize gen_d_image_handler_image_size(DImageHandler *self) { return self->imageSize(); }
 rust::Vec<rust::String> gen_d_image_handler_find_all_meta_data(DImageHandler *self) { return to_rust_string_pairs(self->findAllMetaData()); }
 void gen_d_image_handler_clear_cache(DImageHandler *self) { self->clearCache(); }
 bool gen_d_image_handler_save_image(DImageHandler *self, rust::Str fileName, rust::Str format) { return self->saveImage(from_rust_str(fileName), from_rust_str(format)); }
@@ -91,7 +91,7 @@ QImage * gen_d_image_handler_change_light_and_contrast(QImage * img, int32_t lig
 QImage * gen_d_image_handler_change_brightness(QImage * img, int32_t brightness) { return new QImage(DImageHandler::changeBrightness(*img, brightness)); }
 QImage * gen_d_image_handler_change_transparency(QImage * img, int32_t transparency) { return new QImage(DImageHandler::changeTransparency(*img, transparency)); }
 QImage * gen_d_image_handler_change_stauration(QImage * img, int32_t saturation) { return new QImage(DImageHandler::changeStauration(*img, saturation)); }
-QImage * gen_d_image_handler_replace_point_color(QImage * img, QColor * oldColor, QColor * newColor) { return new QImage(DImageHandler::replacePointColor(*img, *oldColor, *newColor)); }
+QImage * gen_d_image_handler_replace_point_color(QImage * img, const QColor &oldColor, const QColor &newColor) { return new QImage(DImageHandler::replacePointColor(*img, oldColor, newColor)); }
 QImage * gen_d_image_handler_flip_horizontal(QImage * img) { return new QImage(DImageHandler::flipHorizontal(*img)); }
 QImage * gen_d_image_handler_flip_vertical(QImage * img) { return new QImage(DImageHandler::flipVertical(*img)); }
 DFontManager *gen_d_font_manager_new() { return new DFontManager; }

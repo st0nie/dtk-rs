@@ -46,9 +46,22 @@
 #include <QPoint>
 #include <QRect>
 #include <QSize>
+// By-value Qt types shared with cxx-qt-lib: these headers carry the
+// rust::IsRelocatable specializations and layout static_asserts.
+#include "cxx-qt-lib/qcolor.h"
+#include "cxx-qt-lib/qmargins.h"
+#include "cxx-qt-lib/qmarginsf.h"
+#include "cxx-qt-lib/qpoint.h"
+#include "cxx-qt-lib/qpointf.h"
+#include "cxx-qt-lib/qrect.h"
+#include "cxx-qt-lib/qrectf.h"
+#include "cxx-qt-lib/qsize.h"
+#include "cxx-qt-lib/qsizef.h"
+#include "cxx-qt-lib/qurl.h"
 #include <QPainter>
 #include <QStyledItemDelegate>
 #include <QModelIndex>
+#include <QPersistentModelIndex>
 #include <QSocketNotifier>
 #include <QMessageBox>
 #include <QLineEdit>
@@ -100,8 +113,13 @@ using Dtk::Core::DConfig;
 using ::QPoint;
 using ::QRect;
 using ::QSize;
+using ::QPointF;
+using ::QSizeF;
+using ::QRectF;
+using ::QMarginsF;
 using ::QPainter;
 using ::QModelIndex;
+using ::QPersistentModelIndex;
 using ::QSocketNotifier;
 using ::QEvent;
 using ::QStyledItemDelegate;
@@ -347,11 +365,14 @@ QVariant *model_data(QAbstractItemModel *model, int32_t row, int32_t col, int32_
 bool model_set_data(QAbstractItemModel *model, int32_t row, int32_t col, QVariant *data, int32_t role);
 bool model_insert_rows(QAbstractItemModel *model, int32_t row, int32_t count);
 bool model_remove_rows(QAbstractItemModel *model, int32_t row, int32_t count);
+// parent may be null (top level). A foreign model's index is rejected (invalid result).
+QPersistentModelIndex *model_index(QAbstractItemModel *model, int32_t row, int32_t col, QPersistentModelIndex *parent);
+bool model_set_index_data(QAbstractItemModel *model, QPersistentModelIndex *index, QVariant *data, int32_t role);
 
 // ---- QTableWidgetItem ----
 void item_set_icon(QTableWidgetItem *it, QIcon *icon);
 void item_set_text_alignment(QTableWidgetItem *it, int32_t alignment);
-void item_set_foreground(QTableWidgetItem *it, QColor *color);
+void item_set_foreground(QTableWidgetItem *it, const QColor &color);
 void item_set_data_string(QTableWidgetItem *it, int32_t role, rust::Str value);
 rust::String item_data_string(QTableWidgetItem *it, int32_t role);
 void item_set_data_bool(QTableWidgetItem *it, int32_t role, bool value);
@@ -375,9 +396,6 @@ void variant_list_push(QVariantList *list, QVariant *value);
 size_t variant_list_len(QVariantList *list);
 QVariant *variant_list_get(QVariantList *list, size_t index); // nullptr if out of range
 void variant_list_delete(QVariantList *list);
-QColor *color_new_rgb(int32_t r, int32_t g, int32_t b, int32_t a);
-int32_t color_rgba(QColor *c); // packed 0xAARRGGBB
-void color_delete(QColor *c);
 QFont *font_new();
 void font_set_point_size(QFont *f, int32_t size);
 void font_set_bold(QFont *f, bool bold);
@@ -393,8 +411,8 @@ void font_set_monospace(QFont *f);
 void font_set_family(QFont *f, rust::Str name);
 void font_delete(QFont *f);
 QPalette *palette_new();
-void palette_set_color(QPalette *pal, int32_t group, int32_t role, QColor *color);
-QColor *palette_color(QPalette *pal, int32_t group, int32_t role); // heap copy, owned by the caller
+void palette_set_color(QPalette *pal, int32_t group, int32_t role, const QColor &color);
+QColor palette_color(QPalette *pal, int32_t group, int32_t role); // by-value copy
 void palette_delete(QPalette *pal);
 DPalette *dpalette_new();
 QBrush *dpalette_text_title(DPalette *pal); // copy of a native const&
@@ -406,43 +424,27 @@ QImage *image_from_file(rust::Str path);
 bool image_is_null(QImage *image);
 int32_t image_width(QImage *image);
 int32_t image_height(QImage *image);
-void image_fill(QImage *image, QColor *color);
+void image_fill(QImage *image, const QColor &color);
 void image_set_text(QImage *image, rust::Str key, rust::Str value);
 rust::String image_text(QImage *image, rust::Str key);
 bool image_save(QImage *image, rust::Str path);
-QColor *image_pixel_color(QImage *image, int32_t x, int32_t y);
+QColor image_pixel_color(QImage *image, int32_t x, int32_t y);
 void image_delete(QImage *image);
 QPainterPath *painter_path_new();
 void painter_path_add_rect(QPainterPath *path, double x, double y, double w, double h);
 bool painter_path_is_empty(QPainterPath *path);
 int32_t painter_path_element_count(QPainterPath *path);
 void painter_path_delete(QPainterPath *path);
-QBrush *brush_from_color(QColor *color);
-QColor *brush_color(QBrush *brush);
+QBrush *brush_from_color(const QColor &color);
+QColor brush_color(QBrush *brush);
 void brush_delete(QBrush *brush);
 QKeySequence *key_sequence_from_string(rust::Str text);
 rust::String key_sequence_to_string(QKeySequence *seq);
 void key_sequence_delete(QKeySequence *seq);
-QUrl *url_from_string(rust::Str url);
-rust::String url_to_string(QUrl *url);
-bool url_is_valid(QUrl *url);
-void url_delete(QUrl *url);
 QPixmap *standard_icon_pixmap(QWidget *w, int32_t icon, int32_t size); // QStyle::StandardPixmap
-QSize *size_new(int32_t w, int32_t h);
-void size_delete(QSize *s);
-QPoint *point_new(int32_t x, int32_t y);
-void point_delete(QPoint *p);
-QRect *rect_new(int32_t x, int32_t y, int32_t w, int32_t h);
-void rect_delete(QRect *r);
-int32_t rect_width(QRect *r);
-int32_t rect_height(QRect *r);
-int32_t rect_x(QRect *r);
-int32_t rect_y(QRect *r);
 void icon_delete(QIcon *icon);
 
 // ---- QMargins ----
-QMargins *q_margins_new(int32_t left, int32_t top, int32_t right, int32_t bottom);
-void margins_delete(QMargins *m);
 
 // ---- DDciIcon (dtkgui) ----
 DDciIcon *ddci_icon_new();
@@ -462,12 +464,12 @@ void painter_draw_text_at(QPainter *p, int32_t x, int32_t y, rust::Str text);
 void painter_draw_line(QPainter *p, int32_t x1, int32_t y1, int32_t x2, int32_t y2);
 void painter_save(QPainter *p);
 void painter_restore(QPainter *p);
-void painter_set_pen_color(QPainter *p, QColor *color);
+void painter_set_pen_color(QPainter *p, const QColor &color);
 void painter_set_font(QPainter *p, QFont *font);
 void painter_draw_text(QPainter *p, int32_t x, int32_t y, int32_t w, int32_t h, int32_t flags, rust::Str text);
 void painter_draw_pixmap(QPainter *p, int32_t x, int32_t y, int32_t w, int32_t h, QPixmap *pm);
 void painter_draw_icon(QPainter *p, int32_t x, int32_t y, int32_t w, int32_t h, QIcon *icon);
-void painter_fill_rect(QPainter *p, int32_t x, int32_t y, int32_t w, int32_t h, QColor *color);
+void painter_fill_rect(QPainter *p, int32_t x, int32_t y, int32_t w, int32_t h, const QColor &color);
 void painter_set_clip_rect(QPainter *p, int32_t x, int32_t y, int32_t w, int32_t h);
 void painter_translate(QPainter *p, double x, double y);
 void painter_scale(QPainter *p, double sx, double sy);
@@ -477,6 +479,14 @@ rust::String painter_elided_text(QPainter *p, rust::Str text, int32_t mode, int3
 rust::String index_data_string(QModelIndex *idx, int32_t role);
 bool index_data_bool(QModelIndex *idx, int32_t role);
 int64_t index_data_i64(QModelIndex *idx, int32_t role);
+QPersistentModelIndex *persistent_index_from(QModelIndex *idx);
+QPersistentModelIndex *persistent_index_clone(QPersistentModelIndex *idx);
+void persistent_index_delete(QPersistentModelIndex *idx);
+bool persistent_index_is_valid(QPersistentModelIndex *idx);
+int32_t persistent_index_row(QPersistentModelIndex *idx);
+int32_t persistent_index_column(QPersistentModelIndex *idx);
+QVariant *persistent_index_data(QPersistentModelIndex *idx, int32_t role);
+QPersistentModelIndex *persistent_index_parent(QPersistentModelIndex *idx);
 
 // ---- QTimer ----
 QTimer *timer_new(QObject *parent);

@@ -40,18 +40,21 @@ fn main() {
         {
             let label = label.clone();
             let count = count.clone();
-            btn.on_clicked(move || {
+            btn.on_clicked(move |_| {
                 let n = count.get() + 1;
                 count.set(n);
                 label.set_text(&format!("Clicked {n} time(s)."));
-            });
+            })
+            .release();
         }
 
         let about_btn = DPushButton::new("About");
         vbox.add_widget(&about_btn.as_widget());
-        about_btn.on_clicked(|| {
-            DMessageBox::about(None, "About", "Hello from dtk-rs!"); // modal, blocks
-        });
+        about_btn
+            .on_clicked(|_| {
+                DMessageBox::about(None, "About", "Hello from dtk-rs!"); // modal, blocks
+            })
+            .release();
 
         win.set_central_widget(&central);
         win.resize(360, 180);

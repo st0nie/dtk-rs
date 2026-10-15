@@ -1,3 +1,4 @@
+use dtk::ColorExt;
 use dtk::*;
 use std::cell::Cell;
 use std::rc::Rc;
@@ -22,11 +23,12 @@ fn main() {
         let clicked = Rc::new(Cell::new(false));
         {
             let clicked = clicked.clone();
-            btn.on_clicked(move || {
+            btn.on_clicked(move |_| {
                 label.set_text("Button was clicked ✓");
                 clicked.set(true);
                 println!("clicked");
-            });
+            })
+            .release();
         }
         vbox.add_widget(&btn.as_widget());
 
@@ -78,7 +80,7 @@ fn main() {
                 let delegate = PaintDelegate::new(&table, move |p, idx, x, y, w, h, _state| {
                     assert_eq!(idx.data_string(0), "icon cell"); // DisplayRole
                     p.set_clip_rect(x, y, w, h);
-                    p.fill_rect(x, y, w, h, &QColor::rgb(200, 220, 255));
+                    p.fill_rect(x, y, w, h, &QColor::from_rgb(200, 220, 255));
                     let elided = p.elided_text("a-very-long-application-name", qt::elide::RIGHT, w);
                     assert!(
                         elided.ends_with('\u{2026}') || elided.len() < 26,

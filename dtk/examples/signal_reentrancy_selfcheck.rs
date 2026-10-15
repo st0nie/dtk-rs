@@ -10,12 +10,14 @@ fn main() {
         let button = DPushButton::new("recursive click");
         let count = Rc::new(Cell::new(0));
         let (view, calls) = (button.clone(), count.clone());
-        let id = button.on_clicked(move || {
-            calls.set(calls.get() + 1);
-            if calls.get() == 1 {
-                view.click(); // Qt delivers clicked(bool) reentrantly to the same relay
-            }
-        });
+        let id = button
+            .on_clicked(move |_| {
+                calls.set(calls.get() + 1);
+                if calls.get() == 1 {
+                    view.click(); // Qt delivers clicked(bool) reentrantly to the same relay
+                }
+            })
+            .release();
         button.click();
         assert_eq!(count.get(), 2, "nested clicked signal was dropped");
         assert!(unregister_callback(id));
@@ -24,13 +26,15 @@ fn main() {
         let (view, calls) = (button.clone(), cancelled.clone());
         let callback_id = Rc::new(Cell::new(0));
         let slot = callback_id.clone();
-        let id = button.on_clicked(move || {
-            calls.set(calls.get() + 1);
-            if calls.get() == 1 {
-                view.click();
-                assert!(unregister_callback(slot.get()));
-            }
-        });
+        let id = button
+            .on_clicked(move |_| {
+                calls.set(calls.get() + 1);
+                if calls.get() == 1 {
+                    view.click();
+                    assert!(unregister_callback(slot.get()));
+                }
+            })
+            .release();
         callback_id.set(id);
         button.click();
         assert_eq!(
@@ -42,7 +46,9 @@ fn main() {
 
         let foreign_calls = Rc::new(Cell::new(0));
         let observed = foreign_calls.clone();
-        let id = button.on_clicked(move || observed.set(observed.get() + 1));
+        let id = button
+            .on_clicked(move |_| observed.set(observed.get() + 1))
+            .release();
         assert!(id != 0);
         assert!(
             !std::thread::spawn(move || unregister_callback(id))

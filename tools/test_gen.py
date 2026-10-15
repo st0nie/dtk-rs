@@ -376,5 +376,59 @@ class QtAncestryTests(unittest.TestCase):
         self.assertEqual(classify_class("CycleA", bases), "opaque")
 
 
+
+class ByValueAndSignalTests(unittest.TestCase):
+    def test_cxxqt_trivial_values_cross_by_value(self):
+        root = Path(REPO)
+        generated = (root / "dtk/src/widgets.rs").read_text()
+        bridge = (root / "dtk-sys/src/gen_ffi.rs").read_text()
+        self.assertIn("type QColor = cxx_qt_lib::QColor;", bridge)
+        self.assertIn("pub fn set_alert_color(&self, c: &QColor)", generated)
+        self.assertNotIn("color_delete", (root / "dtk-sys/src/lib.rs").read_text())
+        cpp = (root / "dtk-sys/cpp/dtk_gen_shim.cpp").read_text()
+        self.assertNotIn("new QColor(", cpp)
+        self.assertNotIn("new QUrl(", cpp)
+
+    def test_signal_parameter_mapping(self):
+        from tools.signals import map_param
+        enums = {("QAbstractSlider", "SliderAction"): "unscoped", ("Qt", "DropAction"): "unscoped",
+                 ("QIcon", "Mode"): "scoped"}
+        cases = {
+            "bool checked": "prim", "const QString &text": "str", "QColor color": "qval",
+            "const QUrl &url": "qval", "const QFont &font": "heap", "const QModelIndex &parent": "heap",
+            "const QList<int> &roles = QList<int>()": "list", "int action": "prim",
+        }
+        for raw, kind in cases.items():
+            with self.subTest(raw=raw):
+                mapped, why = map_param(raw, "QAbstractSlider", [], enums)
+                self.assertIsNone(why)
+                self.assertEqual(mapped[4], kind)
+        self.assertEqual(map_param("SliderAction action", "QAbstractSlider", [], enums)[0][4], "enum")
+        self.assertEqual(map_param("Qt::DropAction a", "X", [], enums)[0][4], "enum")
+        for raw in ("QAction *action", "QIcon::Mode mode", "Qt::MouseButtons b", "const QTextCharFormat &f"):
+            with self.subTest(raw=raw):
+                mapped, why = map_param(raw, "X", [], enums)
+                self.assertIsNone(mapped)
+                self.assertTrue(why)
+
+    def test_generated_signals_cover_inherited_and_values(self):
+        root = Path(REPO)
+        gen = (root / "dtk/src/signals_gen.rs").read_text()
+        bridge = (root / "dtk-cxxqt/src/bridge.rs").read_text()
+        # Inherited Qt signals on a DTK wrapper, typed values, model indexes.
+        blocks = {b.split(" {", 1)[0]: b for b in gen.split("\nimpl crate::")[1:]}
+        self.assertIn("pub fn on_toggled(", blocks["widgets::DSwitchButton"])
+        self.assertIn("pub fn on_mask_color_changed(&self, mut f: impl FnMut(crate::QColor) + 'static)", gen)
+        self.assertIn("FnMut(crate::PersistentModelIndex, i32, i32)", gen)
+        self.assertIn("FnMut(crate::PersistentModelIndex, crate::PersistentModelIndex, Vec<i32>)", gen)
+        # Typedef aliases resolve to the Qt class; optional feature regions skipped.
+        self.assertIn("pub fn on_clicked(&self, mut f: impl FnMut(bool)", blocks["DPushButton"])
+        self.assertNotIn("mouse_pos_moving", bridge)
+        code = "\n".join(line.split("//")[0] for line in bridge.splitlines())
+        self.assertNotIn("Pin<", code)
+        self.assertNotIn("&mut", code)
+        self.assertEqual(len(re.findall(r"#\[qsignal\]", bridge)), len(re.findall(r"pub\(self\) fn", bridge)))
+
+
 if __name__ == "__main__":
     unittest.main()

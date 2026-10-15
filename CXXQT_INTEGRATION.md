@@ -1,7 +1,7 @@
 # CXX-Qt integration decision
 
-Status: **adopted for imported DTK QObject signals and const methods** (first
-layer landed). Scope: dtk-rs on Linux, Qt 6.8.0, DTK 6.7.47, CXX-Qt 0.10.0.
+Status: **adopted for imported Qt/DTK QObject signals and const methods**;
+the signal layer is generated (phase 2/3, section 8). Scope: dtk-rs on Linux, Qt 6.8.0, DTK 6.7.47, CXX-Qt 0.10.0.
 Related: [ARCHITECTURE.md](ARCHITECTURE.md),
 [RUNTIME_SAFETY_AUDIT.md](RUNTIME_SAFETY_AUDIT.md),
 [OWNERSHIP_HAND_REPORT.md](OWNERSHIP_HAND_REPORT.md) (CXX-Qt section).
@@ -194,10 +194,10 @@ Workaround strategy:
 
 | Phase | Content | Exit criteria |
 |---|---|---|
-| 1 (this change) | `dtk-cxxqt` bridge, typed signals for DSwitchButton, DLineEdit, DSearchEdit, DSlider, DTabBar, DDialog; `Connection`; audit; selfcheck | `tools/check.sh` Debug + Release |
-| 2 | `tools/gen.py` emits the bridge from header `Q_SIGNALS:` sections (header scanning already exists) for scalar and `QString` arguments, plus `const` getters; per-signal entries in the CXX-Qt audit; inherited signals redeclared per subclass | generated bridge reproducible under check.sh; string helpers remain for the remainder |
-| 3 | Signal arguments of cxx-qt-lib value types (`QColor`, `QPoint`, `QSize`, `QRect`, `QUrl`, `QVariant`, `QKeySequence`); evaluate replacing hand heap-copy wrappers with cxx-qt-lib by-value types where layout is static-asserted (`qt_gui` feature for QColor/QFont/QImage) | ownership report for each replaced type; no change to `!Send` |
-| 4 | QtCore/QtGui QObjects (`QTimer`, `QAction`, `QAbstractItemModel`, `QSocketNotifier`) imported for typed signals; pointer-valued signals via guarded-view conversion | per-type borrowed-pointer contract |
+| 1 (done) | `dtk-cxxqt` bridge, typed signals for DSwitchButton, DLineEdit, DSearchEdit, DSlider, DTabBar, DDialog; `Connection`; audit; selfcheck | `tools/check.sh` Debug + Release |
+| 2 (done) | `tools/signals.py` (run by `tools/gen.py`) emits the bridge, connectors, cast header and `dtk/src/signals_gen.rs` from `Q_SIGNALS:` of every class reachable from a wrapper; per-signal audit rows; `GEN_SIGNAL_REPORT.md` | generated files in check.sh reproducibility manifest |
+| 3 (done) | Value-type signal arguments; hand heap wrappers for trivially copyable values replaced by cxx-qt-lib by-value types (section 8) | per-type audit table in `OWNERSHIP_HAND_REPORT.md`; `signal_values_selfcheck` |
+| 4 (partly done) | QtCore/QtGui/QtWidgets QObjects imported for typed signals (`QTimer`, `QAction`, `QAbstractItemModel`, `QWidget`, `QAbstractButton`, ...). Pointer-valued signals via guarded-view conversion remain | per-type borrowed-pointer contract |
 | 5 | Rust-defined QObjects (`extern "RustQt"`) for models/delegates, owned by `Owned<T>` and dispatched under synchronous borrows | separate design: CXX-Qt invokables take `Pin<&mut T>` for Rust state, which must be reconciled with reentrant Qt callbacks before admission |
 
 Throughout: no public API exposes CXX-Qt types except `QString` re-exported from
@@ -221,6 +221,70 @@ build the workspace in one invocation, as `tools/check.sh` does.
 cxx, cxx-build and cxx-gen must move in lockstep (section 2).
 Runtime: one boxed `Any` per emission plus the existing queue; the functor is
 a native lambda (no `DtkRelay` QObject per connection).
+
+## 8. Generated signal layer and by-value Qt types
+
+### Signals (`tools/signals.py`)
+
+- Input: `Q_SIGNALS:` sections of every exported class in DWidget/DGui/DCore
+  and QtCore/QtGui/QtWidgets that is an ancestor of a dtk-rs QObject wrapper
+  (generated widgets/objects and hand-written wrappers). DTK `typedef QFoo DFoo`
+  aliases (`dwidgetstype.h`) resolve to the Qt class. `#ifdef` feature regions
+  that are not defined by the pkg-config build (e.g. `DTK_TITLE_DRAG_WINDOW`),
+  DTK5-only and Qt-deprecated regions are excluded.
+- Each declaring class is imported **once** with only its own signals. The
+  connector receives the wrapper's live `QObject*` and casts it with
+  `qobject_cast<const Declaring *>`; a null result returns no connection
+  (`Connection::new` panics). This replaces per-subclass redeclaration and is
+  correct for secondary bases (`DObject` mixins), unlike a Rust pointer cast.
+- Every wrapper gets `on_*` for its class and all ancestors; a more-derived
+  signal with the same name hides the base one. Overloaded signal names are
+  skipped (the member pointer would be ambiguous).
+- Argument conversion inside the emission (owned, never a reference to Qt
+  storage): scalars and unscoped enums (`i32`) copied; `QString`,
+  `QStringList`, `QByteArray` → `String`, `Vec<String>`, `Vec<u8>`; cxx-qt-lib
+  trivial values cloned; `QList<int>`/`QVector<int>`/`QList<QUrl>` → `Vec`;
+  `QVariant`, `QFont`, `QImage`, `QPixmap`, `QIcon`, `QBrush`, `QPalette`,
+  `QPainterPath`, `QKeySequence`, `DPalette`, `DDciIcon` → a C++ copy held by
+  `dtk_sys::native_signal::OwnedValue` (matching dtk-sys deleter; deleted if the
+  event is cancelled) then adopted by the dtk wrapper; `QModelIndex` →
+  `QPersistentModelIndex` copy (`dtk::PersistentModelIndex`), because a plain
+  index is only valid until the model changes.
+- Not generated (listed with reasons in `GEN_SIGNAL_REPORT.md`): pointer
+  arguments (need per-signal guarded-view contracts), QFlags and scoped enums
+  (no implicit int conversion), other containers, overloaded names,
+  `QObject::destroyed` (emitted during destruction), QSocketNotifier
+  `activated` (level-triggered hand relay).
+- String-based relay helpers that duplicated generated signals were removed
+  (`on_clicked`, `on_timeout`, `on_triggered`, `on_current_index_changed` now
+  return `Connection` with the full typed argument list).
+
+### `dtk::PersistentModelIndex`
+
+Owned `QPersistentModelIndex`: Qt updates it across inserts/moves and
+invalidates it in `~QAbstractItemModel` (`qabstractitemmodel.cpp`:
+`invalidatePersistentIndexes`), so holding one never keeps or dangles the
+model. Its destructor unregisters from the model's private table; Rust drops
+it through `defer_cleanup` while a native frame is active. `data()` and the
+new `QAbstractItemModel::index`/`set_index_data` run inside a `NativeCall`;
+indexes of another model are rejected in C++ (`index.model() != model`).
+
+### By-value Qt types (cxx-qt-lib, `qt_gui` feature)
+
+`QColor`, `QPoint(F)`, `QSize(F)`, `QRect(F)`, `QMargins(F)` and `QUrl` are
+re-exported from cxx-qt-lib and declared as `type T = cxx_qt_lib::T` in all
+four dtk-sys bridges (`cxx::kind::Trivial`). cxx-qt-lib's C++ static-asserts
+their size/alignment and trivial copyability against the installed Qt (QUrl:
+`rust::IsRelocatable<QUrl>` with Clone/Drop calling the C++ copy constructor/
+destructor). Returns are C++ copies, parameters `const T &`; there is no heap
+allocation, deleter, scope guard or QObject reference, so they are
+independent of the application scope. The previous `*_new/*_delete` shims
+and `value_wrapper!`s for these types were removed. dtk-sys locates
+cxx-qt-lib's exported headers through its `links` metadata
+(`DEP_CXX_QT_LIB_CXX_QT_MANIFEST_PATH`). Non-trivial or mutable-reference
+types (`QFont`, `QImage`, `QPixmap`, `QVariant`, `QPalette`, ...) keep the
+audited heap wrappers (their `&mut` mutation APIs and DTK `DPalette` subclass
+are not modelled by cxx-qt-lib). `rgba_u32` moved to `dtk::ColorExt`.
 
 ## Sources
 

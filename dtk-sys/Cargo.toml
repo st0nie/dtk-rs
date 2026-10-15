@@ -9,6 +9,9 @@ links = "dtk6widget"
 # cxx, cxx-build and dtk-cxxqt's cxx-gen must be the same release: CXX
 # embeds its version in every C++ symbol (cxxbridge1$<patch>$...).
 cxx = "=1.0.205"
+# By-value Qt types (QColor/QPoint/QSize/QRect/QMargins/QUrl, ...) shared
+# with dtk-cxxqt. qt_gui provides QColor and the QtGui value types.
+cxx-qt-lib = { version = "=0.10.0", default-features = false, features = ["qt_gui"] }
 
 [build-dependencies]
 cxx-build = "=1.0.205"

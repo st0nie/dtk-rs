@@ -14,21 +14,35 @@ pub mod genffi {
         type QLayout;
         type QWidget;
         type QBrush;
-        type QColor;
         type QFont;
         type QIcon;
         type QImage;
         type QKeySequence;
-        type QMargins;
         type QPainterPath;
         type QPalette;
         type QPixmap;
-        type QPoint;
-        type QRect;
-        type QSize;
-        type QUrl;
         type QVariant;
         type QVariantList;
+        #[namespace = ""]
+        type QColor = cxx_qt_lib::QColor;
+        #[namespace = ""]
+        type QMargins = cxx_qt_lib::QMargins;
+        #[namespace = ""]
+        type QMarginsF = cxx_qt_lib::QMarginsF;
+        #[namespace = ""]
+        type QPoint = cxx_qt_lib::QPoint;
+        #[namespace = ""]
+        type QPointF = cxx_qt_lib::QPointF;
+        #[namespace = ""]
+        type QRect = cxx_qt_lib::QRect;
+        #[namespace = ""]
+        type QRectF = cxx_qt_lib::QRectF;
+        #[namespace = ""]
+        type QSize = cxx_qt_lib::QSize;
+        #[namespace = ""]
+        type QSizeF = cxx_qt_lib::QSizeF;
+        #[namespace = ""]
+        type QUrl = cxx_qt_lib::QUrl;
         type DDciIcon;
         type DPalette;
         type DStandardPaths;

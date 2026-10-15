@@ -25,11 +25,13 @@ fn main() {
         let marker = Rc::new(());
         let weak = Rc::downgrade(&marker);
         assert_ne!(
-            action.on_triggered(move |checked| {
-                assert!(!checked);
-                let _ = &marker;
-                observed.set(observed.get() + 1);
-            }),
+            action
+                .on_triggered(move |checked| {
+                    assert!(!checked);
+                    let _ = &marker;
+                    observed.set(observed.get() + 1);
+                })
+                .release(),
             0
         );
         action.trigger();

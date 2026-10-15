@@ -61,7 +61,6 @@ pub mod ffi {
         type QTableWidgetItem;
         type QTimer;
         type QIcon;
-        type QColor;
         type QFont;
         type QPalette;
         type DPalette;
@@ -70,16 +69,35 @@ pub mod ffi {
         type QBrush;
         type QPainterPath;
         type QKeySequence;
-        type QUrl;
-        type QMargins;
         type QVariant;
         type QVariantList;
         type DDciIcon;
-        type QPoint;
-        type QRect;
-        type QSize;
         type QPainter;
+        // Trivially copyable Qt values: cxx-qt-lib's by-value Rust types are
+        // the same C++ types (static layout asserts in cxx-qt-lib). No heap
+        // allocation, deleter or ownership: plain copies cross the bridge.
+        #[namespace = ""]
+        type QColor = cxx_qt_lib::QColor;
+        #[namespace = ""]
+        type QPoint = cxx_qt_lib::QPoint;
+        #[namespace = ""]
+        type QPointF = cxx_qt_lib::QPointF;
+        #[namespace = ""]
+        type QSize = cxx_qt_lib::QSize;
+        #[namespace = ""]
+        type QSizeF = cxx_qt_lib::QSizeF;
+        #[namespace = ""]
+        type QRect = cxx_qt_lib::QRect;
+        #[namespace = ""]
+        type QRectF = cxx_qt_lib::QRectF;
+        #[namespace = ""]
+        type QMargins = cxx_qt_lib::QMargins;
+        #[namespace = ""]
+        type QMarginsF = cxx_qt_lib::QMarginsF;
+        #[namespace = ""]
+        type QUrl = cxx_qt_lib::QUrl;
         type QModelIndex;
+        type QPersistentModelIndex;
         type QSocketNotifier;
         type QStyledItemDelegate;
 
@@ -356,11 +374,23 @@ pub mod ffi {
         ) -> bool;
         unsafe fn model_insert_rows(model: *mut QAbstractItemModel, row: i32, count: i32) -> bool;
         unsafe fn model_remove_rows(model: *mut QAbstractItemModel, row: i32, count: i32) -> bool;
+        unsafe fn model_index(
+            model: *mut QAbstractItemModel,
+            row: i32,
+            col: i32,
+            parent: *mut QPersistentModelIndex,
+        ) -> *mut QPersistentModelIndex;
+        unsafe fn model_set_index_data(
+            model: *mut QAbstractItemModel,
+            index: *mut QPersistentModelIndex,
+            data: *mut QVariant,
+            role: i32,
+        ) -> bool;
 
         // QTableWidgetItem
         unsafe fn item_set_icon(it: *mut QTableWidgetItem, icon: *mut QIcon);
         unsafe fn item_set_text_alignment(it: *mut QTableWidgetItem, alignment: i32);
-        unsafe fn item_set_foreground(it: *mut QTableWidgetItem, color: *mut QColor);
+        unsafe fn item_set_foreground(it: *mut QTableWidgetItem, color: &QColor);
         unsafe fn item_set_data_string(it: *mut QTableWidgetItem, role: i32, value: &str);
         unsafe fn item_data_string(it: *mut QTableWidgetItem, role: i32) -> String;
         unsafe fn item_set_data_bool(it: *mut QTableWidgetItem, role: i32, value: bool);
@@ -384,9 +414,6 @@ pub mod ffi {
         unsafe fn variant_list_len(list: *mut QVariantList) -> usize;
         unsafe fn variant_list_get(list: *mut QVariantList, index: usize) -> *mut QVariant;
         unsafe fn variant_list_delete(list: *mut QVariantList);
-        unsafe fn color_new_rgb(r: i32, g: i32, b: i32, a: i32) -> *mut QColor;
-        unsafe fn color_rgba(c: *mut QColor) -> i32;
-        unsafe fn color_delete(c: *mut QColor);
         unsafe fn font_new() -> *mut QFont;
         unsafe fn font_set_point_size(f: *mut QFont, size: i32);
         unsafe fn font_set_bold(f: *mut QFont, bold: bool);
@@ -400,8 +427,8 @@ pub mod ffi {
         unsafe fn font_set_family(f: *mut QFont, name: &str);
         unsafe fn font_delete(f: *mut QFont);
         unsafe fn palette_new() -> *mut QPalette;
-        unsafe fn palette_set_color(pal: *mut QPalette, group: i32, role: i32, color: *mut QColor);
-        unsafe fn palette_color(pal: *mut QPalette, group: i32, role: i32) -> *mut QColor;
+        unsafe fn palette_set_color(pal: *mut QPalette, group: i32, role: i32, color: &QColor);
+        unsafe fn palette_color(pal: *mut QPalette, group: i32, role: i32) -> QColor;
         unsafe fn palette_delete(pal: *mut QPalette);
         unsafe fn dpalette_new() -> *mut DPalette;
         unsafe fn dpalette_text_title(pal: *mut DPalette) -> *mut QBrush;
@@ -413,45 +440,28 @@ pub mod ffi {
         unsafe fn image_is_null(image: *mut QImage) -> bool;
         unsafe fn image_width(image: *mut QImage) -> i32;
         unsafe fn image_height(image: *mut QImage) -> i32;
-        unsafe fn image_fill(image: *mut QImage, color: *mut QColor);
+        unsafe fn image_fill(image: *mut QImage, color: &QColor);
         unsafe fn image_set_text(image: *mut QImage, key: &str, value: &str);
         unsafe fn image_text(image: *mut QImage, key: &str) -> String;
         unsafe fn image_save(image: *mut QImage, path: &str) -> bool;
-        unsafe fn image_pixel_color(image: *mut QImage, x: i32, y: i32) -> *mut QColor;
+        unsafe fn image_pixel_color(image: *mut QImage, x: i32, y: i32) -> QColor;
         unsafe fn image_delete(image: *mut QImage);
         unsafe fn painter_path_new() -> *mut QPainterPath;
         unsafe fn painter_path_add_rect(path: *mut QPainterPath, x: f64, y: f64, w: f64, h: f64);
         unsafe fn painter_path_is_empty(path: *mut QPainterPath) -> bool;
         unsafe fn painter_path_element_count(path: *mut QPainterPath) -> i32;
         unsafe fn painter_path_delete(path: *mut QPainterPath);
-        unsafe fn brush_from_color(color: *mut QColor) -> *mut QBrush;
-        unsafe fn brush_color(brush: *mut QBrush) -> *mut QColor;
+        unsafe fn brush_from_color(color: &QColor) -> *mut QBrush;
+        unsafe fn brush_color(brush: *mut QBrush) -> QColor;
         unsafe fn brush_delete(brush: *mut QBrush);
         unsafe fn key_sequence_from_string(text: &str) -> *mut QKeySequence;
         unsafe fn key_sequence_to_string(seq: *mut QKeySequence) -> String;
         unsafe fn key_sequence_delete(seq: *mut QKeySequence);
-        unsafe fn url_from_string(url: &str) -> *mut QUrl;
-        unsafe fn url_to_string(url: *mut QUrl) -> String;
-        unsafe fn url_is_valid(url: *mut QUrl) -> bool;
-        unsafe fn url_delete(url: *mut QUrl);
-        // QMargins
-        unsafe fn q_margins_new(left: i32, top: i32, right: i32, bottom: i32) -> *mut QMargins;
-        unsafe fn margins_delete(m: *mut QMargins);
         // DDciIcon (dtkgui)
         unsafe fn ddci_icon_new() -> *mut DDciIcon;
         unsafe fn ddci_icon_from_file(path: &str) -> *mut DDciIcon;
         unsafe fn ddci_icon_delete(i: *mut DDciIcon);
         unsafe fn standard_icon_pixmap(w: *mut QWidget, icon: i32, size: i32) -> *mut QPixmap;
-        unsafe fn size_new(w: i32, h: i32) -> *mut QSize;
-        unsafe fn size_delete(s: *mut QSize);
-        unsafe fn point_new(x: i32, y: i32) -> *mut QPoint;
-        unsafe fn point_delete(p: *mut QPoint);
-        unsafe fn rect_new(x: i32, y: i32, w: i32, h: i32) -> *mut QRect;
-        unsafe fn rect_delete(r: *mut QRect);
-        unsafe fn rect_width(r: *mut QRect) -> i32;
-        unsafe fn rect_height(r: *mut QRect) -> i32;
-        unsafe fn rect_x(r: *mut QRect) -> i32;
-        unsafe fn rect_y(r: *mut QRect) -> i32;
         unsafe fn icon_delete(icon: *mut QIcon);
 
         // QSocketNotifier
@@ -469,7 +479,7 @@ pub mod ffi {
         unsafe fn painter_draw_line(p: *mut QPainter, x1: i32, y1: i32, x2: i32, y2: i32);
         unsafe fn painter_save(p: *mut QPainter);
         unsafe fn painter_restore(p: *mut QPainter);
-        unsafe fn painter_set_pen_color(p: *mut QPainter, color: *mut QColor);
+        unsafe fn painter_set_pen_color(p: *mut QPainter, color: &QColor);
         unsafe fn painter_set_font(p: *mut QPainter, font: *mut QFont);
         unsafe fn painter_draw_text(
             p: *mut QPainter,
@@ -502,7 +512,7 @@ pub mod ffi {
             y: i32,
             w: i32,
             h: i32,
-            color: *mut QColor,
+            color: &QColor,
         );
         unsafe fn painter_set_clip_rect(p: *mut QPainter, x: i32, y: i32, w: i32, h: i32);
         unsafe fn painter_translate(p: *mut QPainter, x: f64, y: f64);
@@ -518,6 +528,23 @@ pub mod ffi {
         unsafe fn index_data_string(idx: *mut QModelIndex, role: i32) -> String;
         unsafe fn index_data_bool(idx: *mut QModelIndex, role: i32) -> bool;
         unsafe fn index_data_i64(idx: *mut QModelIndex, role: i32) -> i64;
+        // QPersistentModelIndex: Qt updates it across model changes and
+        // invalidates it in ~QAbstractItemModel. Unique heap value.
+        unsafe fn persistent_index_from(idx: *mut QModelIndex) -> *mut QPersistentModelIndex;
+        unsafe fn persistent_index_clone(
+            idx: *mut QPersistentModelIndex,
+        ) -> *mut QPersistentModelIndex;
+        unsafe fn persistent_index_delete(idx: *mut QPersistentModelIndex);
+        unsafe fn persistent_index_is_valid(idx: *mut QPersistentModelIndex) -> bool;
+        unsafe fn persistent_index_row(idx: *mut QPersistentModelIndex) -> i32;
+        unsafe fn persistent_index_column(idx: *mut QPersistentModelIndex) -> i32;
+        unsafe fn persistent_index_data(
+            idx: *mut QPersistentModelIndex,
+            role: i32,
+        ) -> *mut QVariant;
+        unsafe fn persistent_index_parent(
+            idx: *mut QPersistentModelIndex,
+        ) -> *mut QPersistentModelIndex;
 
         // QTimer
         unsafe fn timer_new(parent: *mut QObject) -> *mut QTimer;

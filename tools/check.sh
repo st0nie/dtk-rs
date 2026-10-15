@@ -18,6 +18,8 @@ generated=(
     GEN_REPORT.md GEN_CORE_REPORT.md GEN_GUI_REPORT.md
     OWNERSHIP_WIDGET_REPORT.md OWNERSHIP_CORE_REPORT.md OWNERSHIP_GUI_REPORT.md
     OWNERSHIP_HAND_REPORT.md
+    dtk-cxxqt/src/{bridge,connectors}.rs dtk-cxxqt/include/dtk_cxxqt_casts.h
+    dtk/src/signals_gen.rs GEN_SIGNAL_REPORT.md
 )
 manifest=$(mktemp)
 trap 'rm -f "$manifest"' EXIT

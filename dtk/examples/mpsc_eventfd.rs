@@ -190,7 +190,7 @@ fn main() {
             let status = status.clone();
             let btn = btn.clone();
             let btn_handle = btn.clone();
-            btn.on_clicked(move || {
+            btn.on_clicked(move |_| {
                 if running.load(Ordering::SeqCst) {
                     // toggle pause/resume
                     if paused.fetch_xor(true, Ordering::SeqCst) {
@@ -204,7 +204,8 @@ fn main() {
                     spawn_worker();
                     btn_handle.set_text("Pause");
                 }
-            });
+            })
+            .release();
         }
 
         win.show();

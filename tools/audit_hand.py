@@ -20,12 +20,12 @@ VALUE_ALLOCATIONS = {
     "widget_palette", "icon_from_theme", "icon_from_theme_fallback", "icon_from_file",
     "model_data", "variant_new", "variant_from_bool", "variant_from_i64",
     "variant_from_f64", "variant_from_string", "variant_clone", "variant_list_new",
-    "variant_list_clone", "variant_list_get", "color_new_rgb", "font_new",
-    "palette_new", "palette_color", "dpalette_new", "dpalette_text_title", "pixmap_new",
-    "image_new", "image_from_file", "image_pixel_color", "painter_path_new",
-    "brush_from_color", "brush_color", "key_sequence_from_string", "url_from_string",
-    "q_margins_new", "ddci_icon_new", "ddci_icon_from_file", "standard_icon_pixmap",
-    "size_new", "point_new", "rect_new",
+    "variant_list_clone", "variant_list_get", "font_new",
+    "palette_new", "dpalette_new", "dpalette_text_title", "pixmap_new",
+    "image_new", "image_from_file", "painter_path_new",
+    "brush_from_color", "key_sequence_from_string", "ddci_icon_new", "ddci_icon_from_file", "standard_icon_pixmap",
+    "persistent_index_from", "persistent_index_clone", "persistent_index_data",
+    "persistent_index_parent", "model_index",
 }
 SPECIAL_RETURNS = {
     "application_runtime_application": ("scope borrow", "application_runtime.cpp: runtime.application(); no public owning/Clone token"),
@@ -100,26 +100,66 @@ def render():
                 "- QWidget/layout adoption: cycle/duplicate-parent checks, permanent adoption history (including QObject ChildAdded and parentless native transfers); old constructor owners cannot reclaim transferred allocations.\n"
                 "- Model/delegate setters: Qt retains borrowed QObject pointers; Qt ownership is not inferred from setter spelling. Callback-time mutation cannot invalidate a currently borrowed paint/index/model frame.\n"
                 "- Relays, timers, shortcuts and actions: native owner destruction cancels pending events immediately; capture destructors are retired to a safe Rust boundary, with scope cleanup outside registry borrows.\n")
-    return "".join(rows) + render_cxxqt()
+    return "".join(rows) + render_by_value() + render_cxxqt()
+
+
+# cxx-qt-lib by-value types: `cxx::kind::Trivial` ExternType impls whose C++
+# layout and trivial copyability/relocatability are static_asserted in
+# cxx-qt-lib's own C++ sources against the installed Qt.
+BY_VALUE = {
+    "QColor": "trivially copyable (Qt6 static_assert in cxx-qt-lib qcolor.cpp)",
+    "QPoint": "trivially copyable POD", "QPointF": "trivially copyable POD",
+    "QSize": "trivially copyable POD", "QSizeF": "trivially copyable POD",
+    "QRect": "trivially copyable POD", "QRectF": "trivially copyable POD",
+    "QMargins": "trivially copyable POD", "QMarginsF": "trivially copyable POD",
+    "QUrl": "implicitly shared d-pointer; `rust::IsRelocatable<QUrl>`; Rust Clone/Drop call the C++ copy ctor/destructor",
+}
+
+
+def render_by_value():
+    """Every hand + generated bridge by-value Qt type must be reviewed here."""
+    rows = ["\n## By-value Qt types (cxx-qt-lib)\n\n",
+            "No heap allocation, deleter or pointer crosses FFI: returns are C++ copies moved into Rust, "
+            "inputs are `const T &` borrows of Rust-owned values. These are plain Rust values with cxx-qt-lib's Clone/Drop (no QObject reference, no scope guard); "
+            "independent of the application scope.\n\n| Type | Bridges | Copy semantics |\n|---|---|---|\n"]
+    seen = {}
+    for path in ("dtk-sys/src/lib.rs", "dtk-sys/src/gen_ffi.rs", "dtk-sys/src/core_ffi.rs", "dtk-sys/src/gui_ffi.rs"):
+        for name in re.findall(r"type (\w+) = cxx_qt_lib::(\w+);", (ROOT / path).read_text()):
+            if name[0] != name[1]:
+                raise ValueError(f"{path}: aliased by-value type {name}")
+            seen.setdefault(name[0], []).append(Path(path).name)
+    unknown = set(seen) - set(BY_VALUE)
+    if unknown:
+        raise ValueError(f"unaudited by-value Qt types: {sorted(unknown)}")
+    for name in sorted(seen):
+        rows.append(f"| `{name}` | {', '.join(seen[name])} | {BY_VALUE[name]} |\n")
+    return "".join(rows)
+
+
+def _snake(name):
+    return re.sub(r"_+", "_", re.sub(r"(?<!^)(?=[A-Z])", "_", name).lower())
 
 
 def render_cxxqt():
     """Fail closed unless every CXX-Qt import keeps the shared-borrow model."""
     bridge = (ROOT / "dtk-cxxqt/src/bridge.rs").read_text()
-    glue = (ROOT / "dtk-cxxqt/src/lib.rs").read_text()
+    glue = (ROOT / "dtk-cxxqt/src/connectors.rs").read_text()
     code = "\n".join(line.split("//")[0] for line in bridge.splitlines())
     for banned in ("Pin<", "&mut", '"RustQt"', "Threading", "#[qinvokable]", "#[qproperty"):
         if banned in code:
             raise ValueError(f"dtk-cxxqt bridge declares forbidden `{banned}`")
     rows = ["\n## CXX-Qt imported QObjects (dtk-cxxqt)\n\n",
             "Imports only: no construction, ownership, deletion or `Pin<&mut T>`/`&mut T` receiver. "
-            "Senders are guarded live pointers inside a `NativeCall`; functors own a thread-checked "
-            "`SignalToken` that queues owned values and cancels/retires the callback when Qt destroys it.\n\n",
+            "Senders are guarded live QObject pointers inside a `NativeCall`, cast with `qobject_cast` "
+            "to the declaring class (generated by tools/signals.py); functors own a thread-checked "
+            "`SignalToken` that queues owned values (by-value copies, `OwnedValue` heap copies with their "
+            "matching deleter, `QPersistentModelIndex` for `QModelIndex`) and cancels/retires the callback "
+            "when Qt destroys it.\n\n",
             "| C++ type | Item | Receiver | Kind | Rust-facing glue |\n|---|---|---|---|---|\n"]
     current = None
     count = 0
     items = re.finditer(
-        r"type (\w+);|(#\[qsignal\][^;]*?)?(pub\(self\) )?fn (\w+)\(self: (&\w+)[^;]*;", code, re.S)
+        r"type (\w+);|(#\[qsignal\][^;]*?)?(pub\(self\) )?fn (\w+)\(\s*self: (&\w+)[^;]*;", code, re.S)
     for item in items:
         if item.group(1):
             current = item.group(1)
@@ -129,11 +169,11 @@ def render_cxxqt():
             raise ValueError(f"{current}::{name}: receiver {receiver} is not a shared borrow")
         if signal and not private:
             raise ValueError(f"{current}::{name}: signals must be pub(self) (no Rust emitter)")
-        glue_name = f"{current}::on_{name}(" if signal else f".{name}()"
-        if glue_name not in glue:
+        glue_name = f"sender.on_{name}(" if signal else f".{name}()"
+        if (f"ffi::as_{current}(" not in glue) or glue_name not in glue:
             raise ValueError(f"{current}::{name}: imported but no audited dtk-cxxqt glue")
         kind = "typed signal connection" if signal else "const method"
-        rows.append(f"| `{current}` | `{name}` | `{receiver}` | {kind} | `{glue_name.rstrip('(')}` |\n")
+        rows.append(f"| `{current}` | `{name}` | `{receiver}` | {kind} | `connectors::{_snake(current)}_{name}` |\n")
         count += 1
     rows.append(f"\nCXX-Qt imported items audited: **{count}**.\n")
     return "".join(rows)

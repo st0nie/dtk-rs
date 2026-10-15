@@ -1,5 +1,6 @@
 //! DGui image transforms and guarded, owned DImageHandler lifetime.
 //! QT_QPA_PLATFORM=offscreen cargo run --example gui_image_selfcheck
+use dtk::ColorExt;
 use dtk::gui::DImageHandler;
 use dtk::{DApplication, QColor, QImage, QTimer};
 
@@ -8,7 +9,7 @@ fn main() {
         DApplication::set_quit_on_last_window_closed(false);
         let handler = DImageHandler::new();
         let mut image = QImage::new(3, 2);
-        image.fill(&QColor::rgb(200, 50, 20));
+        image.fill(&QColor::from_rgb(200, 50, 20));
         let gray = DImageHandler::gray_scale_color_filter(&image);
         assert_eq!((gray.width(), gray.height()), (3, 2));
         let argb = gray.pixel_color(1, 1).rgba_u32();

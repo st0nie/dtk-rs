@@ -71,9 +71,11 @@ fn main() {
         let timer = QTimer::new(&parent);
         let marker = capture(&captures);
         assert_ne!(
-            timer.on_timeout(move || {
-                let _ = &marker;
-            }),
+            timer
+                .on_timeout(move || {
+                    let _ = &marker;
+                })
+                .release(),
             0
         );
 

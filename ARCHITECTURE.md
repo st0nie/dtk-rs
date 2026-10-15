@@ -13,7 +13,8 @@ Three layers plus a header-scanning generator:
 │   src/lib.rs      hand-written: core classes, macros, signals  │
 │   src/widgets.rs  GENERATED: 146 DTK Widget classes             │
 │   src/core.rs/gui.rs GENERATED: DCore/DGui pilot classes      │
-│   src/signals.rs  typed on_* signals via dtk-cxxqt (CXX-Qt)    │
+│   src/signals.rs  Connection + connect_typed (CXX-Qt)          │
+│   src/signals_gen.rs GENERATED typed on_* for every wrapper    │
 │   ↑ guarded QObject views, non-owning, !Send                   │
 ├────────────────────────────────────────────────────────────────┤
 │ cxx::bridge #1   dtk-sys/src/lib.rs      hand-written core     │
@@ -31,7 +32,8 @@ Three layers plus a header-scanning generator:
 └────────────────────────────────────────────────────────────────┘
 
 tools/gen.py  scans all DWidget headers plus selected DCore/DGui pilot headers,
-              classifies Qt ancestry and regenerates three domain APIs/reports.
+              classifies Qt ancestry and regenerates three domain APIs/reports;
+              tools/signals.py (called by it) generates the CXX-Qt signal layer.
               Pilot report counts do NOT describe full DCore/DGui coverage.
 ```
 
@@ -195,7 +197,9 @@ widget) rather than panicking on Qt's null. This classification is checked by
 | `int`/`qint32`, `bool`, `qreal`… | `int32_t`, `bool`, `double`… | `i32`, `bool`, `f64`… |
 | enums | `int32_t` + `static_cast` | `i32`; constants in `dtk::qt` |
 | `QFlags` (e.g. `Qt::Alignment`) | `int32_t` + `fromInt`/`toInt` | `i32` |
-| value types (`QColor`, `QFont`, `QPixmap`, `QImage`, `QBrush`, `QPainterPath`, `QKeySequence`, `QUrl`, `QIcon`, `QPalette`, `DPalette`, `QSize`, `QPoint`, `QRect`, `QMargins`, `QVariant`, `QVariantList`, `DDciIcon`) | owning heap pointer | wrapper with `Drop` → shim `*_delete` |
+| trivially copyable values (`QColor`, `QPoint(F)`, `QSize(F)`, `QRect(F)`, `QMargins(F)`, `QUrl`) | by value / `const T &` (cxx-qt-lib `Trivial` types) | the cxx-qt-lib type itself, no deleter |
+| other value types (`QFont`, `QPixmap`, `QImage`, `QBrush`, `QPainterPath`, `QKeySequence`, `QIcon`, `QPalette`, `DPalette`, `QVariant`, `QVariantList`, `DDciIcon`) | owning heap pointer | wrapper with `Drop` → shim `*_delete` |
+| `QModelIndex` (hand API, signal args) | owning `QPersistentModelIndex*` | `PersistentModelIndex` (Qt-updated, invalidated with its model) |
 | `QWidget*` / `QLayout*` / `QBoxLayout*` / `QAction*` / `QAbstractItemModel*` / DTK class pointers | opaque pointer | guarded non-owning QObject view |
 | `QHash<QString, QString>` (out) | owned alternating UTF-8 key/value strings | `BTreeMap<String, String>` (no delimiter or Qt borrow) |
 | other `QList<T>`/`QMap`, `QPrinter*`, … | — | **unmapped → skipped** (GEN_REPORT.md, TODO.md) |
@@ -471,11 +475,12 @@ Three wrapper cases, deliberately different:
    construction but reject closing-scope reentry. The views are not `Copy`/
    `Clone`; arbitrary foreign virtual factories retain an explicit unsafe
    ownership contract rather than manufacturing an owner.
-3. **Value-type wrappers** (`QColor`, `QFont`, `QPixmap`, `QImage`, `QBrush`,
-   `QPainterPath`, `QKeySequence`, `QUrl`, `QIcon`, `QPalette`, `QSize`,
-   `QPoint`, `QRect`, `QMargins`, `QVariant`, `QVariantList`, `DPalette`, `DDciIcon`): own
-   a heap copy created by the shim (`new QColor(...)`), freed in `Drop` via
-   shim `*_delete`. `WaterMarkData` returned by value or const& is explicitly
+3. **Value-type wrappers** (`QFont`, `QPixmap`, `QImage`, `QBrush`,
+   `QPainterPath`, `QKeySequence`, `QIcon`, `QPalette`, `QVariant`,
+   `QVariantList`, `DPalette`, `DDciIcon`): own a heap copy created by the
+   shim (`new QFont(...)`), freed in `Drop` via shim `*_delete`. Trivially
+   copyable `QColor`/`QPoint(F)`/`QSize(F)`/`QRect(F)`/`QMargins(F)`/`QUrl`
+   are cxx-qt-lib types moved by value (CXXQT_INTEGRATION.md section 8). `WaterMarkData` returned by value or const& is explicitly
    copy-constructed into `OwnedOpaque<WaterMarkData>`; its generated deleter
    runs in `Drop`, not when the Qt widget owning its original data is destroyed.
 

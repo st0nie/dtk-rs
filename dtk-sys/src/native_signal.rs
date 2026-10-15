@@ -54,6 +54,36 @@ impl<A> Drop for SignalToken<A> {
     }
 }
 
+/// A unique heap copy of a Qt value made inside a signal emission (e.g. a
+/// `QFont` or `QPersistentModelIndex`), owned until the safe layer adopts it
+/// into its value wrapper. Dropped undelivered (cancelled id, closing scope)
+/// it calls its matching dtk-sys deleter; it never refers to Qt storage.
+pub struct OwnedValue<T> {
+    ptr: *mut T,
+    delete: unsafe fn(*mut T),
+}
+
+impl<T> OwnedValue<T> {
+    /// # Safety
+    /// `ptr` must be a fresh, uniquely owned allocation that `delete` frees.
+    pub unsafe fn new(ptr: *mut T, delete: unsafe fn(*mut T)) -> Self {
+        assert!(!ptr.is_null(), "Qt value copy failed");
+        Self { ptr, delete }
+    }
+    /// Transfer the unique allocation to a wrapper with the same deleter.
+    pub fn into_raw(self) -> *mut T {
+        let ptr = self.ptr;
+        std::mem::forget(self);
+        ptr
+    }
+}
+
+impl<T> Drop for OwnedValue<T> {
+    fn drop(&mut self) {
+        unsafe { (self.delete)(self.ptr) }
+    }
+}
+
 /// Register `f` and let `connect` create the native connection owning the
 /// token. `connect` returns an RAII guard whose Drop disconnects, or `None`
 /// on failure. Returns the callback id for `unregister_cb`; 0 = failed.

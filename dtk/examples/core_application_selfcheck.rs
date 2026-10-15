@@ -96,9 +96,11 @@ fn main() {
                 rejected: teardown_observed,
                 timer: timer.clone(),
             };
-            let callback_id = timer.on_timeout(move || {
-                let _ = (&retained, &reenter);
-            });
+            let callback_id = timer
+                .on_timeout(move || {
+                    let _ = (&retained, &reenter);
+                })
+                .release();
             assert_ne!(callback_id, 0);
             timer.start(60_000); // never fires; must release its Rust captures at scope end
             QTimer::single_shot(0, QCoreApplication::quit);

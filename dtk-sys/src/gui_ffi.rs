@@ -14,21 +14,35 @@ pub mod genffi {
         type QLayout;
         type QWidget;
         type QBrush;
-        type QColor;
         type QFont;
         type QIcon;
         type QImage;
         type QKeySequence;
-        type QMargins;
         type QPainterPath;
         type QPalette;
         type QPixmap;
-        type QPoint;
-        type QRect;
-        type QSize;
-        type QUrl;
         type QVariant;
         type QVariantList;
+        #[namespace = ""]
+        type QColor = cxx_qt_lib::QColor;
+        #[namespace = ""]
+        type QMargins = cxx_qt_lib::QMargins;
+        #[namespace = ""]
+        type QMarginsF = cxx_qt_lib::QMarginsF;
+        #[namespace = ""]
+        type QPoint = cxx_qt_lib::QPoint;
+        #[namespace = ""]
+        type QPointF = cxx_qt_lib::QPointF;
+        #[namespace = ""]
+        type QRect = cxx_qt_lib::QRect;
+        #[namespace = ""]
+        type QRectF = cxx_qt_lib::QRectF;
+        #[namespace = ""]
+        type QSize = cxx_qt_lib::QSize;
+        #[namespace = ""]
+        type QSizeF = cxx_qt_lib::QSizeF;
+        #[namespace = ""]
+        type QUrl = cxx_qt_lib::QUrl;
         type DDciIcon;
         type DPalette;
         type DGuiApplicationHelper;
@@ -59,7 +73,7 @@ pub mod genffi {
         ) -> *mut QObject;
         unsafe fn gen_d_gui_application_helper_instance() -> *mut DGuiApplicationHelper;
         unsafe fn gen_d_gui_application_helper_adjust_color(
-            base: *mut QColor,
+            base: &QColor,
             hueFloat: i8,
             saturationFloat: i8,
             lightnessFloat: i8,
@@ -67,7 +81,7 @@ pub mod genffi {
             greenFloat: i8,
             blueFloat: i8,
             alphaFloat: i8,
-        ) -> *mut QColor;
+        ) -> QColor;
         unsafe fn gen_d_gui_application_helper_adjust_color_2(
             base: *mut QImage,
             hueFloat: i8,
@@ -79,9 +93,9 @@ pub mod genffi {
             alphaFloat: i8,
         ) -> *mut QImage;
         unsafe fn gen_d_gui_application_helper_blend_color(
-            substrate: *mut QColor,
-            superstratum: *mut QColor,
-        ) -> *mut QColor;
+            substrate: &QColor,
+            superstratum: &QColor,
+        ) -> QColor;
         unsafe fn gen_d_gui_application_helper_standard_palette(type_: i32) -> *mut DPalette;
         unsafe fn gen_d_gui_application_helper_generate_palette_color(
             base: *mut DPalette,
@@ -108,7 +122,7 @@ pub mod genffi {
         unsafe fn gen_d_gui_application_helper_font_manager(
             self_: *mut DGuiApplicationHelper,
         ) -> *mut DFontManager;
-        unsafe fn gen_d_gui_application_helper_to_color_type(color: *mut QColor) -> i32;
+        unsafe fn gen_d_gui_application_helper_to_color_type(color: &QColor) -> i32;
         unsafe fn gen_d_gui_application_helper_to_color_type_2(palette: *mut QPalette) -> i32;
         unsafe fn gen_d_gui_application_helper_theme_type(self_: *mut DGuiApplicationHelper)
         -> i32;
@@ -145,11 +159,11 @@ pub mod genffi {
         unsafe fn gen_d_image_handler_read_image(self_: *mut DImageHandler) -> *mut QImage;
         unsafe fn gen_d_image_handler_thumbnail(
             self_: *mut DImageHandler,
-            size: *mut QSize,
+            size: &QSize,
             mode: i32,
         ) -> *mut QImage;
         unsafe fn gen_d_image_handler_image_format(self_: *mut DImageHandler) -> String;
-        unsafe fn gen_d_image_handler_image_size(self_: *mut DImageHandler) -> *mut QSize;
+        unsafe fn gen_d_image_handler_image_size(self_: *mut DImageHandler) -> QSize;
         unsafe fn gen_d_image_handler_find_all_meta_data(self_: *mut DImageHandler) -> Vec<String>;
         unsafe fn gen_d_image_handler_clear_cache(self_: *mut DImageHandler);
         unsafe fn gen_d_image_handler_save_image(
@@ -220,8 +234,8 @@ pub mod genffi {
         ) -> *mut QImage;
         unsafe fn gen_d_image_handler_replace_point_color(
             img: *mut QImage,
-            oldColor: *mut QColor,
-            newColor: *mut QColor,
+            oldColor: &QColor,
+            newColor: &QColor,
         ) -> *mut QImage;
         unsafe fn gen_d_image_handler_flip_horizontal(img: *mut QImage) -> *mut QImage;
         unsafe fn gen_d_image_handler_flip_vertical(img: *mut QImage) -> *mut QImage;

@@ -1,18 +1,19 @@
 //! Qt value-type ownership and DTK method roundtrips (brush, path, shortcut, URL).
 //! QT_QPA_PLATFORM=offscreen cargo run --example value_types_selfcheck
+use dtk::ColorExt;
 use dtk::widgets::{DCrumbTextFormat, DFileChooserEdit, DGraphicsClipEffect, DKeySequenceEdit};
 use dtk::{DApplication, QBrush, QColor, QKeySequence, QPainterPath, QTimer, QUrl};
 
 fn main() {
     // QColor/QBrush/QPainterPath/QUrl are Qt value types, usable without a GUI app.
-    let color = QColor::rgb(30, 80, 150);
+    let color = QColor::from_rgb(30, 80, 150);
     let brush = QBrush::from_color(&color);
     assert_eq!(brush.color().rgba_u32(), color.rgba_u32());
     let mut path = QPainterPath::new();
     assert!(path.is_empty());
     path.add_rect(1.0, 2.0, 30.0, 40.0);
     assert!(path.element_count() > 0);
-    let url = QUrl::from_string("file:///tmp");
+    let url = QUrl::from("file:///tmp");
     assert!(url.is_valid());
     assert_eq!(url.to_string(), "file:///tmp");
     let shortcut = QKeySequence::from_portable_text("Ctrl+Shift+K");
@@ -32,7 +33,7 @@ fn main() {
 
         assert_eq!(
             format.background().color().rgba_u32(),
-            QColor::rgb(30, 80, 150).rgba_u32()
+            QColor::from_rgb(30, 80, 150).rgba_u32()
         );
         assert!(!effect.clip_path().is_empty());
         assert_eq!(file_edit.directory_url().to_string(), "file:///tmp");

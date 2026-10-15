@@ -6,8 +6,8 @@ use crate::{
     SignalBool, SignalI32, SignalI32I32,
 };
 use crate::{
-    QBrush, QColor, QFont, QIcon, QImage, QKeySequence, QMargins, QPainterPath, QPalette, QPixmap,
-    QPoint, QRect, QSize, QUrl, QVariant, QVariantList,
+    QBrush, QColor, QFont, QIcon, QImage, QKeySequence, QMargins, QMarginsF, QPainterPath,
+    QPalette, QPixmap, QPoint, QPointF, QRect, QRectF, QSize, QSizeF, QUrl, QVariant, QVariantList,
 };
 use dtk_sys::core_ffi::genffi;
 use dtk_sys::ffi;

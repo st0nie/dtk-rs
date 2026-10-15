@@ -39,6 +39,7 @@ fn main() {
         .file(&moc_out)
         .include("include")
         .include("compat") // compat dir for alias headers missing from DTK6 packaging
+        .include(cxx_qt_lib_include())
         .std("c++17")
         .flag_if_supported("-fPIC"); // Qt6 requires PIC
 
@@ -63,6 +64,7 @@ fn main() {
     }
 
     build.compile("dtkshim");
+    println!("cargo:rerun-if-env-changed=DEP_CXX_QT_LIB_CXX_QT_MANIFEST_PATH");
 
     println!("cargo:rerun-if-changed=src/lib.rs");
     println!("cargo:rerun-if-changed=src/gen_ffi.rs");
@@ -83,4 +85,16 @@ fn main() {
     println!("cargo:rerun-if-changed=include/dtk_gen_shim.h");
     println!("cargo:rerun-if-changed=include/relay.h");
     println!("cargo:rerun-if-changed=compat"); // alias headers, recursive watch
+}
+
+/// cxx-qt-lib exports its C++ headers (`cxx-qt-lib/qcolor.h`, ... with the
+/// `rust::IsRelocatable` specializations required for by-value types) next to
+/// the manifest it announces through `links = "cxx-qt-lib"` metadata.
+fn cxx_qt_lib_include() -> std::path::PathBuf {
+    let manifest = std::env::var_os("DEP_CXX_QT_LIB_CXX_QT_MANIFEST_PATH")
+        .expect("cxx-qt-lib did not export its CXX-Qt manifest");
+    std::path::Path::new(&manifest)
+        .parent()
+        .expect("manifest directory")
+        .join("include")
 }

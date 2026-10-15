@@ -20,11 +20,11 @@ fn main() {
             let tabbed = tabbed.clone();
             move |ev| match ev {
                 PaintWidgetEvent::Paint(p, w, h) => {
-                    p.fill_rect(0, 0, w, h, &QColor::rgb(30, 30, 30));
+                    p.fill_rect(0, 0, w, h, &QColor::from_rgb(30, 30, 30));
                     let font = QFont::new();
                     font.set_point_size(14);
                     p.set_font(&font);
-                    p.set_pen_color(&QColor::rgb(230, 230, 230));
+                    p.set_pen_color(&QColor::from_rgb(230, 230, 230));
                     p.draw_text(10, 10, 200, 30, qt::alignment::LEFT, "hello paint");
                     painted.set(true);
                 }

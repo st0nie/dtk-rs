@@ -1,5 +1,6 @@
 //! DGui helper maps Qt colors/images through a checked QObject singleton.
 //! QT_QPA_PLATFORM=offscreen cargo run --example gui_helper_selfcheck
+use dtk::ColorExt;
 use dtk::gui::{DGuiApplicationHelper, GuiColorType, GuiSizeMode};
 use dtk::{DApplication, DPalette, QColor, QImage, QTimer};
 
@@ -21,7 +22,7 @@ fn main() {
             helper.application_palette().text_title().color().rgba_u32(),
             0
         );
-        let color = QColor::rgb(87, 122, 193);
+        let color = QColor::from_rgb(87, 122, 193);
         let same = DGuiApplicationHelper::adjust_color(&color, 0, 0, 0, 0, 0, 0, 0);
         assert_eq!(same.rgba_u32(), color.rgba_u32());
         let mut pixels = QImage::new(2, 3);

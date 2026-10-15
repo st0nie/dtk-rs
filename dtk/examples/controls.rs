@@ -61,15 +61,17 @@ fn main() {
         vbox.add_widget(&toast_btn.as_widget());
         {
             let central = central.clone();
-            toast_btn.on_clicked(move || {
-                DMessageManager::instance()
-                    .expect("DTK message manager unavailable")
-                    .send_message_2(
-                        &central,
-                        &QIcon::from_theme("dialog-ok"),
-                        "Saved successfully",
-                    );
-            });
+            toast_btn
+                .on_clicked(move |_| {
+                    DMessageManager::instance()
+                        .expect("DTK message manager unavailable")
+                        .send_message_2(
+                            &central,
+                            &QIcon::from_theme("dialog-ok"),
+                            "Saved successfully",
+                        );
+                })
+                .release();
         }
 
         win.set_central_widget(&central);

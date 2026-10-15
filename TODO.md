@@ -100,11 +100,15 @@ Known gaps in dtk-rs, roughly in priority order.
       DLineEdit, DSearchEdit, DSlider, DTabBar and DDialog typed signals with
       `&T` receivers only; `dtk::Connection` RAII; `cxxqt_signal_selfcheck`.
       See CXXQT_INTEGRATION.md.
-- [ ] CXX-Qt phase 2: generate the bridge from header `Q_SIGNALS:` sections
-      and `const` getters in tools/gen.py; then cxx-qt-lib value-type signal
-      arguments, pointer-valued signals via guarded views, QtCore/QtGui
-      QObject imports, and a separate design for `extern "RustQt"` objects
-      (their `Pin<&mut T>` invokables vs reentrant callbacks).
+- [x] CXX-Qt phase 2/3: `tools/signals.py` generates the bridge from
+      `Q_SIGNALS:` of every wrapped class and its Qt/DTK bases (300 signals,
+      77 imported classes); value-type arguments (by-value cxx-qt-lib types,
+      owned heap copies, `PersistentModelIndex`, `QList<int>`/`QList<QUrl>`);
+      `signal_values_selfcheck`. QColor/QPoint(F)/QSize(F)/QRect(F)/
+      QMargins(F)/QUrl are now cxx-qt-lib by-value types everywhere.
+- [ ] Pointer-valued signals (`QAction*`, `QAbstractButton*`, `QWidget*`, ...)
+      via guarded-view conversion with per-signal borrowed-pointer contracts;
+      QFlags/scoped-enum signal arguments (see GEN_SIGNAL_REPORT.md).
 - [ ] Re-evaluate CxxQtThread for imported QObjects when KDAB/cxx-qt#1155
       lands; `GuiSender` stays the worker→GUI path until then.
 - [ ] Build a coherent QObject/QtWidgets API (action, menu, model/view, layout,

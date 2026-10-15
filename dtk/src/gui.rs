@@ -6,8 +6,8 @@ use crate::{
     SignalBool, SignalI32, SignalI32I32,
 };
 use crate::{
-    QBrush, QColor, QFont, QIcon, QImage, QKeySequence, QMargins, QPainterPath, QPalette, QPixmap,
-    QPoint, QRect, QSize, QUrl, QVariant, QVariantList,
+    QBrush, QColor, QFont, QIcon, QImage, QKeySequence, QMargins, QMarginsF, QPainterPath,
+    QPalette, QPixmap, QPoint, QPointF, QRect, QRectF, QSize, QSizeF, QUrl, QVariant, QVariantList,
 };
 use dtk_sys::ffi;
 use dtk_sys::gui_ffi::genffi;
@@ -120,9 +120,9 @@ impl DGuiApplicationHelper {
     ) -> QColor {
         crate::require_application();
         let _call = dtk_sys::NativeCall::new();
-        QColor::from_raw(unsafe {
+        unsafe {
             genffi::gen_d_gui_application_helper_adjust_color(
-                base.ptr as _,
+                base,
                 hueFloat,
                 saturationFloat,
                 lightnessFloat,
@@ -131,7 +131,7 @@ impl DGuiApplicationHelper {
                 blueFloat,
                 alphaFloat,
             )
-        } as _)
+        }
     }
     pub fn adjust_color_2(
         base: &QImage,
@@ -161,12 +161,7 @@ impl DGuiApplicationHelper {
     pub fn blend_color(substrate: &QColor, superstratum: &QColor) -> QColor {
         crate::require_application();
         let _call = dtk_sys::NativeCall::new();
-        QColor::from_raw(unsafe {
-            genffi::gen_d_gui_application_helper_blend_color(
-                substrate.ptr as _,
-                superstratum.ptr as _,
-            )
-        } as _)
+        unsafe { genffi::gen_d_gui_application_helper_blend_color(substrate, superstratum) }
     }
     pub fn standard_palette(type_: GuiColorType) -> DPalette {
         crate::require_application();
@@ -266,7 +261,7 @@ impl DGuiApplicationHelper {
     pub fn to_color_type(color: &QColor) -> i32 {
         crate::require_application();
         let _call = dtk_sys::NativeCall::new();
-        unsafe { genffi::gen_d_gui_application_helper_to_color_type(color.ptr as _) }
+        unsafe { genffi::gen_d_gui_application_helper_to_color_type(color) }
     }
     pub fn to_color_type_2(palette: &QPalette) -> i32 {
         crate::require_application();
@@ -368,7 +363,7 @@ impl DImageHandler {
     pub unsafe fn thumbnail(&self, size: &QSize, mode: i32) -> QImage {
         let _call = dtk_sys::NativeCall::new();
         QImage::from_raw(unsafe {
-            genffi::gen_d_image_handler_thumbnail(self.live_ptr(), size.ptr as _, mode)
+            genffi::gen_d_image_handler_thumbnail(self.live_ptr(), size, mode)
         } as _)
     }
     pub fn image_format(&self) -> String {
@@ -377,7 +372,7 @@ impl DImageHandler {
     }
     pub fn image_size(&self) -> QSize {
         let _call = dtk_sys::NativeCall::new();
-        QSize::from_raw(unsafe { genffi::gen_d_image_handler_image_size(self.live_ptr()) } as _)
+        unsafe { genffi::gen_d_image_handler_image_size(self.live_ptr()) }
     }
     pub fn find_all_meta_data(&self) -> std::collections::BTreeMap<String, String> {
         let _call = dtk_sys::NativeCall::new();
@@ -554,11 +549,7 @@ impl DImageHandler {
         crate::require_application();
         let _call = dtk_sys::NativeCall::new();
         QImage::from_raw(unsafe {
-            genffi::gen_d_image_handler_replace_point_color(
-                img.ptr as _,
-                oldColor.ptr as _,
-                newColor.ptr as _,
-            )
+            genffi::gen_d_image_handler_replace_point_color(img.ptr as _, oldColor, newColor)
         } as _)
     }
     pub fn flip_horizontal(img: &QImage) -> QImage {

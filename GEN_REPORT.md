@@ -1,12 +1,12 @@
 # DTK6 widget binding coverage report
 
-classes: 146, methods generated: 986, skipped: 203
+classes: 146, methods generated: 987, skipped: 202
 
 Qt ancestry: 85 widgets, 26 QObjects, 35 opaque types
 
 ## skip reasons
-- unsupported param type: 145
-- unsupported return type: 57
+- unsupported param type: 146
+- unsupported return type: 55
 - required native parent: 1
 
 ## DAboutDialog — 19 methods generated, 0 skipped
@@ -158,9 +158,8 @@ Qt ancestry: 85 widgets, 26 QObjects, 35 opaque types
 
 ## DGraphicsClipEffect — 4 methods generated, 0 skipped
 
-## DGraphicsGlowEffect — 13 methods generated, 2 skipped
+## DGraphicsGlowEffect — 14 methods generated, 1 skipped
 - `void draw(QPainter *painter);` ← unsupported param type: QPainter *
-- `QRectF boundingRectFor(const QRectF &rect) const;` ← unsupported return type: QRectF
 
 ## DHeaderLine — 3 methods generated, 0 skipped
 
@@ -373,7 +372,7 @@ Qt ancestry: 85 widgets, 26 QObjects, 35 opaque types
 - `QBrush generatedBrush(const QStyleOption *option, const QBrush &base, DPalette::` ← unsupported param type: const QStyleOption *
 - `QBrush generatedBrush(StyleState state, const QStyleOption *option, const QBrush` ← unsupported param type: const QStyleOption *
 - `virtual QBrush generatedBrush(StateFlags flags, const QBrush &base, DPalette::Co` ← unsupported param type: StateFlags
-- `static QSizeF viewItemTextLayout(QTextLayout &textLayout, int lineWidth);` ← unsupported return type: QSizeF
+- `static QSizeF viewItemTextLayout(QTextLayout &textLayout, int lineWidth);` ← unsupported param type: QTextLayout &
 - `static QSize viewItemSize(const QStyle *style, const QStyleOptionViewItem *optio` ← unsupported param type: const QStyle *
 - `static void viewItemLayout(const QStyle *style, const QStyleOptionViewItem *opt,` ← unsupported param type: const QStyle *
 - `virtual void viewItemLayout(const QStyleOptionViewItem *opt, QRect *pixmapRect, ` ← unsupported param type: const QStyleOptionViewItem *

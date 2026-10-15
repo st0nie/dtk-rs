@@ -6,7 +6,8 @@ Rust bindings for DTK6 (dtkwidget). Goal: write deepin apps with DTK UIs in pure
 
 - Rust-facing wrappers over a `cxx` FFI layer; QObject handles are guarded, but reentrant native calls and non-QObject borrowed lifetimes are **not yet fully memory-safe** (see Design).
 - **146 DTK Widget classes** bound by a header-scanning generator (`DComboBox`, `DSpinner`, `DDialog`, `DListView`, …), with first generated DCore/DGui pilots. The core also has hand-written `DApplication`, `DMainWindow`, layouts, `QTableWidget`, timers and painting.
-- **Any signal** can be connected at runtime by name — no per-signal glue code.
+- **Typed signals for every wrapper**: 300 Qt/DTK signals generated from header `Q_SIGNALS:` sections through CXX-Qt (`on_*` methods, including inherited Qt base-class signals and value-type arguments); any other signal can still be connected at runtime by name.
+- Trivially copyable Qt values (`QColor`, `QPoint(F)`, `QSize(F)`, `QRect(F)`, `QMargins(F)`, `QUrl`) are cxx-qt-lib types passed **by value**.
 - Linux + Qt6 + DTK6 only. Not cross-platform (DTK isn't either).
 
 ## Requirements
@@ -22,9 +23,11 @@ cargo build
 ```
 dtk-sys/   FFI layer: C++ shim (cpp/) + cxx::bridge + build.rs (locates Qt6/DTK6 via pkg-config, moc for the signal relay)
 dtk/       Rust wrappers: hand-written core + generated widgets.rs/core.rs/gui.rs
-dtk-cxxqt/ CXX-Qt imports of DTK QObjects (typed signals, const getters); no ownership
+dtk-cxxqt/ CXX-Qt imports of Qt/DTK QObjects (generated typed signals, const getters); no ownership
 tools/gen.py  scans DWidget headers and selected DCore/DGui pilot headers; regenerates all bridges
+tools/signals.py  (run by gen.py) scans Q_SIGNALS of every wrapped class and its Qt/DTK bases
 GEN_REPORT.md / GEN_CORE_REPORT.md / GEN_GUI_REPORT.md: coverage (DCore/DGui reports are pilots only)
+GEN_SIGNAL_REPORT.md: generated/skipped typed signals with reasons
 TODO.md      known gaps and follow-ups
 ```
 
@@ -43,7 +46,7 @@ let code = DApplication::with("my-app", |app| {
     let win = DMainWindow::new();
     win.titlebar().set_title("Hello");
     let btn = DSuggestButton::new("Click me");
-    btn.on_clicked(|| println!("clicked"));
+    btn.on_clicked(|_| println!("clicked"));
     btn.show();
     win.resize(400, 300);
     win.show();
@@ -99,16 +102,22 @@ Callback panics are caught at the FFI boundary; ordinary scope panics propagate
 and forced termination bypass destructors: call `exit` only **after** `with`
 returns. User-created `Rc` cycles are not broken automatically.
 
-Imported DTK signals are statically typed through CXX-Qt and return an RAII
-`dtk::Connection` (drop disconnects; `release()` keeps it and returns an id):
+Signals are statically typed through CXX-Qt and return an RAII
+`dtk::Connection` (drop disconnects; `release()` keeps it and returns an id).
+Every wrapper gets the signals of its class and all Qt/DTK base classes:
 
 ```rust
 let _c = line_edit.on_text_changed(|text: String| { ... });
-switch.on_checked_changed(|on| { ... }).release();
+switch.on_toggled(|on| { ... }).release();               // inherited QAbstractButton
+blur.on_mask_color_changed(|c: dtk::QColor| { ... }).release();
+model.on_rows_inserted(|parent: dtk::PersistentModelIndex, first, last| { ... }).release();
 ```
 
-Arguments are converted to owned values inside the emission and the closure
-runs after the emitting native call returns. See [CXXQT_INTEGRATION.md](CXXQT_INTEGRATION.md).
+Arguments are converted to owned values inside the emission (`QString` →
+`String`, cxx-qt-lib values by value, `QFont`/`QImage`/`QVariant`/… as owned
+copies, `QModelIndex` → `PersistentModelIndex`) and the closure runs after the
+emitting native call returns. Pointer, QFlags and scoped-enum arguments are
+not generated yet (`GEN_SIGNAL_REPORT.md`). See [CXXQT_INTEGRATION.md](CXXQT_INTEGRATION.md).
 Any other signal can be connected at runtime by name:
 
 ```rust
@@ -165,6 +174,7 @@ All examples live in [`dtk/examples/`](dtk/examples/) and build with `cargo buil
 | [`dialog_selfcheck.rs`](dtk/examples/dialog_selfcheck.rs) | `DDialog` checks | `cargo run --example dialog_selfcheck` |
 | [`lifetime_selfcheck.rs`](dtk/examples/lifetime_selfcheck.rs) | Qt callback cleanup, table metadata, central widget ownership | `QT_QPA_PLATFORM=offscreen cargo run --example lifetime_selfcheck` |
 | [`cxxqt_signal_selfcheck.rs`](dtk/examples/cxxqt_signal_selfcheck.rs) | CXX-Qt typed DTK signals: RAII/release, deferred FIFO delivery, sender destruction, scope cleanup | `QT_QPA_PLATFORM=offscreen cargo run --example cxxqt_signal_selfcheck` |
+| [`signal_values_selfcheck.rs`](dtk/examples/signal_values_selfcheck.rs) | Generated signals: inherited Qt signals, by-value `QColor`, owned `QFont`/`QImage`/`QIcon` copies, `PersistentModelIndex` and `QList<int>` roles | `QT_QPA_PLATFORM=offscreen cargo run --example signal_values_selfcheck` |
 | [`threading_selfcheck.rs`](dtk/examples/threading_selfcheck.rs) | Typed worker → GUI delivery, ordering, destruction | `QT_QPA_PLATFORM=offscreen cargo run --example threading_selfcheck` |
 | [`opaque_lifetime_selfcheck.rs`](dtk/examples/opaque_lifetime_selfcheck.rs) | Owned non-QObject DTK allocations and generated C++ deleters | `QT_QPA_PLATFORM=offscreen cargo run --example opaque_lifetime_selfcheck` |
 | [`guard_selfcheck.rs`](dtk-sys/examples/guard_selfcheck.rs) | QPointer clears when Qt deletes an object | `QT_QPA_PLATFORM=offscreen cargo run -p dtk-sys --example guard_selfcheck` |

@@ -6,8 +6,8 @@ use crate::{
     SignalBool, SignalI32, SignalI32I32,
 };
 use crate::{
-    QBrush, QColor, QFont, QIcon, QImage, QKeySequence, QMargins, QPainterPath, QPalette, QPixmap,
-    QPoint, QRect, QSize, QUrl, QVariant, QVariantList,
+    QBrush, QColor, QFont, QIcon, QImage, QKeySequence, QMargins, QMarginsF, QPainterPath,
+    QPalette, QPixmap, QPoint, QPointF, QRect, QRectF, QSize, QSizeF, QUrl, QVariant, QVariantList,
 };
 use dtk_sys::ffi;
 use dtk_sys::gen_ffi::genffi;
@@ -200,7 +200,7 @@ impl DAbstractDialog {
     }
     pub fn move_(&self, pos: &QPoint) {
         let _call = dtk_sys::NativeCall::new();
-        unsafe { genffi::gen_d_abstract_dialog_move_(self.live_ptr(), pos.ptr as _) }
+        unsafe { genffi::gen_d_abstract_dialog_move_(self.live_ptr(), pos) }
     }
     pub fn move_2(&self, x: i32, y: i32) {
         let _call = dtk_sys::NativeCall::new();
@@ -208,7 +208,7 @@ impl DAbstractDialog {
     }
     pub fn set_geometry(&self, rect: &QRect) {
         let _call = dtk_sys::NativeCall::new();
-        unsafe { genffi::gen_d_abstract_dialog_set_geometry(self.live_ptr(), rect.ptr as _) }
+        unsafe { genffi::gen_d_abstract_dialog_set_geometry(self.live_ptr(), rect) }
     }
     pub fn set_geometry_2(&self, x: i32, y: i32, width: i32, height: i32) {
         let _call = dtk_sys::NativeCall::new();
@@ -226,15 +226,11 @@ impl DAbstractDialog {
     }
     pub fn move_to_center_by_rect(&self, rect: &QRect) {
         let _call = dtk_sys::NativeCall::new();
-        unsafe {
-            genffi::gen_d_abstract_dialog_move_to_center_by_rect(self.live_ptr(), rect.ptr as _)
-        }
+        unsafe { genffi::gen_d_abstract_dialog_move_to_center_by_rect(self.live_ptr(), rect) }
     }
     pub fn move_to_top_right_by_rect(&self, rect: &QRect) {
         let _call = dtk_sys::NativeCall::new();
-        unsafe {
-            genffi::gen_d_abstract_dialog_move_to_top_right_by_rect(self.live_ptr(), rect.ptr as _)
-        }
+        unsafe { genffi::gen_d_abstract_dialog_move_to_top_right_by_rect(self.live_ptr(), rect) }
     }
     pub fn set_display_position(&self, displayPosition: i32) {
         let _call = dtk_sys::NativeCall::new();
@@ -291,17 +287,15 @@ impl DAlertControl {
     }
     pub fn set_alert_color(&self, c: &QColor) {
         let _call = dtk_sys::NativeCall::new();
-        unsafe { genffi::gen_d_alert_control_set_alert_color(self.live_ptr(), c.ptr as _) }
+        unsafe { genffi::gen_d_alert_control_set_alert_color(self.live_ptr(), c) }
     }
     pub fn alert_color(&self) -> QColor {
         let _call = dtk_sys::NativeCall::new();
-        QColor::from_raw(unsafe { genffi::gen_d_alert_control_alert_color(self.live_ptr()) } as _)
+        unsafe { genffi::gen_d_alert_control_alert_color(self.live_ptr()) }
     }
     pub fn default_alert_color(&self) -> QColor {
         let _call = dtk_sys::NativeCall::new();
-        QColor::from_raw(
-            unsafe { genffi::gen_d_alert_control_default_alert_color(self.live_ptr()) } as _,
-        )
+        unsafe { genffi::gen_d_alert_control_default_alert_color(self.live_ptr()) }
     }
     pub fn set_message_alignment(&self, alignment: i32) {
         let _call = dtk_sys::NativeCall::new();
@@ -590,7 +584,7 @@ impl DAnchorsBase {
     }
     pub fn move_center(&self, arg: &QPoint) {
         let _call = dtk_sys::NativeCall::new();
-        unsafe { genffi::gen_d_anchors_base_move_center(self.live_ptr(), arg.ptr as _) }
+        unsafe { genffi::gen_d_anchors_base_move_center(self.live_ptr(), arg) }
     }
 }
 
@@ -717,15 +711,11 @@ impl DArrowRectangle {
     }
     pub fn border_color(&self) -> QColor {
         let _call = dtk_sys::NativeCall::new();
-        QColor::from_raw(
-            unsafe { genffi::gen_d_arrow_rectangle_border_color(self.live_ptr()) } as _,
-        )
+        unsafe { genffi::gen_d_arrow_rectangle_border_color(self.live_ptr()) }
     }
     pub fn background_color(&self) -> QColor {
         let _call = dtk_sys::NativeCall::new();
-        QColor::from_raw(
-            unsafe { genffi::gen_d_arrow_rectangle_background_color(self.live_ptr()) } as _,
-        )
+        unsafe { genffi::gen_d_arrow_rectangle_background_color(self.live_ptr()) }
     }
     pub fn arrow_direction(&self) -> i32 {
         let _call = dtk_sys::NativeCall::new();
@@ -765,17 +755,12 @@ impl DArrowRectangle {
     }
     pub fn set_border_color(&self, borderColor: &QColor) {
         let _call = dtk_sys::NativeCall::new();
-        unsafe {
-            genffi::gen_d_arrow_rectangle_set_border_color(self.live_ptr(), borderColor.ptr as _)
-        }
+        unsafe { genffi::gen_d_arrow_rectangle_set_border_color(self.live_ptr(), borderColor) }
     }
     pub fn set_background_color(&self, backgroundColor: &QColor) {
         let _call = dtk_sys::NativeCall::new();
         unsafe {
-            genffi::gen_d_arrow_rectangle_set_background_color(
-                self.live_ptr(),
-                backgroundColor.ptr as _,
-            )
+            genffi::gen_d_arrow_rectangle_set_background_color(self.live_ptr(), backgroundColor)
         }
     }
     pub fn set_background_color_2(&self, type_: i32) {
@@ -819,9 +804,7 @@ impl DArrowRectangle {
     }
     pub fn get_fixed_size(&self) -> QSize {
         let _call = dtk_sys::NativeCall::new();
-        QSize::from_raw(
-            unsafe { genffi::gen_d_arrow_rectangle_get_fixed_size(self.live_ptr()) } as _,
-        )
+        unsafe { genffi::gen_d_arrow_rectangle_get_fixed_size(self.live_ptr()) }
     }
     pub fn shadow_x_offset(&self) -> f64 {
         let _call = dtk_sys::NativeCall::new();
@@ -877,9 +860,7 @@ impl DBackgroundGroup {
     }
     pub fn item_margins(&self) -> QMargins {
         let _call = dtk_sys::NativeCall::new();
-        QMargins::from_raw(
-            unsafe { genffi::gen_d_background_group_item_margins(self.live_ptr()) } as _,
-        )
+        unsafe { genffi::gen_d_background_group_item_margins(self.live_ptr()) }
     }
     pub fn use_widget_background(&self) -> bool {
         let _call = dtk_sys::NativeCall::new();
@@ -893,9 +874,7 @@ impl DBackgroundGroup {
     }
     pub fn set_item_margins(&self, itemMargins: &QMargins) {
         let _call = dtk_sys::NativeCall::new();
-        unsafe {
-            genffi::gen_d_background_group_set_item_margins(self.live_ptr(), itemMargins.ptr as _)
-        }
+        unsafe { genffi::gen_d_background_group_set_item_margins(self.live_ptr(), itemMargins) }
     }
     pub fn set_item_spacing(&self, spacing: i32) {
         let _call = dtk_sys::NativeCall::new();
@@ -1016,9 +995,7 @@ impl DBlurEffectWidget {
     }
     pub fn mask_color(&self) -> QColor {
         let _call = dtk_sys::NativeCall::new();
-        QColor::from_raw(
-            unsafe { genffi::gen_d_blur_effect_widget_mask_color(self.live_ptr()) } as _,
-        )
+        unsafe { genffi::gen_d_blur_effect_widget_mask_color(self.live_ptr()) }
     }
     pub fn mask_alpha(&self) -> u8 {
         let _call = dtk_sys::NativeCall::new();
@@ -1074,9 +1051,7 @@ impl DBlurEffectWidget {
     }
     pub fn set_mask_color(&self, maskColor: &QColor) {
         let _call = dtk_sys::NativeCall::new();
-        unsafe {
-            genffi::gen_d_blur_effect_widget_set_mask_color(self.live_ptr(), maskColor.ptr as _)
-        }
+        unsafe { genffi::gen_d_blur_effect_widget_set_mask_color(self.live_ptr(), maskColor) }
     }
     pub fn set_mask_color_2(&self, type_: i32) {
         let _call = dtk_sys::NativeCall::new();
@@ -1117,11 +1092,7 @@ impl DBlurEffectGroup {
         crate::require_application();
         let _call = dtk_sys::NativeCall::new();
         unsafe {
-            genffi::gen_d_blur_effect_group_add_widget(
-                self.live_ptr(),
-                widget.live_ptr(),
-                offset.ptr as _,
-            )
+            genffi::gen_d_blur_effect_group_add_widget(self.live_ptr(), widget.live_ptr(), offset)
         }
     }
     pub fn remove_widget(&self, widget: &DBlurEffectWidget) {
@@ -1188,7 +1159,7 @@ impl DBoxWidget {
     }
     pub fn size_hint(&self) -> QSize {
         let _call = dtk_sys::NativeCall::new();
-        QSize::from_raw(unsafe { genffi::gen_d_box_widget_size_hint(self.live_ptr()) } as _)
+        unsafe { genffi::gen_d_box_widget_size_hint(self.live_ptr()) }
     }
 }
 
@@ -1247,17 +1218,15 @@ impl DButtonBoxButton {
     }
     pub fn icon_size(&self) -> QSize {
         let _call = dtk_sys::NativeCall::new();
-        QSize::from_raw(unsafe { genffi::gen_d_button_box_button_icon_size(self.live_ptr()) } as _)
+        unsafe { genffi::gen_d_button_box_button_icon_size(self.live_ptr()) }
     }
     pub fn size_hint(&self) -> QSize {
         let _call = dtk_sys::NativeCall::new();
-        QSize::from_raw(unsafe { genffi::gen_d_button_box_button_size_hint(self.live_ptr()) } as _)
+        unsafe { genffi::gen_d_button_box_button_size_hint(self.live_ptr()) }
     }
     pub fn minimum_size_hint(&self) -> QSize {
         let _call = dtk_sys::NativeCall::new();
-        QSize::from_raw(unsafe {
-            genffi::gen_d_button_box_button_minimum_size_hint(self.live_ptr())
-        } as _)
+        unsafe { genffi::gen_d_button_box_button_minimum_size_hint(self.live_ptr()) }
     }
 }
 
@@ -1345,23 +1314,19 @@ impl DCircleProgress {
     }
     pub fn background_color(&self) -> QColor {
         let _call = dtk_sys::NativeCall::new();
-        QColor::from_raw(
-            unsafe { genffi::gen_d_circle_progress_background_color(self.live_ptr()) } as _,
-        )
+        unsafe { genffi::gen_d_circle_progress_background_color(self.live_ptr()) }
     }
     pub fn set_background_color(&self, color: &QColor) {
         let _call = dtk_sys::NativeCall::new();
-        unsafe {
-            genffi::gen_d_circle_progress_set_background_color(self.live_ptr(), color.ptr as _)
-        }
+        unsafe { genffi::gen_d_circle_progress_set_background_color(self.live_ptr(), color) }
     }
     pub fn chunk_color(&self) -> QColor {
         let _call = dtk_sys::NativeCall::new();
-        QColor::from_raw(unsafe { genffi::gen_d_circle_progress_chunk_color(self.live_ptr()) } as _)
+        unsafe { genffi::gen_d_circle_progress_chunk_color(self.live_ptr()) }
     }
     pub fn set_chunk_color(&self, color: &QColor) {
         let _call = dtk_sys::NativeCall::new();
-        unsafe { genffi::gen_d_circle_progress_set_chunk_color(self.live_ptr(), color.ptr as _) }
+        unsafe { genffi::gen_d_circle_progress_set_chunk_color(self.live_ptr(), color) }
     }
     pub fn line_width(&self) -> i32 {
         let _call = dtk_sys::NativeCall::new();
@@ -1382,9 +1347,7 @@ widget_wrapper!(
 impl DClipEffectWidget {
     pub fn margins(&self) -> QMargins {
         let _call = dtk_sys::NativeCall::new();
-        QMargins::from_raw(
-            unsafe { genffi::gen_d_clip_effect_widget_margins(self.live_ptr()) } as _,
-        )
+        unsafe { genffi::gen_d_clip_effect_widget_margins(self.live_ptr()) }
     }
     pub fn clip_path(&self) -> QPainterPath {
         let _call = dtk_sys::NativeCall::new();
@@ -1394,7 +1357,7 @@ impl DClipEffectWidget {
     }
     pub fn set_margins(&self, margins: &QMargins) {
         let _call = dtk_sys::NativeCall::new();
-        unsafe { genffi::gen_d_clip_effect_widget_set_margins(self.live_ptr(), margins.ptr as _) }
+        unsafe { genffi::gen_d_clip_effect_widget_set_margins(self.live_ptr(), margins) }
     }
     pub fn set_clip_path(&self, path: &QPainterPath) {
         let _call = dtk_sys::NativeCall::new();
@@ -1459,9 +1422,7 @@ widget_wrapper!(
 impl DCommandLinkButton {
     pub fn size_hint(&self) -> QSize {
         let _call = dtk_sys::NativeCall::new();
-        QSize::from_raw(
-            unsafe { genffi::gen_d_command_link_button_size_hint(self.live_ptr()) } as _,
-        )
+        unsafe { genffi::gen_d_command_link_button_size_hint(self.live_ptr()) }
     }
 }
 
@@ -1477,11 +1438,11 @@ impl DCrumbTextFormat {
     }
     pub fn tag_color(&self) -> QColor {
         let _call = dtk_sys::NativeCall::new();
-        QColor::from_raw(unsafe { genffi::gen_d_crumb_text_format_tag_color(self.live_ptr()) } as _)
+        unsafe { genffi::gen_d_crumb_text_format_tag_color(self.live_ptr()) }
     }
     pub fn set_tag_color(&self, color: &QColor) {
         let _call = dtk_sys::NativeCall::new();
-        unsafe { genffi::gen_d_crumb_text_format_set_tag_color(self.live_ptr(), color.ptr as _) }
+        unsafe { genffi::gen_d_crumb_text_format_set_tag_color(self.live_ptr(), color) }
     }
     pub fn text(&self) -> String {
         let _call = dtk_sys::NativeCall::new();
@@ -1493,13 +1454,11 @@ impl DCrumbTextFormat {
     }
     pub fn text_color(&self) -> QColor {
         let _call = dtk_sys::NativeCall::new();
-        QColor::from_raw(
-            unsafe { genffi::gen_d_crumb_text_format_text_color(self.live_ptr()) } as _,
-        )
+        unsafe { genffi::gen_d_crumb_text_format_text_color(self.live_ptr()) }
     }
     pub fn set_text_color(&self, color: &QColor) {
         let _call = dtk_sys::NativeCall::new();
-        unsafe { genffi::gen_d_crumb_text_format_set_text_color(self.live_ptr(), color.ptr as _) }
+        unsafe { genffi::gen_d_crumb_text_format_set_text_color(self.live_ptr(), color) }
     }
     pub fn background(&self) -> QBrush {
         let _call = dtk_sys::NativeCall::new();
@@ -1650,17 +1609,12 @@ impl DDialog {
     pub fn set_content_layout_contents_margins(&self, margins: &QMargins) {
         let _call = dtk_sys::NativeCall::new();
         unsafe {
-            genffi::gen_d_dialog_set_content_layout_contents_margins(
-                self.live_ptr(),
-                margins.ptr as _,
-            )
+            genffi::gen_d_dialog_set_content_layout_contents_margins(self.live_ptr(), margins)
         }
     }
     pub fn content_layout_contents_margins(&self) -> QMargins {
         let _call = dtk_sys::NativeCall::new();
-        QMargins::from_raw(unsafe {
-            genffi::gen_d_dialog_content_layout_contents_margins(self.live_ptr())
-        } as _)
+        unsafe { genffi::gen_d_dialog_content_layout_contents_margins(self.live_ptr()) }
     }
     pub fn close_button_visible(&self) -> bool {
         let _call = dtk_sys::NativeCall::new();
@@ -2081,15 +2035,11 @@ impl DFileChooserEdit {
     }
     pub fn set_directory_url(&self, directory: &QUrl) {
         let _call = dtk_sys::NativeCall::new();
-        unsafe {
-            genffi::gen_d_file_chooser_edit_set_directory_url(self.live_ptr(), directory.ptr as _)
-        }
+        unsafe { genffi::gen_d_file_chooser_edit_set_directory_url(self.live_ptr(), directory) }
     }
     pub fn directory_url(&self) -> QUrl {
         let _call = dtk_sys::NativeCall::new();
-        QUrl::from_raw(
-            unsafe { genffi::gen_d_file_chooser_edit_directory_url(self.live_ptr()) } as _,
-        )
+        unsafe { genffi::gen_d_file_chooser_edit_directory_url(self.live_ptr()) }
     }
     pub fn set_dialog_display_position(&self, dialogDisplayPosition: i32) {
         let _call = dtk_sys::NativeCall::new();
@@ -2226,7 +2176,7 @@ impl DFloatingMessage {
     }
     pub fn size_hint(&self) -> QSize {
         let _call = dtk_sys::NativeCall::new();
-        QSize::from_raw(unsafe { genffi::gen_d_floating_message_size_hint(self.live_ptr()) } as _)
+        unsafe { genffi::gen_d_floating_message_size_hint(self.live_ptr()) }
     }
 }
 
@@ -2246,7 +2196,7 @@ impl DFloatingWidget {
     }
     pub fn size_hint(&self) -> QSize {
         let _call = dtk_sys::NativeCall::new();
-        QSize::from_raw(unsafe { genffi::gen_d_floating_widget_size_hint(self.live_ptr()) } as _)
+        unsafe { genffi::gen_d_floating_widget_size_hint(self.live_ptr()) }
     }
     pub fn set_widget(&self, widget: &QWidget) {
         let _call = dtk_sys::NativeCall::new();
@@ -2339,15 +2289,15 @@ impl DFlowLayout {
     }
     pub fn minimum_size(&self) -> QSize {
         let _call = dtk_sys::NativeCall::new();
-        QSize::from_raw(unsafe { genffi::gen_d_flow_layout_minimum_size(self.live_ptr()) } as _)
+        unsafe { genffi::gen_d_flow_layout_minimum_size(self.live_ptr()) }
     }
     pub fn set_geometry(&self, rect: &QRect) {
         let _call = dtk_sys::NativeCall::new();
-        unsafe { genffi::gen_d_flow_layout_set_geometry(self.live_ptr(), rect.ptr as _) }
+        unsafe { genffi::gen_d_flow_layout_set_geometry(self.live_ptr(), rect) }
     }
     pub fn size_hint(&self) -> QSize {
         let _call = dtk_sys::NativeCall::new();
-        QSize::from_raw(unsafe { genffi::gen_d_flow_layout_size_hint(self.live_ptr()) } as _)
+        unsafe { genffi::gen_d_flow_layout_size_hint(self.live_ptr()) }
     }
     pub fn expanding_directions(&self) -> i32 {
         let _call = dtk_sys::NativeCall::new();
@@ -2397,7 +2347,7 @@ impl DFontComboBox {
     }
     pub fn size_hint(&self) -> QSize {
         let _call = dtk_sys::NativeCall::new();
-        QSize::from_raw(unsafe { genffi::gen_d_font_combo_box_size_hint(self.live_ptr()) } as _)
+        unsafe { genffi::gen_d_font_combo_box_size_hint(self.live_ptr()) }
     }
     pub fn set_current_font(&self, f: &QFont) {
         let _call = dtk_sys::NativeCall::new();
@@ -2472,9 +2422,7 @@ impl DGraphicsClipEffect {
     }
     pub fn margins(&self) -> QMargins {
         let _call = dtk_sys::NativeCall::new();
-        QMargins::from_raw(
-            unsafe { genffi::gen_d_graphics_clip_effect_margins(self.live_ptr()) } as _,
-        )
+        unsafe { genffi::gen_d_graphics_clip_effect_margins(self.live_ptr()) }
     }
     pub fn clip_path(&self) -> QPainterPath {
         let _call = dtk_sys::NativeCall::new();
@@ -2484,7 +2432,7 @@ impl DGraphicsClipEffect {
     }
     pub fn set_margins(&self, margins: &QMargins) {
         let _call = dtk_sys::NativeCall::new();
-        unsafe { genffi::gen_d_graphics_clip_effect_set_margins(self.live_ptr(), margins.ptr as _) }
+        unsafe { genffi::gen_d_graphics_clip_effect_set_margins(self.live_ptr(), margins) }
     }
     pub fn set_clip_path(&self, clipPath: &QPainterPath) {
         let _call = dtk_sys::NativeCall::new();
@@ -2506,6 +2454,10 @@ impl DGraphicsGlowEffect {
         Owned::new(Self::from_raw(unsafe {
             genffi::gen_d_graphics_glow_effect_new()
         }))
+    }
+    pub fn bounding_rect_for(&self, rect: &QRectF) -> QRectF {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_graphics_glow_effect_bounding_rect_for(self.live_ptr(), rect) }
     }
     pub fn set_offset(&self, dx: f64, dy: f64) {
         let _call = dtk_sys::NativeCall::new();
@@ -2545,11 +2497,11 @@ impl DGraphicsGlowEffect {
     }
     pub fn set_color(&self, color: &QColor) {
         let _call = dtk_sys::NativeCall::new();
-        unsafe { genffi::gen_d_graphics_glow_effect_set_color(self.live_ptr(), color.ptr as _) }
+        unsafe { genffi::gen_d_graphics_glow_effect_set_color(self.live_ptr(), color) }
     }
     pub fn color(&self) -> QColor {
         let _call = dtk_sys::NativeCall::new();
-        QColor::from_raw(unsafe { genffi::gen_d_graphics_glow_effect_color(self.live_ptr()) } as _)
+        unsafe { genffi::gen_d_graphics_glow_effect_color(self.live_ptr()) }
     }
     pub fn opacity(&self) -> f64 {
         let _call = dtk_sys::NativeCall::new();
@@ -2617,17 +2569,15 @@ impl DIconButton {
     }
     pub fn size_hint(&self) -> QSize {
         let _call = dtk_sys::NativeCall::new();
-        QSize::from_raw(unsafe { genffi::gen_d_icon_button_size_hint(self.live_ptr()) } as _)
+        unsafe { genffi::gen_d_icon_button_size_hint(self.live_ptr()) }
     }
     pub fn minimum_size_hint(&self) -> QSize {
         let _call = dtk_sys::NativeCall::new();
-        QSize::from_raw(
-            unsafe { genffi::gen_d_icon_button_minimum_size_hint(self.live_ptr()) } as _,
-        )
+        unsafe { genffi::gen_d_icon_button_minimum_size_hint(self.live_ptr()) }
     }
     pub fn icon_size(&self) -> QSize {
         let _call = dtk_sys::NativeCall::new();
-        QSize::from_raw(unsafe { genffi::gen_d_icon_button_icon_size(self.live_ptr()) } as _)
+        unsafe { genffi::gen_d_icon_button_icon_size(self.live_ptr()) }
     }
     pub fn is_flat(&self) -> bool {
         let _call = dtk_sys::NativeCall::new();
@@ -2729,13 +2679,11 @@ impl DImageViewer {
     }
     pub fn visible_image_rect(&self) -> QRect {
         let _call = dtk_sys::NativeCall::new();
-        QRect::from_raw(
-            unsafe { genffi::gen_d_image_viewer_visible_image_rect(self.live_ptr()) } as _,
-        )
+        unsafe { genffi::gen_d_image_viewer_visible_image_rect(self.live_ptr()) }
     }
     pub fn scale_at_point(&self, pos: &QPoint, factor: f64) {
         let _call = dtk_sys::NativeCall::new();
-        unsafe { genffi::gen_d_image_viewer_scale_at_point(self.live_ptr(), pos.ptr as _, factor) }
+        unsafe { genffi::gen_d_image_viewer_scale_at_point(self.live_ptr(), pos, factor) }
     }
     pub fn begin_crop_image(&self) {
         let _call = dtk_sys::NativeCall::new();
@@ -2755,7 +2703,7 @@ impl DImageViewer {
     }
     pub fn crop_image_rect(&self) -> QRect {
         let _call = dtk_sys::NativeCall::new();
-        QRect::from_raw(unsafe { genffi::gen_d_image_viewer_crop_image_rect(self.live_ptr()) } as _)
+        unsafe { genffi::gen_d_image_viewer_crop_image_rect(self.live_ptr()) }
     }
 }
 
@@ -3264,11 +3212,11 @@ impl DListView {
     }
     pub fn is_active_rect(&self, rect: &QRect) -> bool {
         let _call = dtk_sys::NativeCall::new();
-        unsafe { genffi::gen_d_list_view_is_active_rect(self.live_ptr(), rect.ptr as _) }
+        unsafe { genffi::gen_d_list_view_is_active_rect(self.live_ptr(), rect) }
     }
     pub fn is_visual_rect(&self, rect: &QRect) -> bool {
         let _call = dtk_sys::NativeCall::new();
-        unsafe { genffi::gen_d_list_view_is_visual_rect(self.live_ptr(), rect.ptr as _) }
+        unsafe { genffi::gen_d_list_view_is_visual_rect(self.live_ptr(), rect) }
     }
     pub fn count(&self) -> i32 {
         let _call = dtk_sys::NativeCall::new();
@@ -3284,7 +3232,7 @@ impl DListView {
     }
     pub fn minimum_size_hint(&self) -> QSize {
         let _call = dtk_sys::NativeCall::new();
-        QSize::from_raw(unsafe { genffi::gen_d_list_view_minimum_size_hint(self.live_ptr()) } as _)
+        unsafe { genffi::gen_d_list_view_minimum_size_hint(self.live_ptr()) }
     }
     pub fn background_type(&self) -> i32 {
         let _call = dtk_sys::NativeCall::new();
@@ -3292,11 +3240,11 @@ impl DListView {
     }
     pub fn item_margins(&self) -> QMargins {
         let _call = dtk_sys::NativeCall::new();
-        QMargins::from_raw(unsafe { genffi::gen_d_list_view_item_margins(self.live_ptr()) } as _)
+        unsafe { genffi::gen_d_list_view_item_margins(self.live_ptr()) }
     }
     pub fn item_size(&self) -> QSize {
         let _call = dtk_sys::NativeCall::new();
-        QSize::from_raw(unsafe { genffi::gen_d_list_view_item_size(self.live_ptr()) } as _)
+        unsafe { genffi::gen_d_list_view_item_size(self.live_ptr()) }
     }
     pub fn add_item(&self, data: &QVariant) -> bool {
         let _call = dtk_sys::NativeCall::new();
@@ -3366,11 +3314,11 @@ impl DListView {
     }
     pub fn set_item_margins(&self, itemMargins: &QMargins) {
         let _call = dtk_sys::NativeCall::new();
-        unsafe { genffi::gen_d_list_view_set_item_margins(self.live_ptr(), itemMargins.ptr as _) }
+        unsafe { genffi::gen_d_list_view_set_item_margins(self.live_ptr(), itemMargins) }
     }
     pub fn set_item_size(&self, itemSize: &QSize) {
         let _call = dtk_sys::NativeCall::new();
-        unsafe { genffi::gen_d_list_view_set_item_size(self.live_ptr(), itemSize.ptr as _) }
+        unsafe { genffi::gen_d_list_view_set_item_size(self.live_ptr(), itemSize) }
     }
     pub fn set_item_spacing(&self, spacing: i32) {
         let _call = dtk_sys::NativeCall::new();
@@ -3398,9 +3346,7 @@ impl DLoadingIndicator {
     }
     pub fn background_color(&self) -> QColor {
         let _call = dtk_sys::NativeCall::new();
-        QColor::from_raw(unsafe {
-            genffi::gen_d_loading_indicator_background_color(self.live_ptr())
-        } as _)
+        unsafe { genffi::gen_d_loading_indicator_background_color(self.live_ptr()) }
     }
     pub fn loading(&self) -> bool {
         let _call = dtk_sys::NativeCall::new();
@@ -3427,7 +3373,7 @@ impl DLoadingIndicator {
     }
     pub fn size_hint(&self) -> QSize {
         let _call = dtk_sys::NativeCall::new();
-        QSize::from_raw(unsafe { genffi::gen_d_loading_indicator_size_hint(self.live_ptr()) } as _)
+        unsafe { genffi::gen_d_loading_indicator_size_hint(self.live_ptr()) }
     }
     pub fn smooth(&self) -> bool {
         let _call = dtk_sys::NativeCall::new();
@@ -3459,9 +3405,7 @@ impl DLoadingIndicator {
     }
     pub fn set_background_color(&self, color: &QColor) {
         let _call = dtk_sys::NativeCall::new();
-        unsafe {
-            genffi::gen_d_loading_indicator_set_background_color(self.live_ptr(), color.ptr as _)
-        }
+        unsafe { genffi::gen_d_loading_indicator_set_background_color(self.live_ptr(), color) }
     }
     pub fn set_rotate(&self, angle: &QVariant) {
         let _call = dtk_sys::NativeCall::new();
@@ -3546,7 +3490,7 @@ impl DMessageManager {
             genffi::gen_d_message_manager_set_content_margens(
                 self.live_ptr(),
                 par.live_ptr() as _,
-                margins.ptr as _,
+                margins,
             )
         }
     }
@@ -3576,7 +3520,7 @@ impl DMPRISControl {
     }
     pub fn set_picture_size(&self, size: &QSize) {
         let _call = dtk_sys::NativeCall::new();
-        unsafe { genffi::gen_d_m_p_r_i_s_control_set_picture_size(self.live_ptr(), size.ptr as _) }
+        unsafe { genffi::gen_d_m_p_r_i_s_control_set_picture_size(self.live_ptr(), size) }
     }
 }
 
@@ -3620,23 +3564,19 @@ impl DPageIndicator {
     }
     pub fn point_color(&self) -> QColor {
         let _call = dtk_sys::NativeCall::new();
-        QColor::from_raw(unsafe { genffi::gen_d_page_indicator_point_color(self.live_ptr()) } as _)
+        unsafe { genffi::gen_d_page_indicator_point_color(self.live_ptr()) }
     }
     pub fn set_point_color(&self, color: &QColor) {
         let _call = dtk_sys::NativeCall::new();
-        unsafe { genffi::gen_d_page_indicator_set_point_color(self.live_ptr(), color.ptr as _) }
+        unsafe { genffi::gen_d_page_indicator_set_point_color(self.live_ptr(), color) }
     }
     pub fn secondary_point_color(&self) -> QColor {
         let _call = dtk_sys::NativeCall::new();
-        QColor::from_raw(unsafe {
-            genffi::gen_d_page_indicator_secondary_point_color(self.live_ptr())
-        } as _)
+        unsafe { genffi::gen_d_page_indicator_secondary_point_color(self.live_ptr()) }
     }
     pub fn set_secondary_point_color(&self, color: &QColor) {
         let _call = dtk_sys::NativeCall::new();
-        unsafe {
-            genffi::gen_d_page_indicator_set_secondary_point_color(self.live_ptr(), color.ptr as _)
-        }
+        unsafe { genffi::gen_d_page_indicator_set_secondary_point_color(self.live_ptr(), color) }
     }
     pub fn point_radius(&self) -> i32 {
         let _call = dtk_sys::NativeCall::new();
@@ -3844,9 +3784,7 @@ widget_wrapper!(
 impl ColorLabel {
     pub fn get_color(&self, h: f64, s: f64, v: f64) -> QColor {
         let _call = dtk_sys::NativeCall::new();
-        QColor::from_raw(
-            unsafe { genffi::gen_color_label_get_color(self.live_ptr(), h, s, v) } as _,
-        )
+        unsafe { genffi::gen_color_label_get_color(self.live_ptr(), h, s, v) }
     }
     pub fn set_hue(&self, hue: i32) {
         let _call = dtk_sys::NativeCall::new();
@@ -3854,7 +3792,7 @@ impl ColorLabel {
     }
     pub fn pick_color(&self, pos: &QPoint) {
         let _call = dtk_sys::NativeCall::new();
-        unsafe { genffi::gen_color_label_pick_color(self.live_ptr(), pos.ptr as _) }
+        unsafe { genffi::gen_color_label_pick_color(self.live_ptr(), pos) }
     }
 }
 
@@ -3872,9 +3810,7 @@ impl ColorSlider {
     }
     pub fn get_color(&self, h: f64, s: f64, v: f64) -> QColor {
         let _call = dtk_sys::NativeCall::new();
-        QColor::from_raw(
-            unsafe { genffi::gen_color_slider_get_color(self.live_ptr(), h, s, v) } as _,
-        )
+        unsafe { genffi::gen_color_slider_get_color(self.live_ptr(), h, s, v) }
     }
 }
 
@@ -3903,21 +3839,13 @@ impl DPrintPickColorWidget {
     pub fn set_rgb_edit(&self, color: &QColor, btnColor: bool) {
         let _call = dtk_sys::NativeCall::new();
         unsafe {
-            genffi::gen_d_print_pick_color_widget_set_rgb_edit(
-                self.live_ptr(),
-                color.ptr as _,
-                btnColor,
-            )
+            genffi::gen_d_print_pick_color_widget_set_rgb_edit(self.live_ptr(), color, btnColor)
         }
     }
     pub fn convert_color(&self, color: &QColor, btnColor: bool) {
         let _call = dtk_sys::NativeCall::new();
         unsafe {
-            genffi::gen_d_print_pick_color_widget_convert_color(
-                self.live_ptr(),
-                color.ptr as _,
-                btnColor,
-            )
+            genffi::gen_d_print_pick_color_widget_convert_color(self.live_ptr(), color, btnColor)
         }
     }
     pub fn slot_color_pick(&self, uuid: &str, colorName: &str) {
@@ -4373,15 +4301,11 @@ impl DPrintPreviewWidget {
     }
     pub fn water_mark_color(&self) -> QColor {
         let _call = dtk_sys::NativeCall::new();
-        QColor::from_raw(unsafe {
-            genffi::gen_d_print_preview_widget_water_mark_color(self.live_ptr())
-        } as _)
+        unsafe { genffi::gen_d_print_preview_widget_water_mark_color(self.live_ptr()) }
     }
     pub fn set_water_mark_color(&self, color: &QColor) {
         let _call = dtk_sys::NativeCall::new();
-        unsafe {
-            genffi::gen_d_print_preview_widget_set_water_mark_color(self.live_ptr(), color.ptr as _)
-        }
+        unsafe { genffi::gen_d_print_preview_widget_set_water_mark_color(self.live_ptr(), color) }
     }
     pub fn set_water_mark_layout(&self, layout: i32) {
         let _call = dtk_sys::NativeCall::new();
@@ -4485,13 +4409,11 @@ impl DProgressBar {
     }
     pub fn size_hint(&self) -> QSize {
         let _call = dtk_sys::NativeCall::new();
-        QSize::from_raw(unsafe { genffi::gen_d_progress_bar_size_hint(self.live_ptr()) } as _)
+        unsafe { genffi::gen_d_progress_bar_size_hint(self.live_ptr()) }
     }
     pub fn minimum_size_hint(&self) -> QSize {
         let _call = dtk_sys::NativeCall::new();
-        QSize::from_raw(
-            unsafe { genffi::gen_d_progress_bar_minimum_size_hint(self.live_ptr()) } as _,
-        )
+        unsafe { genffi::gen_d_progress_bar_minimum_size_hint(self.live_ptr()) }
     }
 }
 
@@ -4633,7 +4555,7 @@ impl DShadowLine {
     }
     pub fn size_hint(&self) -> QSize {
         let _call = dtk_sys::NativeCall::new();
-        QSize::from_raw(unsafe { genffi::gen_d_shadow_line_size_hint(self.live_ptr()) } as _)
+        unsafe { genffi::gen_d_shadow_line_size_hint(self.live_ptr()) }
     }
 }
 
@@ -4811,7 +4733,7 @@ impl DSlider {
     }
     pub fn set_icon_size(&self, size: &QSize) {
         let _call = dtk_sys::NativeCall::new();
-        unsafe { genffi::gen_d_slider_set_icon_size(self.live_ptr(), size.ptr as _) }
+        unsafe { genffi::gen_d_slider_set_icon_size(self.live_ptr(), size) }
     }
     pub fn set_minimum(&self, min: i32) {
         let _call = dtk_sys::NativeCall::new();
@@ -4871,7 +4793,7 @@ impl DSlider {
     }
     pub fn size_hint(&self) -> QSize {
         let _call = dtk_sys::NativeCall::new();
-        QSize::from_raw(unsafe { genffi::gen_d_slider_size_hint(self.live_ptr()) } as _)
+        unsafe { genffi::gen_d_slider_size_hint(self.live_ptr()) }
     }
     pub fn set_handle_visible(&self, b: bool) {
         let _call = dtk_sys::NativeCall::new();
@@ -5005,7 +4927,7 @@ impl DSpinner {
     }
     pub fn set_background_color(&self, color: &QColor) {
         let _call = dtk_sys::NativeCall::new();
-        unsafe { genffi::gen_d_spinner_set_background_color(self.live_ptr(), color.ptr as _) }
+        unsafe { genffi::gen_d_spinner_set_background_color(self.live_ptr(), color) }
     }
 }
 
@@ -5159,9 +5081,9 @@ impl DStyle {
     ) -> QColor {
         crate::require_application();
         let _call = dtk_sys::NativeCall::new();
-        QColor::from_raw(unsafe {
+        unsafe {
             genffi::gen_d_style_adjust_color(
-                base.ptr as _,
+                base,
                 hueFloat,
                 saturationFloat,
                 lightnessFloat,
@@ -5170,14 +5092,12 @@ impl DStyle {
                 blueFloat,
                 alphaFloat,
             )
-        } as _)
+        }
     }
     pub fn blend_color(substrate: &QColor, superstratum: &QColor) -> QColor {
         crate::require_application();
         let _call = dtk_sys::NativeCall::new();
-        QColor::from_raw(unsafe {
-            genffi::gen_d_style_blend_color(substrate.ptr as _, superstratum.ptr as _)
-        } as _)
+        unsafe { genffi::gen_d_style_blend_color(substrate, superstratum) }
     }
     pub fn set_focus_rect_visible(widget: &QWidget, visible: bool) {
         crate::require_application();
@@ -5247,12 +5167,7 @@ impl DStylePainter {
     pub fn draw_item_pixmap(&self, r: &QRect, flags: i32, pixmap: &QPixmap) {
         let _call = dtk_sys::NativeCall::new();
         unsafe {
-            genffi::gen_d_style_painter_draw_item_pixmap(
-                self.live_ptr(),
-                r.ptr as _,
-                flags,
-                pixmap.ptr as _,
-            )
+            genffi::gen_d_style_painter_draw_item_pixmap(self.live_ptr(), r, flags, pixmap.ptr as _)
         }
     }
 }
@@ -5284,25 +5199,19 @@ impl DViewItemAction {
     }
     pub fn icon_size(&self) -> QSize {
         let _call = dtk_sys::NativeCall::new();
-        QSize::from_raw(unsafe { genffi::gen_d_view_item_action_icon_size(self.live_ptr()) } as _)
+        unsafe { genffi::gen_d_view_item_action_icon_size(self.live_ptr()) }
     }
     pub fn maximum_size(&self) -> QSize {
         let _call = dtk_sys::NativeCall::new();
-        QSize::from_raw(
-            unsafe { genffi::gen_d_view_item_action_maximum_size(self.live_ptr()) } as _,
-        )
+        unsafe { genffi::gen_d_view_item_action_maximum_size(self.live_ptr()) }
     }
     pub fn click_area_margins(&self) -> QMargins {
         let _call = dtk_sys::NativeCall::new();
-        QMargins::from_raw(unsafe {
-            genffi::gen_d_view_item_action_click_area_margins(self.live_ptr())
-        } as _)
+        unsafe { genffi::gen_d_view_item_action_click_area_margins(self.live_ptr()) }
     }
     pub fn set_click_area_margins(&self, margins: &QMargins) {
         let _call = dtk_sys::NativeCall::new();
-        unsafe {
-            genffi::gen_d_view_item_action_set_click_area_margins(self.live_ptr(), margins.ptr as _)
-        }
+        unsafe { genffi::gen_d_view_item_action_set_click_area_margins(self.live_ptr(), margins) }
     }
     pub fn set_text_color_role(&self, role: i32) {
         let _call = dtk_sys::NativeCall::new();
@@ -5369,15 +5278,11 @@ impl DStyledItemDelegate {
     }
     pub fn margins(&self) -> QMargins {
         let _call = dtk_sys::NativeCall::new();
-        QMargins::from_raw(
-            unsafe { genffi::gen_d_styled_item_delegate_margins(self.live_ptr()) } as _,
-        )
+        unsafe { genffi::gen_d_styled_item_delegate_margins(self.live_ptr()) }
     }
     pub fn item_size(&self) -> QSize {
         let _call = dtk_sys::NativeCall::new();
-        QSize::from_raw(
-            unsafe { genffi::gen_d_styled_item_delegate_item_size(self.live_ptr()) } as _,
-        )
+        unsafe { genffi::gen_d_styled_item_delegate_item_size(self.live_ptr()) }
     }
     pub fn spacing(&self) -> i32 {
         let _call = dtk_sys::NativeCall::new();
@@ -5391,13 +5296,11 @@ impl DStyledItemDelegate {
     }
     pub fn set_margins(&self, margins: &QMargins) {
         let _call = dtk_sys::NativeCall::new();
-        unsafe { genffi::gen_d_styled_item_delegate_set_margins(self.live_ptr(), margins.ptr as _) }
+        unsafe { genffi::gen_d_styled_item_delegate_set_margins(self.live_ptr(), margins) }
     }
     pub fn set_item_size(&self, itemSize: &QSize) {
         let _call = dtk_sys::NativeCall::new();
-        unsafe {
-            genffi::gen_d_styled_item_delegate_set_item_size(self.live_ptr(), itemSize.ptr as _)
-        }
+        unsafe { genffi::gen_d_styled_item_delegate_set_item_size(self.live_ptr(), itemSize) }
     }
     pub fn set_item_spacing(&self, spacing: i32) {
         let _call = dtk_sys::NativeCall::new();
@@ -5687,7 +5590,7 @@ impl DSwitchButton {
     }
     pub fn size_hint(&self) -> QSize {
         let _call = dtk_sys::NativeCall::new();
-        QSize::from_raw(unsafe { genffi::gen_d_switch_button_size_hint(self.live_ptr()) } as _)
+        unsafe { genffi::gen_d_switch_button_size_hint(self.live_ptr()) }
     }
 }
 
@@ -5758,11 +5661,11 @@ impl DTabBar {
     }
     pub fn set_tab_minimum_size(&self, index: i32, size: &QSize) {
         let _call = dtk_sys::NativeCall::new();
-        unsafe { genffi::gen_d_tab_bar_set_tab_minimum_size(self.live_ptr(), index, size.ptr as _) }
+        unsafe { genffi::gen_d_tab_bar_set_tab_minimum_size(self.live_ptr(), index, size) }
     }
     pub fn set_tab_maximum_size(&self, index: i32, size: &QSize) {
         let _call = dtk_sys::NativeCall::new();
-        unsafe { genffi::gen_d_tab_bar_set_tab_maximum_size(self.live_ptr(), index, size.ptr as _) }
+        unsafe { genffi::gen_d_tab_bar_set_tab_maximum_size(self.live_ptr(), index, size) }
     }
     pub fn visible_add_button(&self) -> bool {
         let _call = dtk_sys::NativeCall::new();
@@ -5858,11 +5761,11 @@ impl DTabBar {
     }
     pub fn tab_rect(&self, index: i32) -> QRect {
         let _call = dtk_sys::NativeCall::new();
-        QRect::from_raw(unsafe { genffi::gen_d_tab_bar_tab_rect(self.live_ptr(), index) } as _)
+        unsafe { genffi::gen_d_tab_bar_tab_rect(self.live_ptr(), index) }
     }
     pub fn tab_at(&self, pos: &QPoint) -> i32 {
         let _call = dtk_sys::NativeCall::new();
-        unsafe { genffi::gen_d_tab_bar_tab_at(self.live_ptr(), pos.ptr as _) }
+        unsafe { genffi::gen_d_tab_bar_tab_at(self.live_ptr(), pos) }
     }
     pub fn current_index(&self) -> i32 {
         let _call = dtk_sys::NativeCall::new();
@@ -5882,11 +5785,11 @@ impl DTabBar {
     }
     pub fn icon_size(&self) -> QSize {
         let _call = dtk_sys::NativeCall::new();
-        QSize::from_raw(unsafe { genffi::gen_d_tab_bar_icon_size(self.live_ptr()) } as _)
+        unsafe { genffi::gen_d_tab_bar_icon_size(self.live_ptr()) }
     }
     pub fn set_icon_size(&self, size: &QSize) {
         let _call = dtk_sys::NativeCall::new();
-        unsafe { genffi::gen_d_tab_bar_set_icon_size(self.live_ptr(), size.ptr as _) }
+        unsafe { genffi::gen_d_tab_bar_set_icon_size(self.live_ptr(), size) }
     }
     pub fn uses_scroll_buttons(&self) -> bool {
         let _call = dtk_sys::NativeCall::new();
@@ -5986,11 +5889,11 @@ impl DTabBar {
     }
     pub fn mask_color(&self) -> QColor {
         let _call = dtk_sys::NativeCall::new();
-        QColor::from_raw(unsafe { genffi::gen_d_tab_bar_mask_color(self.live_ptr()) } as _)
+        unsafe { genffi::gen_d_tab_bar_mask_color(self.live_ptr()) }
     }
     pub fn flash_color(&self) -> QColor {
         let _call = dtk_sys::NativeCall::new();
-        QColor::from_raw(unsafe { genffi::gen_d_tab_bar_flash_color(self.live_ptr()) } as _)
+        unsafe { genffi::gen_d_tab_bar_flash_color(self.live_ptr()) }
     }
     pub fn set_enabled_embed_style(&self, enable: bool) {
         let _call = dtk_sys::NativeCall::new();
@@ -6014,11 +5917,11 @@ impl DTabBar {
     }
     pub fn set_mask_color(&self, maskColor: &QColor) {
         let _call = dtk_sys::NativeCall::new();
-        unsafe { genffi::gen_d_tab_bar_set_mask_color(self.live_ptr(), maskColor.ptr as _) }
+        unsafe { genffi::gen_d_tab_bar_set_mask_color(self.live_ptr(), maskColor) }
     }
     pub fn set_flash_color(&self, flashColor: &QColor) {
         let _call = dtk_sys::NativeCall::new();
-        unsafe { genffi::gen_d_tab_bar_set_flash_color(self.live_ptr(), flashColor.ptr as _) }
+        unsafe { genffi::gen_d_tab_bar_set_flash_color(self.live_ptr(), flashColor) }
     }
     pub fn start_drag(&self, index: i32) {
         let _call = dtk_sys::NativeCall::new();
@@ -6046,9 +5949,7 @@ impl DTabletWindowOptionButton {
     }
     pub fn size_hint(&self) -> QSize {
         let _call = dtk_sys::NativeCall::new();
-        QSize::from_raw(unsafe {
-            genffi::gen_d_tablet_window_option_button_size_hint(self.live_ptr())
-        } as _)
+        unsafe { genffi::gen_d_tablet_window_option_button_size_hint(self.live_ptr()) }
     }
 }
 
@@ -6279,7 +6180,7 @@ impl DToolTip {
     }
     pub fn size_hint(&self) -> QSize {
         let _call = dtk_sys::NativeCall::new();
-        QSize::from_raw(unsafe { genffi::gen_d_tool_tip_size_hint(self.live_ptr()) } as _)
+        unsafe { genffi::gen_d_tool_tip_size_hint(self.live_ptr()) }
     }
 }
 
@@ -6404,11 +6305,11 @@ impl WaterMarkData {
     }
     pub fn color(&self) -> QColor {
         let _call = dtk_sys::NativeCall::new();
-        QColor::from_raw(unsafe { genffi::gen_water_mark_data_color(self.live_ptr()) } as _)
+        unsafe { genffi::gen_water_mark_data_color(self.live_ptr()) }
     }
     pub fn set_color(&self, color: &QColor) {
         let _call = dtk_sys::NativeCall::new();
-        unsafe { genffi::gen_water_mark_data_set_color(self.live_ptr(), color.ptr as _) }
+        unsafe { genffi::gen_water_mark_data_set_color(self.live_ptr(), color) }
     }
     pub fn rotation(&self) -> f64 {
         let _call = dtk_sys::NativeCall::new();
@@ -6525,9 +6426,7 @@ impl DWindowCloseButton {
     }
     pub fn size_hint(&self) -> QSize {
         let _call = dtk_sys::NativeCall::new();
-        QSize::from_raw(
-            unsafe { genffi::gen_d_window_close_button_size_hint(self.live_ptr()) } as _,
-        )
+        unsafe { genffi::gen_d_window_close_button_size_hint(self.live_ptr()) }
     }
 }
 
@@ -6551,7 +6450,7 @@ impl DWindowMaxButton {
     }
     pub fn size_hint(&self) -> QSize {
         let _call = dtk_sys::NativeCall::new();
-        QSize::from_raw(unsafe { genffi::gen_d_window_max_button_size_hint(self.live_ptr()) } as _)
+        unsafe { genffi::gen_d_window_max_button_size_hint(self.live_ptr()) }
     }
     pub fn set_maximized(&self, isMaximized: bool) {
         let _call = dtk_sys::NativeCall::new();
@@ -6575,7 +6474,7 @@ impl DWindowMinButton {
     }
     pub fn size_hint(&self) -> QSize {
         let _call = dtk_sys::NativeCall::new();
-        QSize::from_raw(unsafe { genffi::gen_d_window_min_button_size_hint(self.live_ptr()) } as _)
+        unsafe { genffi::gen_d_window_min_button_size_hint(self.live_ptr()) }
     }
 }
 
@@ -6595,9 +6494,7 @@ impl DWindowOptionButton {
     }
     pub fn size_hint(&self) -> QSize {
         let _call = dtk_sys::NativeCall::new();
-        QSize::from_raw(
-            unsafe { genffi::gen_d_window_option_button_size_hint(self.live_ptr()) } as _,
-        )
+        unsafe { genffi::gen_d_window_option_button_size_hint(self.live_ptr()) }
     }
 }
 
@@ -6617,9 +6514,7 @@ impl DWindowQuitFullButton {
     }
     pub fn size_hint(&self) -> QSize {
         let _call = dtk_sys::NativeCall::new();
-        QSize::from_raw(
-            unsafe { genffi::gen_d_window_quit_full_button_size_hint(self.live_ptr()) } as _,
-        )
+        unsafe { genffi::gen_d_window_quit_full_button_size_hint(self.live_ptr()) }
     }
 }
 

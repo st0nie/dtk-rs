@@ -7,12 +7,12 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | Native API | Native result | Rust ownership | Evidence |
 |---|---|---|---|
 | `DGuiApplicationHelper::instance` | `DGuiApplicationHelper*` | `object_borrow` | `dtkgui/src/kernel/dguiapplicationhelper.cpp`: returns native global helper; staticCleanApplication post routine resets it |
-| `DGuiApplicationHelper::adjustColor` | `*mut QColor` | owned heap copy | shim conversion; `dguiapplicationhelper.h` |
-| `DGuiApplicationHelper::adjustColor` Qt value inputs | `QColor * base` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dguiapplicationhelper.h` native value/reference signature |
+| `DGuiApplicationHelper::adjustColor` | `QColor` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dguiapplicationhelper.h` |
+| `DGuiApplicationHelper::adjustColor` Qt value inputs | `const QColor &base` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dguiapplicationhelper.h` native value/reference signature |
 | `DGuiApplicationHelper::adjustColor` | `*mut QImage` | owned heap copy | shim conversion; `dguiapplicationhelper.h` |
 | `DGuiApplicationHelper::adjustColor` Qt value inputs | `QImage * base` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dguiapplicationhelper.h` native value/reference signature |
-| `DGuiApplicationHelper::blendColor` | `*mut QColor` | owned heap copy | shim conversion; `dguiapplicationhelper.h` |
-| `DGuiApplicationHelper::blendColor` Qt value inputs | `QColor * substrate, QColor * superstratum` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dguiapplicationhelper.h` native value/reference signature |
+| `DGuiApplicationHelper::blendColor` | `QColor` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dguiapplicationhelper.h` |
+| `DGuiApplicationHelper::blendColor` Qt value inputs | `const QColor &substrate, const QColor &superstratum` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dguiapplicationhelper.h` native value/reference signature |
 | `DGuiApplicationHelper::standardPalette` | `*mut DPalette` | owned heap copy | shim conversion; `dguiapplicationhelper.h` |
 | `DGuiApplicationHelper::generatePaletteColor` | `()` | copied scalar / no result | shim conversion; `dguiapplicationhelper.h` |
 | `DGuiApplicationHelper::generatePaletteColor` Qt value inputs | `DPalette * base` | exclusive mutable value borrow; no QObject ownership transfer | explicit value mapping; `dguiapplicationhelper.h` native value/reference signature |
@@ -29,7 +29,7 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DGuiApplicationHelper::setApplicationPalette` Qt value inputs | `DPalette * palette` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dguiapplicationhelper.h` native value/reference signature |
 | `DGuiApplicationHelper::fontManager` | `DFontManager*` | `object_borrow` | `dtkgui/src/kernel/dguiapplicationhelper.cpp`: returns Q_GLOBAL_STATIC(DFontManager, _globalFM); no transfer |
 | `DGuiApplicationHelper::toColorType` | `i32` | copied scalar / no result | shim conversion; `dguiapplicationhelper.h` |
-| `DGuiApplicationHelper::toColorType` Qt value inputs | `QColor * color` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dguiapplicationhelper.h` native value/reference signature |
+| `DGuiApplicationHelper::toColorType` Qt value inputs | `const QColor &color` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dguiapplicationhelper.h` native value/reference signature |
 | `DGuiApplicationHelper::toColorType` | `i32` | copied scalar / no result | shim conversion; `dguiapplicationhelper.h` |
 | `DGuiApplicationHelper::toColorType` Qt value inputs | `QPalette * palette` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dguiapplicationhelper.h` native value/reference signature |
 | `DGuiApplicationHelper::themeType` | `i32` | copied scalar / no result | shim conversion; `dguiapplicationhelper.h` |
@@ -49,9 +49,9 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DImageHandler::fileName` | `String` | owned Rust strings/container | shim conversion; `dimagehandler.h` |
 | `DImageHandler::readImage` | `*mut QImage` | owned heap copy | shim conversion; `dimagehandler.h` |
 | `DImageHandler::thumbnail` | `*mut QImage` | owned heap copy | shim conversion; `dimagehandler.h` |
-| `DImageHandler::thumbnail` Qt value inputs | `QSize * size` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dimagehandler.h` native value/reference signature |
+| `DImageHandler::thumbnail` Qt value inputs | `const QSize &size` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dimagehandler.h` native value/reference signature |
 | `DImageHandler::imageFormat` | `String` | owned Rust strings/container | shim conversion; `dimagehandler.h` |
-| `DImageHandler::imageSize` | `*mut QSize` | owned heap copy | shim conversion; `dimagehandler.h` |
+| `DImageHandler::imageSize` | `QSize` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dimagehandler.h` |
 | `DImageHandler::findAllMetaData` | `Vec<String>` | owned Rust strings/container | shim conversion; `dimagehandler.h` |
 | `DImageHandler::clearCache` | `()` | copied scalar / no result | shim conversion; `dimagehandler.h` |
 | `DImageHandler::saveImage` | `bool` | copied scalar / no result | shim conversion; `dimagehandler.h` |
@@ -99,7 +99,7 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DImageHandler::changeStauration` | `*mut QImage` | owned heap copy | shim conversion; `dimagehandler.h` |
 | `DImageHandler::changeStauration` Qt value inputs | `QImage * img` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dimagehandler.h` native value/reference signature |
 | `DImageHandler::replacePointColor` | `*mut QImage` | owned heap copy | shim conversion; `dimagehandler.h` |
-| `DImageHandler::replacePointColor` Qt value inputs | `QImage * img, QColor * oldColor, QColor * newColor` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dimagehandler.h` native value/reference signature |
+| `DImageHandler::replacePointColor` Qt value inputs | `QImage * img, const QColor &oldColor, const QColor &newColor` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dimagehandler.h` native value/reference signature |
 | `DImageHandler::flipHorizontal` | `*mut QImage` | owned heap copy | shim conversion; `dimagehandler.h` |
 | `DImageHandler::flipHorizontal` Qt value inputs | `QImage * img` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dimagehandler.h` native value/reference signature |
 | `DImageHandler::flipVertical` | `*mut QImage` | owned heap copy | shim conversion; `dimagehandler.h` |

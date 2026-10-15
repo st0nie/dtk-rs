@@ -819,13 +819,23 @@ bool model_insert_rows(QAbstractItemModel *model, int32_t row, int32_t count) {
 bool model_remove_rows(QAbstractItemModel *model, int32_t row, int32_t count) {
     return model->removeRows(row, count);
 }
+QPersistentModelIndex *model_index(QAbstractItemModel *model, int32_t row, int32_t col, QPersistentModelIndex *parent) {
+    const QModelIndex p = parent ? QModelIndex(*parent) : QModelIndex();
+    if (p.isValid() && p.model() != model)
+        return new QPersistentModelIndex;
+    return new QPersistentModelIndex(model->index(row, col, p));
+}
+bool model_set_index_data(QAbstractItemModel *model, QPersistentModelIndex *index, QVariant *data, int32_t role) {
+    // Qt asserts/UB when an index from another model is used: reject it.
+    return index->isValid() && index->model() == model && model->setData(*index, *data, role);
+}
 
 // ---- QTableWidgetItem ----
 void item_set_icon(QTableWidgetItem *it, QIcon *icon) { it->setIcon(*icon); }
 void item_set_text_alignment(QTableWidgetItem *it, int32_t alignment) {
     it->setTextAlignment(Qt::Alignment::fromInt(alignment));
 }
-void item_set_foreground(QTableWidgetItem *it, QColor *color) { it->setForeground(*color); }
+void item_set_foreground(QTableWidgetItem *it, const QColor &color) { it->setForeground(color); }
 void item_set_data_string(QTableWidgetItem *it, int32_t role, rust::Str value) {
     it->setData(role, from_rust_str(value));
 }
@@ -859,9 +869,6 @@ QVariant *variant_list_get(QVariantList *list, size_t index) {
     return new QVariant(list->at(static_cast<qsizetype>(index)));
 }
 void variant_list_delete(QVariantList *list) { delete list; }
-QColor *color_new_rgb(int32_t r, int32_t g, int32_t b, int32_t a) { return new QColor(r, g, b, a); }
-int32_t color_rgba(QColor *c) { return static_cast<int32_t>(c->rgba()); }
-void color_delete(QColor *c) { delete c; }
 QFont *font_new() { return new QFont; }
 void font_set_point_size(QFont *f, int32_t size) { f->setPointSize(size); }
 void font_set_bold(QFont *f, bool bold) { f->setBold(bold); }
@@ -884,12 +891,12 @@ void font_set_monospace(QFont *f) {
 void font_set_family(QFont *f, rust::Str name) { f->setFamily(from_rust_str(name)); }
 void font_delete(QFont *f) { delete f; }
 QPalette *palette_new() { return new QPalette; }
-void palette_set_color(QPalette *pal, int32_t group, int32_t role, QColor *color) {
-    pal->setColor(static_cast<QPalette::ColorGroup>(group), static_cast<QPalette::ColorRole>(role), *color);
+void palette_set_color(QPalette *pal, int32_t group, int32_t role, const QColor &color) {
+    pal->setColor(static_cast<QPalette::ColorGroup>(group), static_cast<QPalette::ColorRole>(role), color);
 }
-QColor *palette_color(QPalette *pal, int32_t group, int32_t role) {
-    return new QColor(pal->color(static_cast<QPalette::ColorGroup>(group),
-                                 static_cast<QPalette::ColorRole>(role)));
+QColor palette_color(QPalette *pal, int32_t group, int32_t role) {
+    return pal->color(static_cast<QPalette::ColorGroup>(group),
+                      static_cast<QPalette::ColorRole>(role));
 }
 void palette_delete(QPalette *pal) { delete pal; }
 DPalette *dpalette_new() { return new DPalette; }
@@ -906,7 +913,7 @@ QImage *image_from_file(rust::Str path) { return new QImage(from_rust_str(path))
 bool image_is_null(QImage *image) { return image->isNull(); }
 int32_t image_width(QImage *image) { return image->width(); }
 int32_t image_height(QImage *image) { return image->height(); }
-void image_fill(QImage *image, QColor *color) { image->fill(*color); }
+void image_fill(QImage *image, const QColor &color) { image->fill(color); }
 void image_set_text(QImage *image, rust::Str key, rust::Str value) {
     image->setText(from_rust_str(key), from_rust_str(value));
 }
@@ -916,8 +923,8 @@ rust::String image_text(QImage *image, rust::Str key) {
 bool image_save(QImage *image, rust::Str path) {
     return image->save(from_rust_str(path));
 }
-QColor *image_pixel_color(QImage *image, int32_t x, int32_t y) {
-    return new QColor(image->pixelColor(x, y));
+QColor image_pixel_color(QImage *image, int32_t x, int32_t y) {
+    return image->pixelColor(x, y);
 }
 void image_delete(QImage *image) { delete image; }
 QPainterPath *painter_path_new() { return new QPainterPath; }
@@ -927,8 +934,8 @@ void painter_path_add_rect(QPainterPath *path, double x, double y, double w, dou
 bool painter_path_is_empty(QPainterPath *path) { return path->isEmpty(); }
 int32_t painter_path_element_count(QPainterPath *path) { return path->elementCount(); }
 void painter_path_delete(QPainterPath *path) { delete path; }
-QBrush *brush_from_color(QColor *color) { return new QBrush(*color); }
-QColor *brush_color(QBrush *brush) { return new QColor(brush->color()); }
+QBrush *brush_from_color(const QColor &color) { return new QBrush(color); }
+QColor brush_color(QBrush *brush) { return brush->color(); }
 void brush_delete(QBrush *brush) { delete brush; }
 QKeySequence *key_sequence_from_string(rust::Str text) {
     return new QKeySequence(from_rust_str(text), QKeySequence::PortableText);
@@ -937,16 +944,6 @@ rust::String key_sequence_to_string(QKeySequence *seq) {
     return to_rust_string(seq->toString(QKeySequence::PortableText));
 }
 void key_sequence_delete(QKeySequence *seq) { delete seq; }
-QUrl *url_from_string(rust::Str url) { return new QUrl(from_rust_str(url)); }
-rust::String url_to_string(QUrl *url) { return to_rust_string(url->toString()); }
-bool url_is_valid(QUrl *url) { return url->isValid(); }
-void url_delete(QUrl *url) { delete url; }
-
-// ---- QMargins ----
-QMargins *q_margins_new(int32_t left, int32_t top, int32_t right, int32_t bottom) {
-    return new QMargins(left, top, right, bottom);
-}
-void margins_delete(QMargins *m) { delete m; }
 
 // ---- DDciIcon (dtkgui) ----
 DDciIcon *ddci_icon_new() { return new DDciIcon; }
@@ -957,16 +954,6 @@ void ddci_icon_delete(DDciIcon *i) { delete i; }
 QPixmap *standard_icon_pixmap(QWidget *w, int32_t icon, int32_t size) {
     return new QPixmap(w->style()->standardIcon(static_cast<QStyle::StandardPixmap>(icon)).pixmap(size, size));
 }
-QSize *size_new(int32_t w, int32_t h) { return new QSize(w, h); }
-void size_delete(QSize *s) { delete s; }
-QPoint *point_new(int32_t x, int32_t y) { return new QPoint(x, y); }
-void point_delete(QPoint *p) { delete p; }
-QRect *rect_new(int32_t x, int32_t y, int32_t w, int32_t h) { return new QRect(x, y, w, h); }
-void rect_delete(QRect *r) { delete r; }
-int32_t rect_width(QRect *r) { return r->width(); }
-int32_t rect_height(QRect *r) { return r->height(); }
-int32_t rect_x(QRect *r) { return r->x(); }
-int32_t rect_y(QRect *r) { return r->y(); }
 void icon_delete(QIcon *icon) { delete icon; }
 
 // ---- QSocketNotifier ----
@@ -992,7 +979,7 @@ void painter_draw_text_at(QPainter *p, int32_t x, int32_t y, rust::Str text) {
 
 void painter_save(QPainter *p) { p->save(); }
 void painter_restore(QPainter *p) { p->restore(); }
-void painter_set_pen_color(QPainter *p, QColor *color) { p->setPen(*color); }
+void painter_set_pen_color(QPainter *p, const QColor &color) { p->setPen(color); }
 void painter_set_font(QPainter *p, QFont *font) { p->setFont(*font); }
 void painter_draw_text(QPainter *p, int32_t x, int32_t y, int32_t w, int32_t h, int32_t flags,
                        rust::Str text) {
@@ -1004,8 +991,8 @@ void painter_draw_pixmap(QPainter *p, int32_t x, int32_t y, int32_t w, int32_t h
 void painter_draw_icon(QPainter *p, int32_t x, int32_t y, int32_t w, int32_t h, QIcon *icon) {
     icon->paint(p, QRect(x, y, w, h));
 }
-void painter_fill_rect(QPainter *p, int32_t x, int32_t y, int32_t w, int32_t h, QColor *color) {
-    p->fillRect(QRect(x, y, w, h), *color);
+void painter_fill_rect(QPainter *p, int32_t x, int32_t y, int32_t w, int32_t h, const QColor &color) {
+    p->fillRect(QRect(x, y, w, h), color);
 }
 void painter_set_clip_rect(QPainter *p, int32_t x, int32_t y, int32_t w, int32_t h) {
     p->setClipRect(x, y, w, h);
@@ -1024,6 +1011,18 @@ rust::String index_data_string(QModelIndex *idx, int32_t role) {
 bool index_data_bool(QModelIndex *idx, int32_t role) { return idx->data(role).toBool(); }
 int64_t index_data_i64(QModelIndex *idx, int32_t role) {
     return idx->data(role).toLongLong();
+}
+QPersistentModelIndex *persistent_index_from(QModelIndex *idx) { return new QPersistentModelIndex(*idx); }
+QPersistentModelIndex *persistent_index_clone(QPersistentModelIndex *idx) {
+    return new QPersistentModelIndex(*idx);
+}
+void persistent_index_delete(QPersistentModelIndex *idx) { delete idx; }
+bool persistent_index_is_valid(QPersistentModelIndex *idx) { return idx->isValid(); }
+int32_t persistent_index_row(QPersistentModelIndex *idx) { return idx->row(); }
+int32_t persistent_index_column(QPersistentModelIndex *idx) { return idx->column(); }
+QVariant *persistent_index_data(QPersistentModelIndex *idx, int32_t role) { return new QVariant(idx->data(role)); }
+QPersistentModelIndex *persistent_index_parent(QPersistentModelIndex *idx) {
+    return new QPersistentModelIndex(idx->parent());
 }
 
 // ---- QTimer ----

@@ -220,13 +220,15 @@ fn receiver_deletion_during_queued_callback() {
         let dialog = DMessageBox::new();
         let calls = Rc::new(Cell::new(0));
         let (view, nested, observed) = (button.clone(), dialog.clone(), calls.clone());
-        button.on_clicked(move || {
-            observed.set(observed.get() + 1);
-            view.delete_later();
-            let close = nested.clone();
-            QTimer::single_shot(0, move || close.close());
-            nested.exec();
-        });
+        button
+            .on_clicked(move |_| {
+                observed.set(observed.get() + 1);
+                view.delete_later();
+                let close = nested.clone();
+                QTimer::single_shot(0, move || close.close());
+                nested.exec();
+            })
+            .release();
         button.click();
         assert_eq!(calls.get(), 1);
         QTimer::single_shot(0, move || {
@@ -261,9 +263,11 @@ fn native_destruction_retires_captures() {
             button: independent.clone(),
             observed: retired.clone(),
         };
-        child.on_clicked(move || {
-            let _ = &capture;
-        });
+        child
+            .on_clicked(move |_| {
+                let _ = &capture;
+            })
+            .release();
         parent.delete_later();
         QTimer::single_shot(0, move || {
             assert!(!child.is_alive());
@@ -311,7 +315,7 @@ fn paint_and_close_return_borrows() {
                 expect_panic("native state is borrowed", || QTimer::single_shot(0, || {}));
                 parent.delete_later(); // request only; never flush from paint
                 drop(value.take()); // unique opaque deletion is retired, too
-                painter.fill_rect(0, 0, width, height, &dtk::QColor::rgb(1, 2, 3));
+                painter.fill_rect(0, 0, width, height, &dtk::QColor::from_rgb(1, 2, 3));
                 paint_seen.set(true);
             }
         });
@@ -327,7 +331,7 @@ fn paint_and_close_return_borrows() {
                 index.data_string(dtk::qt::item_role::DISPLAY_ROLE),
                 "paint index"
             );
-            painter.set_pen_color(&dtk::QColor::rgb(3, 2, 1));
+            painter.set_pen_color(&dtk::QColor::from_rgb(3, 2, 1));
             model_seen.set(true);
         });
         table.set_delegate_for_column(0, &delegate);
@@ -338,18 +342,20 @@ fn paint_and_close_return_borrows() {
         let checked = result.clone();
         let check = QTimer::new(app);
         let polls = Rc::new(Cell::new(0));
-        check.on_timeout(move || {
-            polls.set(polls.get() + 1);
-            if painted.get() && delegated.get() && !window.is_alive() {
-                checked.set(true);
-                DApplication::quit();
-            } else {
-                assert!(
-                    polls.get() < 500,
-                    "native paint/retirement checks did not finish"
-                );
-            }
-        });
+        check
+            .on_timeout(move || {
+                polls.set(polls.get() + 1);
+                if painted.get() && delegated.get() && !window.is_alive() {
+                    checked.set(true);
+                    DApplication::quit();
+                } else {
+                    assert!(
+                        polls.get() < 500,
+                        "native paint/retirement checks did not finish"
+                    );
+                }
+            })
+            .release();
         check.start(1);
         assert_eq!(app.exec(), 0);
         assert!(result.get());

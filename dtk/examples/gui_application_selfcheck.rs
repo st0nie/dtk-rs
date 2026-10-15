@@ -1,5 +1,6 @@
 //! Deterministic GUI shutdown. QT_QPA_PLATFORM=offscreen cargo run --example gui_application_selfcheck
 //! Native QPointer witnesses distinguish actual deletion from scope invalidation.
+use dtk::ColorExt;
 use dtk::core::DConfig;
 use dtk::gui::{DGuiApplicationHelper, FontSizeType};
 use dtk::widgets::{
@@ -66,7 +67,7 @@ impl Drop for ReenterOnDrop {
             QVariant::from_string("cleanup value").to_string(),
             "cleanup value"
         );
-        assert_eq!(QColor::rgb(1, 2, 3).rgba_u32(), 0xff010203);
+        assert_eq!(QColor::from_rgb(1, 2, 3).rgba_u32(), 0xff010203);
         let image = QImage::new(1, 1);
         assert_eq!(image.width(), 1);
         drop(QFont::new());
@@ -238,9 +239,13 @@ fn main() {
                     font: font.clone(),
                 };
                 let marker = capture(&captures);
-                ids.push(timer.on_timeout(move || {
-                    let _ = (&marker, &reenter);
-                }));
+                ids.push(
+                    timer
+                        .on_timeout(move || {
+                            let _ = (&marker, &reenter);
+                        })
+                        .release(),
+                );
                 timer.start(60_000);
                 witnesses.borrow_mut().push(witness(&timer));
                 let config = DConfig::create_generic("dtk-rs-gui-scope-missing-meta", "").unwrap();
@@ -408,9 +413,11 @@ fn main() {
         });
         let timer = QTimer::new(app);
         let marker = capture(&captures);
-        timer.on_timeout(move || {
-            let _ = &marker;
-        });
+        timer
+            .on_timeout(move || {
+                let _ = &marker;
+            })
+            .release();
         // These APIs return borrowed process singletons: never delete them.
         let font_size = DFontSizeManager::instance().unwrap();
         let provider = DFileIconProvider::global_provider().unwrap();

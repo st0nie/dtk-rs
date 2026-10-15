@@ -31,17 +31,17 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DAbstractDialog()` | `new DAbstractDialog` | constructor `Owned` | constructor; `dabstractdialog.h` |
 | `DAbstractDialog::displayPosition` | `i32` | copied scalar / no result | shim conversion; `dabstractdialog.h` |
 | `DAbstractDialog::move` | `()` | copied scalar / no result | shim conversion; `dabstractdialog.h` |
-| `DAbstractDialog::move` Qt value inputs | `QPoint * pos` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dabstractdialog.h` native value/reference signature |
+| `DAbstractDialog::move` Qt value inputs | `const QPoint &pos` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dabstractdialog.h` native value/reference signature |
 | `DAbstractDialog::move` | `()` | copied scalar / no result | shim conversion; `dabstractdialog.h` |
 | `DAbstractDialog::setGeometry` | `()` | copied scalar / no result | shim conversion; `dabstractdialog.h` |
-| `DAbstractDialog::setGeometry` Qt value inputs | `QRect * rect` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dabstractdialog.h` native value/reference signature |
+| `DAbstractDialog::setGeometry` Qt value inputs | `const QRect &rect` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dabstractdialog.h` native value/reference signature |
 | `DAbstractDialog::setGeometry` | `()` | copied scalar / no result | shim conversion; `dabstractdialog.h` |
 | `DAbstractDialog::moveToCenter` | `()` | copied scalar / no result | shim conversion; `dabstractdialog.h` |
 | `DAbstractDialog::moveToTopRight` | `()` | copied scalar / no result | shim conversion; `dabstractdialog.h` |
 | `DAbstractDialog::moveToCenterByRect` | `()` | copied scalar / no result | shim conversion; `dabstractdialog.h` |
-| `DAbstractDialog::moveToCenterByRect` Qt value inputs | `QRect * rect` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dabstractdialog.h` native value/reference signature |
+| `DAbstractDialog::moveToCenterByRect` Qt value inputs | `const QRect &rect` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dabstractdialog.h` native value/reference signature |
 | `DAbstractDialog::moveToTopRightByRect` | `()` | copied scalar / no result | shim conversion; `dabstractdialog.h` |
-| `DAbstractDialog::moveToTopRightByRect` Qt value inputs | `QRect * rect` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dabstractdialog.h` native value/reference signature |
+| `DAbstractDialog::moveToTopRightByRect` Qt value inputs | `const QRect &rect` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dabstractdialog.h` native value/reference signature |
 | `DAbstractDialog::setDisplayPosition` | `()` | copied scalar / no result | shim conversion; `dabstractdialog.h` |
 | `DAccessibilityChecker()` | `new DAccessibilityChecker` | constructor `Owned` | constructor; `daccessibilitychecker.h` |
 | `DAccessibilityChecker::setOutputFormat` | `()` | copied scalar / no result | shim conversion; `daccessibilitychecker.h` |
@@ -51,9 +51,9 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DAlertControl::setAlert` | `()` | copied scalar / no result | shim conversion; `dalertcontrol.h` |
 | `DAlertControl::isAlert` | `bool` | copied scalar / no result | shim conversion; `dalertcontrol.h` |
 | `DAlertControl::setAlertColor` | `()` | copied scalar / no result | shim conversion; `dalertcontrol.h` |
-| `DAlertControl::setAlertColor` Qt value inputs | `QColor * c` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dalertcontrol.h` native value/reference signature |
-| `DAlertControl::alertColor` | `*mut QColor` | owned heap copy | shim conversion; `dalertcontrol.h` |
-| `DAlertControl::defaultAlertColor` | `*mut QColor` | owned heap copy | shim conversion; `dalertcontrol.h` |
+| `DAlertControl::setAlertColor` Qt value inputs | `const QColor &c` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dalertcontrol.h` native value/reference signature |
+| `DAlertControl::alertColor` | `QColor` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dalertcontrol.h` |
+| `DAlertControl::defaultAlertColor` | `QColor` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dalertcontrol.h` |
 | `DAlertControl::setMessageAlignment` | `()` | copied scalar / no result | shim conversion; `dalertcontrol.h` |
 | `DAlertControl::messageAlignment` | `i32` | copied scalar / no result | shim conversion; `dalertcontrol.h` |
 | `DAlertControl::showAlertMessage` | `()` | copied scalar / no result | shim conversion; `dalertcontrol.h` |
@@ -114,7 +114,7 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DAnchorsBase::moveHorizontalCenter` | `()` | copied scalar / no result | shim conversion; `danchors.h` |
 | `DAnchorsBase::moveVerticalCenter` | `()` | copied scalar / no result | shim conversion; `danchors.h` |
 | `DAnchorsBase::moveCenter` | `()` | copied scalar / no result | shim conversion; `danchors.h` |
-| `DAnchorsBase::moveCenter` Qt value inputs | `QPoint * arg` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `danchors.h` native value/reference signature |
+| `DAnchorsBase::moveCenter` Qt value inputs | `const QPoint &arg` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `danchors.h` native value/reference signature |
 | `ArrowButtonIcon()` | `new ArrowButtonIcon` | constructor `Owned` | constructor; `darrowbutton.h` |
 | `ArrowButtonIcon::setArrowDirection` | `()` | copied scalar / no result | shim conversion; `darrowbutton.h` |
 | `ArrowButtonIcon::setButtonState` | `()` | copied scalar / no result | shim conversion; `darrowbutton.h` |
@@ -135,8 +135,8 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DArrowRectangle::arrowY` | `i32` | copied scalar / no result | shim conversion; `darrowrectangle.h` |
 | `DArrowRectangle::margin` | `i32` | copied scalar / no result | shim conversion; `darrowrectangle.h` |
 | `DArrowRectangle::borderWidth` | `i32` | copied scalar / no result | shim conversion; `darrowrectangle.h` |
-| `DArrowRectangle::borderColor` | `*mut QColor` | owned heap copy | shim conversion; `darrowrectangle.h` |
-| `DArrowRectangle::backgroundColor` | `*mut QColor` | owned heap copy | shim conversion; `darrowrectangle.h` |
+| `DArrowRectangle::borderColor` | `QColor` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `darrowrectangle.h` |
+| `DArrowRectangle::backgroundColor` | `QColor` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `darrowrectangle.h` |
 | `DArrowRectangle::arrowDirection` | `i32` | copied scalar / no result | shim conversion; `darrowrectangle.h` |
 | `DArrowRectangle::setRadius` | `()` | copied scalar / no result | shim conversion; `darrowrectangle.h` |
 | `DArrowRectangle::setRadiusForceEnable` | `()` | copied scalar / no result | shim conversion; `darrowrectangle.h` |
@@ -147,9 +147,9 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DArrowRectangle::setMargin` | `()` | copied scalar / no result | shim conversion; `darrowrectangle.h` |
 | `DArrowRectangle::setBorderWidth` | `()` | copied scalar / no result | shim conversion; `darrowrectangle.h` |
 | `DArrowRectangle::setBorderColor` | `()` | copied scalar / no result | shim conversion; `darrowrectangle.h` |
-| `DArrowRectangle::setBorderColor` Qt value inputs | `QColor * borderColor` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `darrowrectangle.h` native value/reference signature |
+| `DArrowRectangle::setBorderColor` Qt value inputs | `const QColor &borderColor` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `darrowrectangle.h` native value/reference signature |
 | `DArrowRectangle::setBackgroundColor` | `()` | copied scalar / no result | shim conversion; `darrowrectangle.h` |
-| `DArrowRectangle::setBackgroundColor` Qt value inputs | `QColor * backgroundColor` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `darrowrectangle.h` native value/reference signature |
+| `DArrowRectangle::setBackgroundColor` Qt value inputs | `const QColor &backgroundColor` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `darrowrectangle.h` native value/reference signature |
 | `DArrowRectangle::setBackgroundColor` | `()` | copied scalar / no result | shim conversion; `darrowrectangle.h` |
 | `DArrowRectangle::setArrowDirection` | `()` | copied scalar / no result | shim conversion; `darrowrectangle.h` |
 | `DArrowRectangle::setWidth` | `()` | copied scalar / no result | shim conversion; `darrowrectangle.h` |
@@ -160,7 +160,7 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DArrowRectangle::getContent` | `QWidget*` | `object_borrow` | `dtkwidget/src/widgets/darrowrectangle.cpp`: returns existing QPointer m_content |
 | `DArrowRectangle::resizeWithContent` | `()` | copied scalar / no result | shim conversion; `darrowrectangle.h` |
 | `DArrowRectangle::move` | `()` | copied scalar / no result | shim conversion; `darrowrectangle.h` |
-| `DArrowRectangle::getFixedSize` | `*mut QSize` | owned heap copy | shim conversion; `darrowrectangle.h` |
+| `DArrowRectangle::getFixedSize` | `QSize` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `darrowrectangle.h` |
 | `DArrowRectangle::shadowXOffset` | `f64` | copied scalar / no result | shim conversion; `darrowrectangle.h` |
 | `DArrowRectangle::shadowYOffset` | `f64` | copied scalar / no result | shim conversion; `darrowrectangle.h` |
 | `DArrowRectangle::shadowBlurRadius` | `f64` | copied scalar / no result | shim conversion; `darrowrectangle.h` |
@@ -170,12 +170,12 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DArrowRectangle::setLeftRightRadius` | `()` | copied scalar / no result | shim conversion; `darrowrectangle.h` |
 | `DArrowRectangle::setRadiusArrowStyleEnable` | `()` | copied scalar / no result | shim conversion; `darrowrectangle.h` |
 | `DBackgroundGroup()` | `new DBackgroundGroup` | constructor `Owned` | constructor; `dbackgroundgroup.h` |
-| `DBackgroundGroup::itemMargins` | `*mut QMargins` | owned heap copy | shim conversion; `dbackgroundgroup.h` |
+| `DBackgroundGroup::itemMargins` | `QMargins` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dbackgroundgroup.h` |
 | `DBackgroundGroup::useWidgetBackground` | `bool` | copied scalar / no result | shim conversion; `dbackgroundgroup.h` |
 | `DBackgroundGroup::setLayout` | `()` | copied scalar / no result | shim conversion; `dbackgroundgroup.h` |
 | `DBackgroundGroup::setLayout` parameters | `QLayout*` | Qt adoption | native `dbackgroundgroup.h` implementation: QWidget::setLayout; only valid layout handoff |
 | `DBackgroundGroup::setItemMargins` | `()` | copied scalar / no result | shim conversion; `dbackgroundgroup.h` |
-| `DBackgroundGroup::setItemMargins` Qt value inputs | `QMargins * itemMargins` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dbackgroundgroup.h` native value/reference signature |
+| `DBackgroundGroup::setItemMargins` Qt value inputs | `const QMargins &itemMargins` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dbackgroundgroup.h` native value/reference signature |
 | `DBackgroundGroup::setItemSpacing` | `()` | copied scalar / no result | shim conversion; `dbackgroundgroup.h` |
 | `DBackgroundGroup::setUseWidgetBackground` | `()` | copied scalar / no result | shim conversion; `dbackgroundgroup.h` |
 | `DBaseLine()` | `new DBaseLine` | constructor `Owned` | constructor; `dbaseline.h` |
@@ -197,7 +197,7 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DBlurEffectWidget::blurRectYRadius` | `i32` | copied scalar / no result | shim conversion; `dblureffectwidget.h` |
 | `DBlurEffectWidget::isFull` | `bool` | copied scalar / no result | shim conversion; `dblureffectwidget.h` |
 | `DBlurEffectWidget::blurEnabled` | `bool` | copied scalar / no result | shim conversion; `dblureffectwidget.h` |
-| `DBlurEffectWidget::maskColor` | `*mut QColor` | owned heap copy | shim conversion; `dblureffectwidget.h` |
+| `DBlurEffectWidget::maskColor` | `QColor` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dblureffectwidget.h` |
 | `DBlurEffectWidget::maskAlpha` | `u8` | copied scalar / no result | shim conversion; `dblureffectwidget.h` |
 | `DBlurEffectWidget::setMaskPath` | `()` | copied scalar / no result | shim conversion; `dblureffectwidget.h` |
 | `DBlurEffectWidget::setMaskPath` Qt value inputs | `QPainterPath * path` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dblureffectwidget.h` native value/reference signature |
@@ -210,7 +210,7 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DBlurEffectWidget::setBlurRectYRadius` | `()` | copied scalar / no result | shim conversion; `dblureffectwidget.h` |
 | `DBlurEffectWidget::setMaskAlpha` | `()` | copied scalar / no result | shim conversion; `dblureffectwidget.h` |
 | `DBlurEffectWidget::setMaskColor` | `()` | copied scalar / no result | shim conversion; `dblureffectwidget.h` |
-| `DBlurEffectWidget::setMaskColor` Qt value inputs | `QColor * maskColor` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dblureffectwidget.h` native value/reference signature |
+| `DBlurEffectWidget::setMaskColor` Qt value inputs | `const QColor &maskColor` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dblureffectwidget.h` native value/reference signature |
 | `DBlurEffectWidget::setMaskColor` | `()` | copied scalar / no result | shim conversion; `dblureffectwidget.h` |
 | `DBlurEffectWidget::setFull` | `()` | copied scalar / no result | shim conversion; `dblureffectwidget.h` |
 | `DBlurEffectWidget::setBlurEnabled` | `()` | copied scalar / no result | shim conversion; `dblureffectwidget.h` |
@@ -219,7 +219,7 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DBlurEffectGroup::setSourceImage` Qt value inputs | `QImage * image` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dblureffectwidget.h` native value/reference signature |
 | `DBlurEffectGroup::addWidget` | `()` | copied scalar / no result | shim conversion; `dblureffectwidget.h` |
 | `DBlurEffectGroup::addWidget` parameters | `DBlurEffectWidget*` | retained borrow | native `dblureffectwidget.h` implementation: widget destructor removes itself from group; group destructor clears widget group pointers |
-| `DBlurEffectGroup::addWidget` Qt value inputs | `QPoint * offset` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dblureffectwidget.h` native value/reference signature |
+| `DBlurEffectGroup::addWidget` Qt value inputs | `const QPoint &offset` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dblureffectwidget.h` native value/reference signature |
 | `DBlurEffectGroup::removeWidget` | `()` | copied scalar / no result | shim conversion; `dblureffectwidget.h` |
 | `DBlurEffectGroup::removeWidget` parameters | `DBlurEffectWidget*` | borrow; releases relation | native `dblureffectwidget.h` implementation: removes map entry and clears widget group pointer |
 | `DBlurEffectWithBorderWidget()` | `new DBlurEffectWithBorderWidget` | constructor `Owned` | constructor; `dblureffectwithborderwidget.h` |
@@ -228,7 +228,7 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DBoxWidget::layout` | `QBoxLayout*` | `object_borrow` | `dtkwidget/src/widgets/dboxwidget.cpp`: returns the installed layout |
 | `DBoxWidget::addWidget` | `()` | copied scalar / no result | shim conversion; `dboxwidget.h` |
 | `DBoxWidget::addWidget` parameters | `QWidget*` | Qt adoption | native `dboxwidget.h` implementation: QBoxLayout owns item and reparents widget to containing widget |
-| `DBoxWidget::sizeHint` | `*mut QSize` | owned heap copy | shim conversion; `dboxwidget.h` |
+| `DBoxWidget::sizeHint` | `QSize` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dboxwidget.h` |
 | `DHBoxWidget()` | `new DHBoxWidget` | constructor `Owned` | constructor; `dboxwidget.h` |
 | `DVBoxWidget()` | `new DVBoxWidget` | constructor `Owned` | constructor; `dboxwidget.h` |
 | `DButtonBoxButton::setIcon` | `()` | copied scalar / no result | shim conversion; `dbuttonbox.h` |
@@ -237,9 +237,9 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DButtonBoxButton::setIcon` | `()` | copied scalar / no result | shim conversion; `dbuttonbox.h` |
 | `DButtonBoxButton::setIcon` Qt value inputs | `DDciIcon * icon` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dbuttonbox.h` native value/reference signature |
 | `DButtonBoxButton::dciIcon` | `*mut DDciIcon` | owned heap copy | shim conversion; `dbuttonbox.h` |
-| `DButtonBoxButton::iconSize` | `*mut QSize` | owned heap copy | shim conversion; `dbuttonbox.h` |
-| `DButtonBoxButton::sizeHint` | `*mut QSize` | owned heap copy | shim conversion; `dbuttonbox.h` |
-| `DButtonBoxButton::minimumSizeHint` | `*mut QSize` | owned heap copy | shim conversion; `dbuttonbox.h` |
+| `DButtonBoxButton::iconSize` | `QSize` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dbuttonbox.h` |
+| `DButtonBoxButton::sizeHint` | `QSize` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dbuttonbox.h` |
+| `DButtonBoxButton::minimumSizeHint` | `QSize` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dbuttonbox.h` |
 | `DButtonBox()` | `new DButtonBox` | constructor `Owned` | constructor; `dbuttonbox.h` |
 | `DButtonBox::orientation` | `i32` | copied scalar / no result | shim conversion; `dbuttonbox.h` |
 | `DButtonBox::setOrientation` | `()` | copied scalar / no result | shim conversion; `dbuttonbox.h` |
@@ -255,18 +255,18 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DCircleProgress::setValue` | `()` | copied scalar / no result | shim conversion; `dcircleprogress.h` |
 | `DCircleProgress::text` | `String` | owned Rust strings/container | shim conversion; `dcircleprogress.h` |
 | `DCircleProgress::setText` | `()` | copied scalar / no result | shim conversion; `dcircleprogress.h` |
-| `DCircleProgress::backgroundColor` | `*mut QColor` | owned heap copy | shim conversion; `dcircleprogress.h` |
+| `DCircleProgress::backgroundColor` | `QColor` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dcircleprogress.h` |
 | `DCircleProgress::setBackgroundColor` | `()` | copied scalar / no result | shim conversion; `dcircleprogress.h` |
-| `DCircleProgress::setBackgroundColor` Qt value inputs | `QColor * color` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dcircleprogress.h` native value/reference signature |
-| `DCircleProgress::chunkColor` | `*mut QColor` | owned heap copy | shim conversion; `dcircleprogress.h` |
+| `DCircleProgress::setBackgroundColor` Qt value inputs | `const QColor &color` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dcircleprogress.h` native value/reference signature |
+| `DCircleProgress::chunkColor` | `QColor` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dcircleprogress.h` |
 | `DCircleProgress::setChunkColor` | `()` | copied scalar / no result | shim conversion; `dcircleprogress.h` |
-| `DCircleProgress::setChunkColor` Qt value inputs | `QColor * color` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dcircleprogress.h` native value/reference signature |
+| `DCircleProgress::setChunkColor` Qt value inputs | `const QColor &color` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dcircleprogress.h` native value/reference signature |
 | `DCircleProgress::lineWidth` | `i32` | copied scalar / no result | shim conversion; `dcircleprogress.h` |
 | `DCircleProgress::setLineWidth` | `()` | copied scalar / no result | shim conversion; `dcircleprogress.h` |
-| `DClipEffectWidget::margins` | `*mut QMargins` | owned heap copy | shim conversion; `dclipeffectwidget.h` |
+| `DClipEffectWidget::margins` | `QMargins` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dclipeffectwidget.h` |
 | `DClipEffectWidget::clipPath` | `*mut QPainterPath` | owned heap copy | shim conversion; `dclipeffectwidget.h` |
 | `DClipEffectWidget::setMargins` | `()` | copied scalar / no result | shim conversion; `dclipeffectwidget.h` |
-| `DClipEffectWidget::setMargins` Qt value inputs | `QMargins * margins` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dclipeffectwidget.h` native value/reference signature |
+| `DClipEffectWidget::setMargins` Qt value inputs | `const QMargins &margins` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dclipeffectwidget.h` native value/reference signature |
 | `DClipEffectWidget::setClipPath` | `()` | copied scalar / no result | shim conversion; `dclipeffectwidget.h` |
 | `DClipEffectWidget::setClipPath` Qt value inputs | `QPainterPath * path` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dclipeffectwidget.h` native value/reference signature |
 | `DColoredProgressBar()` | `new DColoredProgressBar` | constructor `Owned` | constructor; `dcoloredprogressbar.h` |
@@ -275,16 +275,16 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DColoredProgressBar::removeThreshold` | `()` | copied scalar / no result | shim conversion; `dcoloredprogressbar.h` |
 | `DComboBox()` | `new DComboBox` | constructor `Owned` | constructor; `dcombobox.h` |
 | `DComboBox::showPopup` | `()` | copied scalar / no result | shim conversion; `dcombobox.h` |
-| `DCommandLinkButton::sizeHint` | `*mut QSize` | owned heap copy | shim conversion; `dcommandlinkbutton.h` |
+| `DCommandLinkButton::sizeHint` | `QSize` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dcommandlinkbutton.h` |
 | `DCrumbTextFormat()` | `new DCrumbTextFormat` | unique `OwnedOpaque` | constructor; `dcrumbedit.h` |
-| `DCrumbTextFormat::tagColor` | `*mut QColor` | owned heap copy | shim conversion; `dcrumbedit.h` |
+| `DCrumbTextFormat::tagColor` | `QColor` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dcrumbedit.h` |
 | `DCrumbTextFormat::setTagColor` | `()` | copied scalar / no result | shim conversion; `dcrumbedit.h` |
-| `DCrumbTextFormat::setTagColor` Qt value inputs | `QColor * color` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dcrumbedit.h` native value/reference signature |
+| `DCrumbTextFormat::setTagColor` Qt value inputs | `const QColor &color` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dcrumbedit.h` native value/reference signature |
 | `DCrumbTextFormat::text` | `String` | owned Rust strings/container | shim conversion; `dcrumbedit.h` |
 | `DCrumbTextFormat::setText` | `()` | copied scalar / no result | shim conversion; `dcrumbedit.h` |
-| `DCrumbTextFormat::textColor` | `*mut QColor` | owned heap copy | shim conversion; `dcrumbedit.h` |
+| `DCrumbTextFormat::textColor` | `QColor` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dcrumbedit.h` |
 | `DCrumbTextFormat::setTextColor` | `()` | copied scalar / no result | shim conversion; `dcrumbedit.h` |
-| `DCrumbTextFormat::setTextColor` Qt value inputs | `QColor * color` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dcrumbedit.h` native value/reference signature |
+| `DCrumbTextFormat::setTextColor` Qt value inputs | `const QColor &color` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dcrumbedit.h` native value/reference signature |
 | `DCrumbTextFormat::background` | `*mut QBrush` | owned heap copy | shim conversion; `dcrumbedit.h` |
 | `DCrumbTextFormat::setBackground` | `()` | copied scalar / no result | shim conversion; `dcrumbedit.h` |
 | `DCrumbTextFormat::setBackground` Qt value inputs | `QBrush * background` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dcrumbedit.h` native value/reference signature |
@@ -315,8 +315,8 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DDialog::textFormat` | `i32` | copied scalar / no result | shim conversion; `ddialog.h` |
 | `DDialog::onButtonClickedClose` | `bool` | copied scalar / no result | shim conversion; `ddialog.h` |
 | `DDialog::setContentLayoutContentsMargins` | `()` | copied scalar / no result | shim conversion; `ddialog.h` |
-| `DDialog::setContentLayoutContentsMargins` Qt value inputs | `QMargins * margins` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `ddialog.h` native value/reference signature |
-| `DDialog::contentLayoutContentsMargins` | `*mut QMargins` | owned heap copy | shim conversion; `ddialog.h` |
+| `DDialog::setContentLayoutContentsMargins` Qt value inputs | `const QMargins &margins` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `ddialog.h` native value/reference signature |
+| `DDialog::contentLayoutContentsMargins` | `QMargins` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `ddialog.h` |
 | `DDialog::closeButtonVisible` | `bool` | copied scalar / no result | shim conversion; `ddialog.h` |
 | `DDialog::addButton` | `i32` | copied scalar / no result | shim conversion; `ddialog.h` |
 | `DDialog::addButtons` | `i32` | copied scalar / no result | shim conversion; `ddialog.h` |
@@ -410,8 +410,8 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DFileChooserEdit::setNameFilters` | `()` | copied scalar / no result | shim conversion; `dfilechooseredit.h` |
 | `DFileChooserEdit::nameFilters` | `Vec<String>` | owned Rust strings/container | shim conversion; `dfilechooseredit.h` |
 | `DFileChooserEdit::setDirectoryUrl` | `()` | copied scalar / no result | shim conversion; `dfilechooseredit.h` |
-| `DFileChooserEdit::setDirectoryUrl` Qt value inputs | `QUrl * directory` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dfilechooseredit.h` native value/reference signature |
-| `DFileChooserEdit::directoryUrl` | `*mut QUrl` | owned heap copy | shim conversion; `dfilechooseredit.h` |
+| `DFileChooserEdit::setDirectoryUrl` Qt value inputs | `const QUrl &directory` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dfilechooseredit.h` native value/reference signature |
+| `DFileChooserEdit::directoryUrl` | `QUrl` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dfilechooseredit.h` |
 | `DFileChooserEdit::setDialogDisplayPosition` | `()` | copied scalar / no result | shim conversion; `dfilechooseredit.h` |
 | `DFileChooserEdit::dialogDisplayPosition` | `i32` | copied scalar / no result | shim conversion; `dfilechooseredit.h` |
 | `DFileChooserEdit::initDialog` | `()` | copied scalar / no result | shim conversion; `dfilechooseredit.h` |
@@ -435,9 +435,9 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DFloatingMessage::setWidget` | `()` | copied scalar / no result | shim conversion; `dfloatingmessage.h` |
 | `DFloatingMessage::setWidget` parameters | `QWidget*` | Qt adoption | native `dfloatingmessage.h` implementation: content layout; deletes old layout item, not widget |
 | `DFloatingMessage::setDuration` | `()` | copied scalar / no result | shim conversion; `dfloatingmessage.h` |
-| `DFloatingMessage::sizeHint` | `*mut QSize` | owned heap copy | shim conversion; `dfloatingmessage.h` |
+| `DFloatingMessage::sizeHint` | `QSize` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dfloatingmessage.h` |
 | `DFloatingWidget()` | `new DFloatingWidget` | constructor `Owned` | constructor; `dfloatingwidget.h` |
-| `DFloatingWidget::sizeHint` | `*mut QSize` | owned heap copy | shim conversion; `dfloatingwidget.h` |
+| `DFloatingWidget::sizeHint` | `QSize` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dfloatingwidget.h` |
 | `DFloatingWidget::setWidget` | `()` | copied scalar / no result | shim conversion; `dfloatingwidget.h` |
 | `DFloatingWidget::setWidget` parameters | `QWidget*` | Qt adoption | native `dfloatingwidget.h` implementation: layout manages content; removes layout items before insertion |
 | `DFloatingWidget::setFramRadius` | `()` | copied scalar / no result | shim conversion; `dfloatingwidget.h` |
@@ -458,10 +458,10 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DFlowLayout::hasHeightForWidth` | `bool` | copied scalar / no result | shim conversion; `dflowlayout.h` |
 | `DFlowLayout::heightForWidth` | `i32` | copied scalar / no result | shim conversion; `dflowlayout.h` |
 | `DFlowLayout::count` | `i32` | copied scalar / no result | shim conversion; `dflowlayout.h` |
-| `DFlowLayout::minimumSize` | `*mut QSize` | owned heap copy | shim conversion; `dflowlayout.h` |
+| `DFlowLayout::minimumSize` | `QSize` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dflowlayout.h` |
 | `DFlowLayout::setGeometry` | `()` | copied scalar / no result | shim conversion; `dflowlayout.h` |
-| `DFlowLayout::setGeometry` Qt value inputs | `QRect * rect` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dflowlayout.h` native value/reference signature |
-| `DFlowLayout::sizeHint` | `*mut QSize` | owned heap copy | shim conversion; `dflowlayout.h` |
+| `DFlowLayout::setGeometry` Qt value inputs | `const QRect &rect` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dflowlayout.h` native value/reference signature |
+| `DFlowLayout::sizeHint` | `QSize` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dflowlayout.h` |
 | `DFlowLayout::expandingDirections` | `i32` | copied scalar / no result | shim conversion; `dflowlayout.h` |
 | `DFlowLayout::horizontalSpacing` | `i32` | copied scalar / no result | shim conversion; `dflowlayout.h` |
 | `DFlowLayout::verticalSpacing` | `i32` | copied scalar / no result | shim conversion; `dflowlayout.h` |
@@ -470,7 +470,7 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DFlowLayout::setSpacing` | `()` | copied scalar / no result | shim conversion; `dflowlayout.h` |
 | `DFontComboBox()` | `new DFontComboBox` | constructor `Owned` | constructor; `dfontcombobox.h` |
 | `DFontComboBox::currentFont` | `*mut QFont` | owned heap copy | shim conversion; `dfontcombobox.h` |
-| `DFontComboBox::sizeHint` | `*mut QSize` | owned heap copy | shim conversion; `dfontcombobox.h` |
+| `DFontComboBox::sizeHint` | `QSize` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dfontcombobox.h` |
 | `DFontComboBox::setCurrentFont` | `()` | copied scalar / no result | shim conversion; `dfontcombobox.h` |
 | `DFontComboBox::setCurrentFont` Qt value inputs | `QFont * f` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dfontcombobox.h` native value/reference signature |
 | `DFrame()` | `new DFrame` | constructor `Owned` | constructor; `dframe.h` |
@@ -479,13 +479,15 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DHorizontalLine()` | `new DHorizontalLine` | constructor `Owned` | constructor; `dframe.h` |
 | `DVerticalLine()` | `new DVerticalLine` | constructor `Owned` | constructor; `dframe.h` |
 | `DGraphicsClipEffect()` | `new DGraphicsClipEffect` | constructor `Owned` | constructor; `dgraphicsclipeffect.h` |
-| `DGraphicsClipEffect::margins` | `*mut QMargins` | owned heap copy | shim conversion; `dgraphicsclipeffect.h` |
+| `DGraphicsClipEffect::margins` | `QMargins` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dgraphicsclipeffect.h` |
 | `DGraphicsClipEffect::clipPath` | `*mut QPainterPath` | owned heap copy | shim conversion; `dgraphicsclipeffect.h` |
 | `DGraphicsClipEffect::setMargins` | `()` | copied scalar / no result | shim conversion; `dgraphicsclipeffect.h` |
-| `DGraphicsClipEffect::setMargins` Qt value inputs | `QMargins * margins` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dgraphicsclipeffect.h` native value/reference signature |
+| `DGraphicsClipEffect::setMargins` Qt value inputs | `const QMargins &margins` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dgraphicsclipeffect.h` native value/reference signature |
 | `DGraphicsClipEffect::setClipPath` | `()` | copied scalar / no result | shim conversion; `dgraphicsclipeffect.h` |
 | `DGraphicsClipEffect::setClipPath` Qt value inputs | `QPainterPath * clipPath` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dgraphicsclipeffect.h` native value/reference signature |
 | `DGraphicsGlowEffect()` | `new DGraphicsGlowEffect` | constructor `Owned` | constructor; `dgraphicsgloweffect.h` |
+| `DGraphicsGlowEffect::boundingRectFor` | `QRectF` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dgraphicsgloweffect.h` |
+| `DGraphicsGlowEffect::boundingRectFor` Qt value inputs | `const QRectF &rect` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dgraphicsgloweffect.h` native value/reference signature |
 | `DGraphicsGlowEffect::setOffset` | `()` | copied scalar / no result | shim conversion; `dgraphicsgloweffect.h` |
 | `DGraphicsGlowEffect::setXOffset` | `()` | copied scalar / no result | shim conversion; `dgraphicsgloweffect.h` |
 | `DGraphicsGlowEffect::xOffset` | `f64` | copied scalar / no result | shim conversion; `dgraphicsgloweffect.h` |
@@ -496,8 +498,8 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DGraphicsGlowEffect::setBlurRadius` | `()` | copied scalar / no result | shim conversion; `dgraphicsgloweffect.h` |
 | `DGraphicsGlowEffect::blurRadius` | `f64` | copied scalar / no result | shim conversion; `dgraphicsgloweffect.h` |
 | `DGraphicsGlowEffect::setColor` | `()` | copied scalar / no result | shim conversion; `dgraphicsgloweffect.h` |
-| `DGraphicsGlowEffect::setColor` Qt value inputs | `QColor * color` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dgraphicsgloweffect.h` native value/reference signature |
-| `DGraphicsGlowEffect::color` | `*mut QColor` | owned heap copy | shim conversion; `dgraphicsgloweffect.h` |
+| `DGraphicsGlowEffect::setColor` Qt value inputs | `const QColor &color` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dgraphicsgloweffect.h` native value/reference signature |
+| `DGraphicsGlowEffect::color` | `QColor` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dgraphicsgloweffect.h` |
 | `DGraphicsGlowEffect::opacity` | `f64` | copied scalar / no result | shim conversion; `dgraphicsgloweffect.h` |
 | `DGraphicsGlowEffect::setOpacity` | `()` | copied scalar / no result | shim conversion; `dgraphicsgloweffect.h` |
 | `DHeaderLine()` | `new DHeaderLine` | constructor `Owned` | constructor; `dheaderline.h` |
@@ -512,9 +514,9 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DIconButton::setIcon` | `()` | copied scalar / no result | shim conversion; `diconbutton.h` |
 | `DIconButton::setIcon` Qt value inputs | `DDciIcon * icon` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `diconbutton.h` native value/reference signature |
 | `DIconButton::dciIcon` | `*mut DDciIcon` | owned heap copy | shim conversion; `diconbutton.h` |
-| `DIconButton::sizeHint` | `*mut QSize` | owned heap copy | shim conversion; `diconbutton.h` |
-| `DIconButton::minimumSizeHint` | `*mut QSize` | owned heap copy | shim conversion; `diconbutton.h` |
-| `DIconButton::iconSize` | `*mut QSize` | owned heap copy | shim conversion; `diconbutton.h` |
+| `DIconButton::sizeHint` | `QSize` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `diconbutton.h` |
+| `DIconButton::minimumSizeHint` | `QSize` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `diconbutton.h` |
+| `DIconButton::iconSize` | `QSize` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `diconbutton.h` |
 | `DIconButton::isFlat` | `bool` | copied scalar / no result | shim conversion; `diconbutton.h` |
 | `DIconButton::setEnabledCircle` | `()` | copied scalar / no result | shim conversion; `diconbutton.h` |
 | `DIconButton::enabledCircle` | `bool` | copied scalar / no result | shim conversion; `diconbutton.h` |
@@ -538,14 +540,14 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DImageViewer::resetRotateAngle` | `()` | copied scalar / no result | shim conversion; `dimageviewer.h` |
 | `DImageViewer::clear` | `()` | copied scalar / no result | shim conversion; `dimageviewer.h` |
 | `DImageViewer::centerOn` | `()` | copied scalar / no result | shim conversion; `dimageviewer.h` |
-| `DImageViewer::visibleImageRect` | `*mut QRect` | owned heap copy | shim conversion; `dimageviewer.h` |
+| `DImageViewer::visibleImageRect` | `QRect` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dimageviewer.h` |
 | `DImageViewer::scaleAtPoint` | `()` | copied scalar / no result | shim conversion; `dimageviewer.h` |
-| `DImageViewer::scaleAtPoint` Qt value inputs | `QPoint * pos` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dimageviewer.h` native value/reference signature |
+| `DImageViewer::scaleAtPoint` Qt value inputs | `const QPoint &pos` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dimageviewer.h` native value/reference signature |
 | `DImageViewer::beginCropImage` | `()` | copied scalar / no result | shim conversion; `dimageviewer.h` |
 | `DImageViewer::endCropImage` | `()` | copied scalar / no result | shim conversion; `dimageviewer.h` |
 | `DImageViewer::resetCropImage` | `()` | copied scalar / no result | shim conversion; `dimageviewer.h` |
 | `DImageViewer::setCropAspectRatio` | `()` | copied scalar / no result | shim conversion; `dimageviewer.h` |
-| `DImageViewer::cropImageRect` | `*mut QRect` | owned heap copy | shim conversion; `dimageviewer.h` |
+| `DImageViewer::cropImageRect` | `QRect` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dimageviewer.h` |
 | `DIndeterminateProgressbar()` | `new DIndeterminateProgressbar` | constructor `Owned` | constructor; `dindeterminateprogressbar.h` |
 | `DInputDialog()` | `new DInputDialog` | constructor `Owned` | constructor; `dinputdialog.h` |
 | `DInputDialog::setInputMode` | `()` | copied scalar / no result | shim conversion; `dinputdialog.h` |
@@ -647,17 +649,17 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DListView::getHeaderWidget` | `QWidget*` | `object_borrow` | `dtkwidget/src/widgets/dlistview.cpp`: returns headerList entry; view/layout owns it |
 | `DListView::getFooterWidget` | `QWidget*` | `object_borrow` | `dtkwidget/src/widgets/dlistview.cpp`: returns footerList entry; view/layout owns it |
 | `DListView::isActiveRect` | `bool` | copied scalar / no result | shim conversion; `dlistview.h` |
-| `DListView::isActiveRect` Qt value inputs | `QRect * rect` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dlistview.h` native value/reference signature |
+| `DListView::isActiveRect` Qt value inputs | `const QRect &rect` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dlistview.h` native value/reference signature |
 | `DListView::isVisualRect` | `bool` | copied scalar / no result | shim conversion; `dlistview.h` |
-| `DListView::isVisualRect` Qt value inputs | `QRect * rect` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dlistview.h` native value/reference signature |
+| `DListView::isVisualRect` Qt value inputs | `const QRect &rect` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dlistview.h` native value/reference signature |
 | `DListView::count` | `i32` | copied scalar / no result | shim conversion; `dlistview.h` |
 | `DListView::orientation` | `i32` | copied scalar / no result | shim conversion; `dlistview.h` |
 | `DListView::setModel` | `()` | copied scalar / no result | shim conversion; `dlistview.h` |
 | `DListView::setModel` parameters | `QAbstractItemModel*` | retained borrow | native `dlistview.h` implementation: QAbstractItemView::setModel does not transfer QObject ownership; Qt tracks model destruction |
-| `DListView::minimumSizeHint` | `*mut QSize` | owned heap copy | shim conversion; `dlistview.h` |
+| `DListView::minimumSizeHint` | `QSize` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dlistview.h` |
 | `DListView::backgroundType` | `i32` | copied scalar / no result | shim conversion; `dlistview.h` |
-| `DListView::itemMargins` | `*mut QMargins` | owned heap copy | shim conversion; `dlistview.h` |
-| `DListView::itemSize` | `*mut QSize` | owned heap copy | shim conversion; `dlistview.h` |
+| `DListView::itemMargins` | `QMargins` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dlistview.h` |
+| `DListView::itemSize` | `QSize` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dlistview.h` |
 | `DListView::addItem` | `bool` | copied scalar / no result | shim conversion; `dlistview.h` |
 | `DListView::addItem` Qt value inputs | `QVariant * data` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dlistview.h` native value/reference signature |
 | `DListView::addItems` | `bool` | copied scalar / no result | shim conversion; `dlistview.h` |
@@ -678,18 +680,18 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DListView::takeFooterWidget` | `QWidget*` | `object_borrow` | `dtkwidget/src/widgets/dlistview.cpp`: removes list/layout entry but leaves widget parented; an empty footer container's deleteLater destroys it; NOT a transfer |
 | `DListView::setBackgroundType` | `()` | copied scalar / no result | shim conversion; `dlistview.h` |
 | `DListView::setItemMargins` | `()` | copied scalar / no result | shim conversion; `dlistview.h` |
-| `DListView::setItemMargins` Qt value inputs | `QMargins * itemMargins` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dlistview.h` native value/reference signature |
+| `DListView::setItemMargins` Qt value inputs | `const QMargins &itemMargins` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dlistview.h` native value/reference signature |
 | `DListView::setItemSize` | `()` | copied scalar / no result | shim conversion; `dlistview.h` |
-| `DListView::setItemSize` Qt value inputs | `QSize * itemSize` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dlistview.h` native value/reference signature |
+| `DListView::setItemSize` Qt value inputs | `const QSize &itemSize` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dlistview.h` native value/reference signature |
 | `DListView::setItemSpacing` | `()` | copied scalar / no result | shim conversion; `dlistview.h` |
 | `DListView::setItemRadius` | `()` | copied scalar / no result | shim conversion; `dlistview.h` |
 | `DLoadingIndicator()` | `new DLoadingIndicator` | constructor `Owned` | constructor; `dloadingindicator.h` |
-| `DLoadingIndicator::backgroundColor` | `*mut QColor` | owned heap copy | shim conversion; `dloadingindicator.h` |
+| `DLoadingIndicator::backgroundColor` | `QColor` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dloadingindicator.h` |
 | `DLoadingIndicator::loading` | `bool` | copied scalar / no result | shim conversion; `dloadingindicator.h` |
 | `DLoadingIndicator::widgetSource` | `QWidget*` | `object_borrow` | `dtkwidget/src/widgets/dloadingindicator.cpp`: returns widgetSource; QGraphicsProxyWidget adopts its widget |
 | `DLoadingIndicator::imageSource` | `*mut QPixmap` | owned heap copy | shim conversion; `dloadingindicator.h` |
 | `DLoadingIndicator::aniDuration` | `i32` | copied scalar / no result | shim conversion; `dloadingindicator.h` |
-| `DLoadingIndicator::sizeHint` | `*mut QSize` | owned heap copy | shim conversion; `dloadingindicator.h` |
+| `DLoadingIndicator::sizeHint` | `QSize` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dloadingindicator.h` |
 | `DLoadingIndicator::smooth` | `bool` | copied scalar / no result | shim conversion; `dloadingindicator.h` |
 | `DLoadingIndicator::direction` | `i32` | copied scalar / no result | shim conversion; `dloadingindicator.h` |
 | `DLoadingIndicator::rotate` | `f64` | copied scalar / no result | shim conversion; `dloadingindicator.h` |
@@ -698,7 +700,7 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DLoadingIndicator::setLoading` | `()` | copied scalar / no result | shim conversion; `dloadingindicator.h` |
 | `DLoadingIndicator::setAniDuration` | `()` | copied scalar / no result | shim conversion; `dloadingindicator.h` |
 | `DLoadingIndicator::setBackgroundColor` | `()` | copied scalar / no result | shim conversion; `dloadingindicator.h` |
-| `DLoadingIndicator::setBackgroundColor` Qt value inputs | `QColor * color` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dloadingindicator.h` native value/reference signature |
+| `DLoadingIndicator::setBackgroundColor` Qt value inputs | `const QColor &color` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dloadingindicator.h` native value/reference signature |
 | `DLoadingIndicator::setRotate` | `()` | copied scalar / no result | shim conversion; `dloadingindicator.h` |
 | `DLoadingIndicator::setRotate` Qt value inputs | `QVariant * angle` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dloadingindicator.h` native value/reference signature |
 | `DLoadingIndicator::setWidgetSource` | `()` | copied scalar / no result | shim conversion; `dloadingindicator.h` |
@@ -718,12 +720,12 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DMessageManager::sendMessage` Qt value inputs | `DDciIcon * icon` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dmessagemanager.h` native value/reference signature |
 | `DMessageManager::setContentMargens` | `bool` | copied scalar / no result | shim conversion; `dmessagemanager.h` |
 | `DMessageManager::setContentMargens` parameters | `QWidget*` | borrow | native `dmessagemanager.h` implementation: changes existing content layout; no transfer |
-| `DMessageManager::setContentMargens` Qt value inputs | `QMargins * margins` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dmessagemanager.h` native value/reference signature |
+| `DMessageManager::setContentMargens` Qt value inputs | `const QMargins &margins` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dmessagemanager.h` native value/reference signature |
 | `DMPRISControl()` | `new DMPRISControl` | constructor `Owned` | constructor; `dmpriscontrol.h` |
 | `DMPRISControl::isWorking` | `bool` | copied scalar / no result | shim conversion; `dmpriscontrol.h` |
 | `DMPRISControl::setPictureVisible` | `()` | copied scalar / no result | shim conversion; `dmpriscontrol.h` |
 | `DMPRISControl::setPictureSize` | `()` | copied scalar / no result | shim conversion; `dmpriscontrol.h` |
-| `DMPRISControl::setPictureSize` Qt value inputs | `QSize * size` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dmpriscontrol.h` native value/reference signature |
+| `DMPRISControl::setPictureSize` Qt value inputs | `const QSize &size` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dmpriscontrol.h` native value/reference signature |
 | `DPageIndicator()` | `new DPageIndicator` | constructor `Owned` | constructor; `dpageindicator.h` |
 | `DPageIndicator::pageCount` | `i32` | copied scalar / no result | shim conversion; `dpageindicator.h` |
 | `DPageIndicator::setPageCount` | `()` | copied scalar / no result | shim conversion; `dpageindicator.h` |
@@ -731,12 +733,12 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DPageIndicator::previousPage` | `()` | copied scalar / no result | shim conversion; `dpageindicator.h` |
 | `DPageIndicator::setCurrentPage` | `()` | copied scalar / no result | shim conversion; `dpageindicator.h` |
 | `DPageIndicator::currentPageIndex` | `i32` | copied scalar / no result | shim conversion; `dpageindicator.h` |
-| `DPageIndicator::pointColor` | `*mut QColor` | owned heap copy | shim conversion; `dpageindicator.h` |
+| `DPageIndicator::pointColor` | `QColor` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dpageindicator.h` |
 | `DPageIndicator::setPointColor` | `()` | copied scalar / no result | shim conversion; `dpageindicator.h` |
-| `DPageIndicator::setPointColor` Qt value inputs | `QColor * color` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dpageindicator.h` native value/reference signature |
-| `DPageIndicator::secondaryPointColor` | `*mut QColor` | owned heap copy | shim conversion; `dpageindicator.h` |
+| `DPageIndicator::setPointColor` Qt value inputs | `const QColor &color` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dpageindicator.h` native value/reference signature |
+| `DPageIndicator::secondaryPointColor` | `QColor` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dpageindicator.h` |
 | `DPageIndicator::setSecondaryPointColor` | `()` | copied scalar / no result | shim conversion; `dpageindicator.h` |
-| `DPageIndicator::setSecondaryPointColor` Qt value inputs | `QColor * color` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dpageindicator.h` native value/reference signature |
+| `DPageIndicator::setSecondaryPointColor` Qt value inputs | `const QColor &color` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dpageindicator.h` native value/reference signature |
 | `DPageIndicator::pointRadius` | `i32` | copied scalar / no result | shim conversion; `dpageindicator.h` |
 | `DPageIndicator::setPointRadius` | `()` | copied scalar / no result | shim conversion; `dpageindicator.h` |
 | `DPageIndicator::secondaryPointRadius` | `i32` | copied scalar / no result | shim conversion; `dpageindicator.h` |
@@ -773,19 +775,19 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DPlatformWindowHandle::isEnabledDXcb` | `bool` | copied scalar / no result | shim conversion; `dplatformwindowhandle.h` |
 | `DPlatformWindowHandle::isEnabledDXcb` parameters | `QWidget*` | borrow | native `dplatformwindowhandle.h` implementation: platform property lookup |
 | `DPlatformWindowHandle::setWindowSurfaceType` | `()` | copied scalar / no result | shim conversion; `dplatformwindowhandle.h` |
-| `ColorLabel::getColor` | `*mut QColor` | owned heap copy | shim conversion; `dprintpickcolorwidget.h` |
+| `ColorLabel::getColor` | `QColor` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dprintpickcolorwidget.h` |
 | `ColorLabel::setHue` | `()` | copied scalar / no result | shim conversion; `dprintpickcolorwidget.h` |
 | `ColorLabel::pickColor` | `()` | copied scalar / no result | shim conversion; `dprintpickcolorwidget.h` |
-| `ColorLabel::pickColor` Qt value inputs | `QPoint * pos` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dprintpickcolorwidget.h` native value/reference signature |
+| `ColorLabel::pickColor` Qt value inputs | `const QPoint &pos` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dprintpickcolorwidget.h` native value/reference signature |
 | `ColorSlider()` | `new ColorSlider` | constructor `Owned` | constructor; `dprintpickcolorwidget.h` |
-| `ColorSlider::getColor` | `*mut QColor` | owned heap copy | shim conversion; `dprintpickcolorwidget.h` |
+| `ColorSlider::getColor` | `QColor` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dprintpickcolorwidget.h` |
 | `DPrintPickColorWidget()` | `new DPrintPickColorWidget` | constructor `Owned` | constructor; `dprintpickcolorwidget.h` |
 | `DPrintPickColorWidget::initUI` | `()` | copied scalar / no result | shim conversion; `dprintpickcolorwidget.h` |
 | `DPrintPickColorWidget::initConnection` | `()` | copied scalar / no result | shim conversion; `dprintpickcolorwidget.h` |
 | `DPrintPickColorWidget::setRgbEdit` | `()` | copied scalar / no result | shim conversion; `dprintpickcolorwidget.h` |
-| `DPrintPickColorWidget::setRgbEdit` Qt value inputs | `QColor * color` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dprintpickcolorwidget.h` native value/reference signature |
+| `DPrintPickColorWidget::setRgbEdit` Qt value inputs | `const QColor &color` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dprintpickcolorwidget.h` native value/reference signature |
 | `DPrintPickColorWidget::convertColor` | `()` | copied scalar / no result | shim conversion; `dprintpickcolorwidget.h` |
-| `DPrintPickColorWidget::convertColor` Qt value inputs | `QColor * color` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dprintpickcolorwidget.h` native value/reference signature |
+| `DPrintPickColorWidget::convertColor` Qt value inputs | `const QColor &color` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dprintpickcolorwidget.h` native value/reference signature |
 | `DPrintPickColorWidget::slotColorPick` | `()` | copied scalar / no result | shim conversion; `dprintpickcolorwidget.h` |
 | `DPrintPickColorWidget::slotEditColor` | `()` | copied scalar / no result | shim conversion; `dprintpickcolorwidget.h` |
 | `DPrintPreviewDialog()` | `new DPrintPreviewDialog` | constructor `Owned` | constructor; `dprintpreviewdialog.h` |
@@ -853,9 +855,9 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DPrintPreviewWidget::setTextWaterMark` | `()` | copied scalar / no result | shim conversion; `dprintpreviewwidget.h` |
 | `DPrintPreviewWidget::setWaterMarkFont` | `()` | copied scalar / no result | shim conversion; `dprintpreviewwidget.h` |
 | `DPrintPreviewWidget::setWaterMarkFont` Qt value inputs | `QFont * font` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dprintpreviewwidget.h` native value/reference signature |
-| `DPrintPreviewWidget::waterMarkColor` | `*mut QColor` | owned heap copy | shim conversion; `dprintpreviewwidget.h` |
+| `DPrintPreviewWidget::waterMarkColor` | `QColor` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dprintpreviewwidget.h` |
 | `DPrintPreviewWidget::setWaterMarkColor` | `()` | copied scalar / no result | shim conversion; `dprintpreviewwidget.h` |
-| `DPrintPreviewWidget::setWaterMarkColor` Qt value inputs | `QColor * color` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dprintpreviewwidget.h` native value/reference signature |
+| `DPrintPreviewWidget::setWaterMarkColor` Qt value inputs | `const QColor &color` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dprintpreviewwidget.h` native value/reference signature |
 | `DPrintPreviewWidget::setWaterMarkLayout` | `()` | copied scalar / no result | shim conversion; `dprintpreviewwidget.h` |
 | `DPrintPreviewWidget::setImposition` | `()` | copied scalar / no result | shim conversion; `dprintpreviewwidget.h` |
 | `DPrintPreviewWidget::imposition` | `i32` | copied scalar / no result | shim conversion; `dprintpreviewwidget.h` |
@@ -878,8 +880,8 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DPrintPreviewWidget::setCurrentPage` | `()` | copied scalar / no result | shim conversion; `dprintpreviewwidget.h` |
 | `DPrintPreviewWidget::print` | `()` | copied scalar / no result | shim conversion; `dprintpreviewwidget.h` |
 | `DProgressBar()` | `new DProgressBar` | constructor `Owned` | constructor; `dprogressbar.h` |
-| `DProgressBar::sizeHint` | `*mut QSize` | owned heap copy | shim conversion; `dprogressbar.h` |
-| `DProgressBar::minimumSizeHint` | `*mut QSize` | owned heap copy | shim conversion; `dprogressbar.h` |
+| `DProgressBar::sizeHint` | `QSize` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dprogressbar.h` |
+| `DProgressBar::minimumSizeHint` | `QSize` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dprogressbar.h` |
 | `DSearchComboBox()` | `new DSearchComboBox` | constructor `Owned` | constructor; `dsearchcombobox.h` |
 | `DSearchComboBox::setEditable` | `()` | copied scalar / no result | shim conversion; `dsearchcombobox.h` |
 | `DSearchEdit()` | `new DSearchEdit` | constructor `Owned` | constructor; `dsearchedit.h` |
@@ -900,7 +902,7 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DSettingsDialog::setGroupVisible` | `()` | copied scalar / no result | shim conversion; `dsettingsdialog.h` |
 | `DSettingsWidgetFactory()` | `new DSettingsWidgetFactory` | constructor `Owned` | constructor; `dsettingswidgetfactory.h` |
 | `DShadowLine()` | `new DShadowLine` | constructor `Owned` | constructor; `dshadowline.h` |
-| `DShadowLine::sizeHint` | `*mut QSize` | owned heap copy | shim conversion; `dshadowline.h` |
+| `DShadowLine::sizeHint` | `QSize` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dshadowline.h` |
 | `DShortcutEditLabel()` | `new DShortcutEditLabel` | constructor `Owned` | constructor; `dshortcutedit.h` |
 | `DShortcutEditLabel::setEchoState` | `()` | copied scalar / no result | shim conversion; `dshortcutedit.h` |
 | `DSimpleListItem::sameAs` | `bool` | copied scalar / no result | shim conversion; `dsimplelistitem.h` |
@@ -938,7 +940,7 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DSlider::setRightIcon` | `()` | copied scalar / no result | shim conversion; `dslider.h` |
 | `DSlider::setRightIcon` Qt value inputs | `QIcon * right` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dslider.h` native value/reference signature |
 | `DSlider::setIconSize` | `()` | copied scalar / no result | shim conversion; `dslider.h` |
-| `DSlider::setIconSize` Qt value inputs | `QSize * size` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dslider.h` native value/reference signature |
+| `DSlider::setIconSize` Qt value inputs | `const QSize &size` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dslider.h` native value/reference signature |
 | `DSlider::setMinimum` | `()` | copied scalar / no result | shim conversion; `dslider.h` |
 | `DSlider::minimum` | `i32` | copied scalar / no result | shim conversion; `dslider.h` |
 | `DSlider::setValue` | `()` | copied scalar / no result | shim conversion; `dslider.h` |
@@ -953,7 +955,7 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DSlider::setBelowTicks` | `()` | copied scalar / no result | shim conversion; `dslider.h` |
 | `DSlider::setMouseWheelEnabled` | `()` | copied scalar / no result | shim conversion; `dslider.h` |
 | `DSlider::setTipValue` | `()` | copied scalar / no result | shim conversion; `dslider.h` |
-| `DSlider::sizeHint` | `*mut QSize` | owned heap copy | shim conversion; `dslider.h` |
+| `DSlider::sizeHint` | `QSize` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dslider.h` |
 | `DSlider::setHandleVisible` | `()` | copied scalar / no result | shim conversion; `dslider.h` |
 | `DSlider::handleVisible` | `bool` | copied scalar / no result | shim conversion; `dslider.h` |
 | `DSlider::setEnabledAcrossStyle` | `()` | copied scalar / no result | shim conversion; `dslider.h` |
@@ -976,7 +978,7 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DSpinner::start` | `()` | copied scalar / no result | shim conversion; `dspinner.h` |
 | `DSpinner::stop` | `()` | copied scalar / no result | shim conversion; `dspinner.h` |
 | `DSpinner::setBackgroundColor` | `()` | copied scalar / no result | shim conversion; `dspinner.h` |
-| `DSpinner::setBackgroundColor` Qt value inputs | `QColor * color` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dspinner.h` native value/reference signature |
+| `DSpinner::setBackgroundColor` Qt value inputs | `const QColor &color` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dspinner.h` native value/reference signature |
 | `DSlideStackWidgetTransition()` | `new DSlideStackWidgetTransition` | constructor `Owned` | constructor; `dstackwidget.h` |
 | `DStackWidget()` | `new DStackWidget` | constructor `Owned` | constructor; `dstackwidget.h` |
 | `DStackWidget::busy` | `bool` | copied scalar / no result | shim conversion; `dstackwidget.h` |
@@ -999,10 +1001,10 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DStackWidget::setTransition` parameters | `DAbstractStackWidgetTransition*` | Qt adoption | native `dstackwidget.h` implementation: parents new transition, schedules old deletion; self replacement must be a no-op |
 | `DStackWidget::setAnimationDuration` | `()` | copied scalar / no result | shim conversion; `dstackwidget.h` |
 | `DStyle()` | `new DStyle` | constructor `Owned` | constructor; `dstyle.h` |
-| `DStyle::adjustColor` | `*mut QColor` | owned heap copy | shim conversion; `dstyle.h` |
-| `DStyle::adjustColor` Qt value inputs | `QColor * base` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dstyle.h` native value/reference signature |
-| `DStyle::blendColor` | `*mut QColor` | owned heap copy | shim conversion; `dstyle.h` |
-| `DStyle::blendColor` Qt value inputs | `QColor * substrate, QColor * superstratum` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dstyle.h` native value/reference signature |
+| `DStyle::adjustColor` | `QColor` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dstyle.h` |
+| `DStyle::adjustColor` Qt value inputs | `const QColor &base` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dstyle.h` native value/reference signature |
+| `DStyle::blendColor` | `QColor` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dstyle.h` |
+| `DStyle::blendColor` Qt value inputs | `const QColor &substrate, const QColor &superstratum` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dstyle.h` native value/reference signature |
 | `DStyle::setFocusRectVisible` | `()` | copied scalar / no result | shim conversion; `dstyle.h` |
 | `DStyle::setFocusRectVisible` parameters | `QWidget*` | borrow | native `dstyle.h` implementation: widget style property |
 | `DStyle::setFrameRadius` | `()` | copied scalar / no result | shim conversion; `dstyle.h` |
@@ -1018,15 +1020,15 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DStylePainter::begin` | `bool` | copied scalar / no result | shim conversion; `dstyle.h` |
 | `DStylePainter::begin` parameters | `QWidget*` | callback-scoped device borrow | native `dstyle.h` implementation: QPainter paint device lifetime; this opaque class has no safe constructor/getter |
 | `DStylePainter::drawItemPixmap` | `()` | copied scalar / no result | shim conversion; `dstyle.h` |
-| `DStylePainter::drawItemPixmap` Qt value inputs | `QRect * r, QPixmap * pixmap` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dstyle.h` native value/reference signature |
+| `DStylePainter::drawItemPixmap` Qt value inputs | `const QRect &r, QPixmap * pixmap` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dstyle.h` native value/reference signature |
 | `DStyledIconEngine::setIconName` | `()` | copied scalar / no result | shim conversion; `dstyle.h` |
 | `DViewItemAction()` | `new DViewItemAction` | constructor `Owned` | constructor; `dstyleditemdelegate.h` |
 | `DViewItemAction::alignment` | `i32` | copied scalar / no result | shim conversion; `dstyleditemdelegate.h` |
-| `DViewItemAction::iconSize` | `*mut QSize` | owned heap copy | shim conversion; `dstyleditemdelegate.h` |
-| `DViewItemAction::maximumSize` | `*mut QSize` | owned heap copy | shim conversion; `dstyleditemdelegate.h` |
-| `DViewItemAction::clickAreaMargins` | `*mut QMargins` | owned heap copy | shim conversion; `dstyleditemdelegate.h` |
+| `DViewItemAction::iconSize` | `QSize` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dstyleditemdelegate.h` |
+| `DViewItemAction::maximumSize` | `QSize` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dstyleditemdelegate.h` |
+| `DViewItemAction::clickAreaMargins` | `QMargins` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dstyleditemdelegate.h` |
 | `DViewItemAction::setClickAreaMargins` | `()` | copied scalar / no result | shim conversion; `dstyleditemdelegate.h` |
-| `DViewItemAction::setClickAreaMargins` Qt value inputs | `QMargins * margins` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dstyleditemdelegate.h` native value/reference signature |
+| `DViewItemAction::setClickAreaMargins` Qt value inputs | `const QMargins &margins` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dstyleditemdelegate.h` native value/reference signature |
 | `DViewItemAction::setTextColorRole` | `()` | copied scalar / no result | shim conversion; `dstyleditemdelegate.h` |
 | `DViewItemAction::setTextColorRole` | `()` | copied scalar / no result | shim conversion; `dstyleditemdelegate.h` |
 | `DViewItemAction::textColorType` | `i32` | copied scalar / no result | shim conversion; `dstyleditemdelegate.h` |
@@ -1041,14 +1043,14 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DViewItemAction::setDciIcon` Qt value inputs | `DDciIcon * dciIcon` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dstyleditemdelegate.h` native value/reference signature |
 | `DViewItemAction::dciIcon` | `*mut DDciIcon` | owned heap copy | shim conversion; `dstyleditemdelegate.h` |
 | `DStyledItemDelegate::backgroundType` | `i32` | copied scalar / no result | shim conversion; `dstyleditemdelegate.h` |
-| `DStyledItemDelegate::margins` | `*mut QMargins` | owned heap copy | shim conversion; `dstyleditemdelegate.h` |
-| `DStyledItemDelegate::itemSize` | `*mut QSize` | owned heap copy | shim conversion; `dstyleditemdelegate.h` |
+| `DStyledItemDelegate::margins` | `QMargins` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dstyleditemdelegate.h` |
+| `DStyledItemDelegate::itemSize` | `QSize` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dstyleditemdelegate.h` |
 | `DStyledItemDelegate::spacing` | `i32` | copied scalar / no result | shim conversion; `dstyleditemdelegate.h` |
 | `DStyledItemDelegate::setBackgroundType` | `()` | copied scalar / no result | shim conversion; `dstyleditemdelegate.h` |
 | `DStyledItemDelegate::setMargins` | `()` | copied scalar / no result | shim conversion; `dstyleditemdelegate.h` |
-| `DStyledItemDelegate::setMargins` Qt value inputs | `QMargins * margins` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dstyleditemdelegate.h` native value/reference signature |
+| `DStyledItemDelegate::setMargins` Qt value inputs | `const QMargins &margins` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dstyleditemdelegate.h` native value/reference signature |
 | `DStyledItemDelegate::setItemSize` | `()` | copied scalar / no result | shim conversion; `dstyleditemdelegate.h` |
-| `DStyledItemDelegate::setItemSize` Qt value inputs | `QSize * itemSize` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dstyleditemdelegate.h` native value/reference signature |
+| `DStyledItemDelegate::setItemSize` Qt value inputs | `const QSize &itemSize` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dstyleditemdelegate.h` native value/reference signature |
 | `DStyledItemDelegate::setItemSpacing` | `()` | copied scalar / no result | shim conversion; `dstyleditemdelegate.h` |
 | `DStandardItem::setTextColorRole` | `()` | copied scalar / no result | shim conversion; `dstyleditemdelegate.h` |
 | `DStandardItem::setTextColorRole` | `()` | copied scalar / no result | shim conversion; `dstyleditemdelegate.h` |
@@ -1114,7 +1116,7 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DFontSizeManager::fontPixelSize` | `i32` | copied scalar / no result | shim conversion; `dstyleoption.h` |
 | `DFontSizeManager::fontPixelSize` Qt value inputs | `QFont * font` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dstyleoption.h` native value/reference signature |
 | `DSwitchButton()` | `new DSwitchButton` | constructor `Owned` | constructor; `dswitchbutton.h` |
-| `DSwitchButton::sizeHint` | `*mut QSize` | owned heap copy | shim conversion; `dswitchbutton.h` |
+| `DSwitchButton::sizeHint` | `QSize` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dswitchbutton.h` |
 | `DSwitchHeaderLine()` | `new DSwitchHeaderLine` | constructor `Owned` | constructor; `dswitchlineexpand.h` |
 | `DSwitchHeaderLine::setExpand` | `()` | copied scalar / no result | shim conversion; `dswitchlineexpand.h` |
 | `DSwitchLineExpand()` | `new DSwitchLineExpand` | constructor `Owned` | constructor; `dswitchlineexpand.h` |
@@ -1123,9 +1125,9 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DSwitchLineExpand::header` | `DBaseLine*` | `object_borrow` | `dtkwidget/src/widgets/dswitchlineexpand.cpp`: returns existing header widget |
 | `DTabBar()` | `new DTabBar` | constructor `Owned` | constructor; `dtabbar.h` |
 | `DTabBar::setTabMinimumSize` | `()` | copied scalar / no result | shim conversion; `dtabbar.h` |
-| `DTabBar::setTabMinimumSize` Qt value inputs | `QSize * size` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dtabbar.h` native value/reference signature |
+| `DTabBar::setTabMinimumSize` Qt value inputs | `const QSize &size` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dtabbar.h` native value/reference signature |
 | `DTabBar::setTabMaximumSize` | `()` | copied scalar / no result | shim conversion; `dtabbar.h` |
-| `DTabBar::setTabMaximumSize` Qt value inputs | `QSize * size` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dtabbar.h` native value/reference signature |
+| `DTabBar::setTabMaximumSize` Qt value inputs | `const QSize &size` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dtabbar.h` native value/reference signature |
 | `DTabBar::visibleAddButton` | `bool` | copied scalar / no result | shim conversion; `dtabbar.h` |
 | `DTabBar::shape` | `i32` | copied scalar / no result | shim conversion; `dtabbar.h` |
 | `DTabBar::setShape` | `()` | copied scalar / no result | shim conversion; `dtabbar.h` |
@@ -1153,16 +1155,16 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DTabBar::setTabData` | `()` | copied scalar / no result | shim conversion; `dtabbar.h` |
 | `DTabBar::setTabData` Qt value inputs | `QVariant * data` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dtabbar.h` native value/reference signature |
 | `DTabBar::tabData` | `*mut QVariant` | owned heap copy | shim conversion; `dtabbar.h` |
-| `DTabBar::tabRect` | `*mut QRect` | owned heap copy | shim conversion; `dtabbar.h` |
+| `DTabBar::tabRect` | `QRect` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dtabbar.h` |
 | `DTabBar::tabAt` | `i32` | copied scalar / no result | shim conversion; `dtabbar.h` |
-| `DTabBar::tabAt` Qt value inputs | `QPoint * pos` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dtabbar.h` native value/reference signature |
+| `DTabBar::tabAt` Qt value inputs | `const QPoint &pos` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dtabbar.h` native value/reference signature |
 | `DTabBar::currentIndex` | `i32` | copied scalar / no result | shim conversion; `dtabbar.h` |
 | `DTabBar::count` | `i32` | copied scalar / no result | shim conversion; `dtabbar.h` |
 | `DTabBar::setDrawBase` | `()` | copied scalar / no result | shim conversion; `dtabbar.h` |
 | `DTabBar::drawBase` | `bool` | copied scalar / no result | shim conversion; `dtabbar.h` |
-| `DTabBar::iconSize` | `*mut QSize` | owned heap copy | shim conversion; `dtabbar.h` |
+| `DTabBar::iconSize` | `QSize` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dtabbar.h` |
 | `DTabBar::setIconSize` | `()` | copied scalar / no result | shim conversion; `dtabbar.h` |
-| `DTabBar::setIconSize` Qt value inputs | `QSize * size` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dtabbar.h` native value/reference signature |
+| `DTabBar::setIconSize` Qt value inputs | `const QSize &size` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dtabbar.h` native value/reference signature |
 | `DTabBar::usesScrollButtons` | `bool` | copied scalar / no result | shim conversion; `dtabbar.h` |
 | `DTabBar::setUsesScrollButtons` | `()` | copied scalar / no result | shim conversion; `dtabbar.h` |
 | `DTabBar::tabsClosable` | `bool` | copied scalar / no result | shim conversion; `dtabbar.h` |
@@ -1185,21 +1187,21 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DTabBar::changeCurrentOnDrag` | `bool` | copied scalar / no result | shim conversion; `dtabbar.h` |
 | `DTabBar::setChangeCurrentOnDrag` | `()` | copied scalar / no result | shim conversion; `dtabbar.h` |
 | `DTabBar::startDragDistance` | `i32` | copied scalar / no result | shim conversion; `dtabbar.h` |
-| `DTabBar::maskColor` | `*mut QColor` | owned heap copy | shim conversion; `dtabbar.h` |
-| `DTabBar::flashColor` | `*mut QColor` | owned heap copy | shim conversion; `dtabbar.h` |
+| `DTabBar::maskColor` | `QColor` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dtabbar.h` |
+| `DTabBar::flashColor` | `QColor` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dtabbar.h` |
 | `DTabBar::setEnabledEmbedStyle` | `()` | copied scalar / no result | shim conversion; `dtabbar.h` |
 | `DTabBar::setTabLabelAlignment` | `()` | copied scalar / no result | shim conversion; `dtabbar.h` |
 | `DTabBar::setCurrentIndex` | `()` | copied scalar / no result | shim conversion; `dtabbar.h` |
 | `DTabBar::setVisibleAddButton` | `()` | copied scalar / no result | shim conversion; `dtabbar.h` |
 | `DTabBar::setStartDragDistance` | `()` | copied scalar / no result | shim conversion; `dtabbar.h` |
 | `DTabBar::setMaskColor` | `()` | copied scalar / no result | shim conversion; `dtabbar.h` |
-| `DTabBar::setMaskColor` Qt value inputs | `QColor * maskColor` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dtabbar.h` native value/reference signature |
+| `DTabBar::setMaskColor` Qt value inputs | `const QColor &maskColor` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dtabbar.h` native value/reference signature |
 | `DTabBar::setFlashColor` | `()` | copied scalar / no result | shim conversion; `dtabbar.h` |
-| `DTabBar::setFlashColor` Qt value inputs | `QColor * flashColor` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dtabbar.h` native value/reference signature |
+| `DTabBar::setFlashColor` Qt value inputs | `const QColor &flashColor` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dtabbar.h` native value/reference signature |
 | `DTabBar::startDrag` | `()` | copied scalar / no result | shim conversion; `dtabbar.h` |
 | `DTabBar::stopDrag` | `()` | copied scalar / no result | shim conversion; `dtabbar.h` |
 | `DTabletWindowOptionButton()` | `new DTabletWindowOptionButton` | constructor `Owned` | constructor; `dtabletwindowoptionbutton.h` |
-| `DTabletWindowOptionButton::sizeHint` | `*mut QSize` | owned heap copy | shim conversion; `dtabletwindowoptionbutton.h` |
+| `DTabletWindowOptionButton::sizeHint` | `QSize` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dtabletwindowoptionbutton.h` |
 | `DTextEdit()` | `new DTextEdit` | constructor `Owned` | constructor; `dtextedit.h` |
 | `DTextEdit::speechToTextIsEnabled` | `bool` | copied scalar / no result | shim conversion; `dtextedit.h` |
 | `DTextEdit::setSpeechToTextEnabled` | `()` | copied scalar / no result | shim conversion; `dtextedit.h` |
@@ -1215,7 +1217,7 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DTickEffect::setFixedPixelMove` | `()` | copied scalar / no result | shim conversion; `dtickeffect.h` |
 | `DTipLabel()` | `new DTipLabel` | constructor `Owned` | constructor; `dtiplabel.h` |
 | `DTipLabel::show` | `()` | copied scalar / no result | shim conversion; `dtiplabel.h` |
-| `DTipLabel::show` Qt value inputs | `QPoint * pos` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dtiplabel.h` native value/reference signature |
+| `DTipLabel::show` Qt value inputs | `const QPoint &pos` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dtiplabel.h` native value/reference signature |
 | `DTipLabel::setForegroundRole` | `()` | copied scalar / no result | shim conversion; `dtiplabel.h` |
 | `DTitlebarToolBaseInterface::id` | `String` | owned Rust strings/container | shim conversion; `dtitlebarsettings.h` |
 | `DTitlebarToolBaseInterface::description` | `String` | owned Rust strings/container | shim conversion; `dtitlebarsettings.h` |
@@ -1237,9 +1239,9 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DToolTip::needUpdateToolTip` parameters | `QWidget*` | borrow | native `dtooltip.h` implementation: widget property lookup |
 | `DToolTip::setShowToolTip` | `()` | copied scalar / no result | shim conversion; `dtooltip.h` |
 | `DToolTip::setShowToolTip` parameters | `QWidget*` | borrow | native `dtooltip.h` implementation: widget property |
-| `DToolTip::sizeHint` | `*mut QSize` | owned heap copy | shim conversion; `dtooltip.h` |
+| `DToolTip::sizeHint` | `QSize` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dtooltip.h` |
 | `DToolTip::show` | `()` | copied scalar / no result | shim conversion; `dtooltip.h` |
-| `DToolTip::show` Qt value inputs | `QPoint * pos` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dtooltip.h` native value/reference signature |
+| `DToolTip::show` Qt value inputs | `const QPoint &pos` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dtooltip.h` native value/reference signature |
 | `DWarningButton()` | `new DWarningButton` | constructor `Owned` | constructor; `dwarningbutton.h` |
 | `DWaterMarkHelper::instance` | `DWaterMarkHelper*` | `object_borrow` | `dtkwidget/src/widgets/dwatermarkhelper.cpp`: returns Q_GLOBAL_STATIC helper; native post routine owns cleanup |
 | `DWaterMarkHelper::registerWidget` | `()` | copied scalar / no result | shim conversion; `dwatermarkhelper.h` |
@@ -1263,9 +1265,9 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `WaterMarkData::font` | `*mut QFont` | owned heap copy | shim conversion; `dwatermarkwidget.h` |
 | `WaterMarkData::setFont` | `()` | copied scalar / no result | shim conversion; `dwatermarkwidget.h` |
 | `WaterMarkData::setFont` Qt value inputs | `QFont * font` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dwatermarkwidget.h` native value/reference signature |
-| `WaterMarkData::color` | `*mut QColor` | owned heap copy | shim conversion; `dwatermarkwidget.h` |
+| `WaterMarkData::color` | `QColor` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dwatermarkwidget.h` |
 | `WaterMarkData::setColor` | `()` | copied scalar / no result | shim conversion; `dwatermarkwidget.h` |
-| `WaterMarkData::setColor` Qt value inputs | `QColor * color` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dwatermarkwidget.h` native value/reference signature |
+| `WaterMarkData::setColor` Qt value inputs | `const QColor &color` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dwatermarkwidget.h` native value/reference signature |
 | `WaterMarkData::rotation` | `f64` | copied scalar / no result | shim conversion; `dwatermarkwidget.h` |
 | `WaterMarkData::setRotation` | `()` | copied scalar / no result | shim conversion; `dwatermarkwidget.h` |
 | `WaterMarkData::opacity` | `f64` | copied scalar / no result | shim conversion; `dwatermarkwidget.h` |
@@ -1286,14 +1288,14 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DWaterProgress::setValue` | `()` | copied scalar / no result | shim conversion; `dwaterprogress.h` |
 | `DWaterProgress::setTextVisible` | `()` | copied scalar / no result | shim conversion; `dwaterprogress.h` |
 | `DWindowCloseButton()` | `new DWindowCloseButton` | constructor `Owned` | constructor; `dwindowclosebutton.h` |
-| `DWindowCloseButton::sizeHint` | `*mut QSize` | owned heap copy | shim conversion; `dwindowclosebutton.h` |
+| `DWindowCloseButton::sizeHint` | `QSize` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dwindowclosebutton.h` |
 | `DWindowMaxButton()` | `new DWindowMaxButton` | constructor `Owned` | constructor; `dwindowmaxbutton.h` |
 | `DWindowMaxButton::isMaximized` | `bool` | copied scalar / no result | shim conversion; `dwindowmaxbutton.h` |
-| `DWindowMaxButton::sizeHint` | `*mut QSize` | owned heap copy | shim conversion; `dwindowmaxbutton.h` |
+| `DWindowMaxButton::sizeHint` | `QSize` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dwindowmaxbutton.h` |
 | `DWindowMaxButton::setMaximized` | `()` | copied scalar / no result | shim conversion; `dwindowmaxbutton.h` |
 | `DWindowMinButton()` | `new DWindowMinButton` | constructor `Owned` | constructor; `dwindowminbutton.h` |
-| `DWindowMinButton::sizeHint` | `*mut QSize` | owned heap copy | shim conversion; `dwindowminbutton.h` |
+| `DWindowMinButton::sizeHint` | `QSize` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dwindowminbutton.h` |
 | `DWindowOptionButton()` | `new DWindowOptionButton` | constructor `Owned` | constructor; `dwindowoptionbutton.h` |
-| `DWindowOptionButton::sizeHint` | `*mut QSize` | owned heap copy | shim conversion; `dwindowoptionbutton.h` |
+| `DWindowOptionButton::sizeHint` | `QSize` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dwindowoptionbutton.h` |
 | `DWindowQuitFullButton()` | `new DWindowQuitFullButton` | constructor `Owned` | constructor; `dwindowquitfullbutton.h` |
-| `DWindowQuitFullButton::sizeHint` | `*mut QSize` | owned heap copy | shim conversion; `dwindowquitfullbutton.h` |
+| `DWindowQuitFullButton::sizeHint` | `QSize` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dwindowquitfullbutton.h` |

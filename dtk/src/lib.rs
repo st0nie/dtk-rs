@@ -21,6 +21,7 @@ use std::rc::Rc;
 mod application;
 pub use application::{DApplication, QCoreApplication};
 mod signals;
+mod signals_gen;
 pub mod threading;
 pub use signals::Connection;
 pub use threading::GuiSender;
@@ -1004,10 +1005,6 @@ impl QAction {
         let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::action_trigger(self.live_ptr()) }
     }
-    /// Connect `triggered(bool)`, including the checked state for checkable actions.
-    pub fn on_triggered(&self, f: impl FnMut(bool) + 'static) -> usize {
-        self.connect_signal_bool("triggered(bool)", f)
-    }
 }
 
 // Popup menu (DMenu = QMenu typedef in DTK6); parent owns its actions.
@@ -1242,7 +1239,6 @@ macro_rules! value_wrapper {
     };
 }
 
-value_wrapper!(QColor, ffi::QColor, color_delete);
 value_wrapper!(QFont, ffi::QFont, font_delete);
 value_wrapper!(QPalette, ffi::QPalette, palette_delete);
 value_wrapper!(DPalette, ffi::DPalette, dpalette_delete);
@@ -1251,14 +1247,90 @@ value_wrapper!(QImage, ffi::QImage, image_delete);
 value_wrapper!(QBrush, ffi::QBrush, brush_delete);
 value_wrapper!(QPainterPath, ffi::QPainterPath, painter_path_delete);
 value_wrapper!(QKeySequence, ffi::QKeySequence, key_sequence_delete);
-value_wrapper!(QUrl, ffi::QUrl, url_delete);
-value_wrapper!(QPoint, ffi::QPoint, point_delete);
-value_wrapper!(QRect, ffi::QRect, rect_delete);
-value_wrapper!(QSize, ffi::QSize, size_delete);
-value_wrapper!(QMargins, ffi::QMargins, margins_delete);
 value_wrapper!(QVariant, ffi::QVariant, variant_delete);
 value_wrapper!(QVariantList, ffi::QVariantList, variant_list_delete);
 value_wrapper!(DDciIcon, ffi::DDciIcon, ddci_icon_delete);
+
+/// Owned `QPersistentModelIndex` (a model position that survives callbacks).
+///
+/// Qt keeps it current across inserts/moves and invalidates it in
+/// `~QAbstractItemModel`; it never keeps the model alive. Its destructor
+/// unregisters from the model's private index table, so Drop is deferred while
+/// native model code is on the stack. `!Send`: model thread only.
+pub struct PersistentModelIndex {
+    ptr: *mut ffi::QPersistentModelIndex,
+    _not_send: PhantomData<*mut ()>,
+}
+
+impl PersistentModelIndex {
+    pub(crate) fn from_raw(ptr: *mut ffi::QPersistentModelIndex) -> Self {
+        assert!(!ptr.is_null());
+        Self {
+            ptr,
+            _not_send: PhantomData,
+        }
+    }
+    /// False once the row was removed or the model destroyed.
+    pub fn is_valid(&self) -> bool {
+        unsafe { ffi::persistent_index_is_valid(self.ptr) }
+    }
+    pub fn row(&self) -> i32 {
+        unsafe { ffi::persistent_index_row(self.ptr) }
+    }
+    pub fn column(&self) -> i32 {
+        unsafe { ffi::persistent_index_column(self.ptr) }
+    }
+    pub fn parent(&self) -> PersistentModelIndex {
+        Self::from_raw(unsafe { ffi::persistent_index_parent(self.ptr) })
+    }
+    /// `QAbstractItemModel::data`: a native model call, serialized like any
+    /// QObject operation. An invalid index returns an invalid QVariant.
+    pub fn data(&self, role: i32) -> QVariant {
+        let _call = dtk_sys::NativeCall::new();
+        QVariant::from_raw(unsafe { ffi::persistent_index_data(self.ptr, role) })
+    }
+}
+
+impl Clone for PersistentModelIndex {
+    fn clone(&self) -> Self {
+        Self::from_raw(unsafe { ffi::persistent_index_clone(self.ptr) })
+    }
+}
+
+impl Drop for PersistentModelIndex {
+    fn drop(&mut self) {
+        let ptr = self.ptr;
+        dtk_sys::defer_cleanup(move || unsafe { ffi::persistent_index_delete(ptr) });
+    }
+}
+
+impl std::fmt::Debug for PersistentModelIndex {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "PersistentModelIndex({}, {})", self.row(), self.column())
+    }
+}
+
+/// Trivially copyable / implicitly shared Qt values, bound **by value** through
+/// cxx-qt-lib (the same C++ types; cxx-qt-lib static-asserts their layout
+/// against the installed Qt). No heap allocation or deleter crosses FFI:
+/// returns are C++ copies, inputs are `const T &` borrows of Rust values.
+pub use cxx_qt_lib::{
+    QColor, QMargins, QMarginsF, QPoint, QPointF, QRect, QRectF, QSize, QSizeF, QString, QUrl,
+};
+
+/// Packed `0xAARRGGBB` view of a [`QColor`] (Qt `QColor::rgba()`).
+pub trait ColorExt {
+    fn rgba_u32(&self) -> u32;
+}
+impl ColorExt for QColor {
+    fn rgba_u32(&self) -> u32 {
+        let c = self.to_rgb();
+        (c.alpha() as u32) << 24
+            | (c.red() as u32) << 16
+            | (c.green() as u32) << 8
+            | c.blue() as u32
+    }
+}
 
 impl QVariant {
     /// An invalid/empty Qt QVariant.
@@ -1352,19 +1424,6 @@ impl FromIterator<QVariant> for QVariantList {
     }
 }
 
-impl QColor {
-    pub fn rgb(r: i32, g: i32, b: i32) -> Self {
-        Self::from_raw(unsafe { ffi::color_new_rgb(r, g, b, 255) })
-    }
-    pub fn rgba(r: i32, g: i32, b: i32, a: i32) -> Self {
-        Self::from_raw(unsafe { ffi::color_new_rgb(r, g, b, a) })
-    }
-    /// packed 0xAARRGGBB
-    pub fn rgba_u32(&self) -> u32 {
-        unsafe { ffi::color_rgba(self.ptr) as u32 }
-    }
-}
-
 impl QFont {
     pub fn new() -> Self {
         Self::from_raw(unsafe { ffi::font_new() })
@@ -1424,11 +1483,11 @@ impl QPalette {
     }
     /// use qt::palette_group / qt::palette_role constants
     pub fn set_color(&self, group: i32, role: i32, color: &QColor) {
-        unsafe { ffi::palette_set_color(self.ptr, group, role, color.ptr) }
+        unsafe { ffi::palette_set_color(self.ptr, group, role, color) }
     }
     /// read a color (e.g. copy Active Highlight into the Inactive group)
     pub fn color(&self, group: i32, role: i32) -> QColor {
-        QColor::from_raw(unsafe { ffi::palette_color(self.ptr, group, role) })
+        unsafe { ffi::palette_color(self.ptr, group, role) }
     }
 }
 
@@ -1460,7 +1519,7 @@ impl QImage {
         unsafe { ffi::image_height(self.ptr) }
     }
     pub fn fill(&mut self, color: &QColor) {
-        unsafe { ffi::image_fill(self.ptr, color.ptr) }
+        unsafe { ffi::image_fill(self.ptr, color) }
     }
     pub fn set_text(&mut self, key: &str, value: &str) {
         unsafe { ffi::image_set_text(self.ptr, key, value) }
@@ -1475,16 +1534,16 @@ impl QImage {
     /// Pixel color; x/y must be in bounds (Qt warns on invalid coordinates).
     pub fn pixel_color(&self, x: i32, y: i32) -> QColor {
         assert!(x >= 0 && x < self.width() && y >= 0 && y < self.height());
-        QColor::from_raw(unsafe { ffi::image_pixel_color(self.ptr, x, y) })
+        unsafe { ffi::image_pixel_color(self.ptr, x, y) }
     }
 }
 
 impl QBrush {
     pub fn from_color(color: &QColor) -> Self {
-        Self::from_raw(unsafe { ffi::brush_from_color(color.ptr) })
+        Self::from_raw(unsafe { ffi::brush_from_color(color) })
     }
     pub fn color(&self) -> QColor {
-        QColor::from_raw(unsafe { ffi::brush_color(self.ptr) })
+        unsafe { ffi::brush_color(self.ptr) }
     }
 }
 
@@ -1513,57 +1572,6 @@ impl QKeySequence {
 impl std::fmt::Display for QKeySequence {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(&unsafe { ffi::key_sequence_to_string(self.ptr) })
-    }
-}
-
-impl QUrl {
-    pub fn from_string(url: &str) -> Self {
-        Self::from_raw(unsafe { ffi::url_from_string(url) })
-    }
-    pub fn is_valid(&self) -> bool {
-        unsafe { ffi::url_is_valid(self.ptr) }
-    }
-}
-
-impl std::fmt::Display for QUrl {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&unsafe { ffi::url_to_string(self.ptr) })
-    }
-}
-
-impl QPoint {
-    pub fn new(x: i32, y: i32) -> Self {
-        Self::from_raw(unsafe { ffi::point_new(x, y) })
-    }
-}
-
-impl QRect {
-    pub fn new(x: i32, y: i32, w: i32, h: i32) -> Self {
-        Self::from_raw(unsafe { ffi::rect_new(x, y, w, h) })
-    }
-    pub fn width(&self) -> i32 {
-        unsafe { ffi::rect_width(self.ptr) }
-    }
-    pub fn height(&self) -> i32 {
-        unsafe { ffi::rect_height(self.ptr) }
-    }
-    pub fn x(&self) -> i32 {
-        unsafe { ffi::rect_x(self.ptr) }
-    }
-    pub fn y(&self) -> i32 {
-        unsafe { ffi::rect_y(self.ptr) }
-    }
-}
-
-impl QSize {
-    pub fn new(w: i32, h: i32) -> Self {
-        Self::from_raw(unsafe { ffi::size_new(w, h) })
-    }
-}
-
-impl QMargins {
-    pub fn new(left: i32, top: i32, right: i32, bottom: i32) -> Self {
-        Self::from_raw(unsafe { ffi::q_margins_new(left, top, right, bottom) })
     }
 }
 
@@ -1835,9 +1843,6 @@ impl DSuggestButton {
         let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::button_set_text(self.live_ptr().cast(), text) }
     }
-    pub fn on_clicked(&self, f: impl FnMut() + 'static) -> usize {
-        self.connect_signal("clicked(bool)", f)
-    }
     /// programmatic click (emits clicked; useful for tests)
     pub fn click(&self) {
         let _call = dtk_sys::NativeCall::new();
@@ -1858,9 +1863,6 @@ impl DPushButton {
     pub fn click(&self) {
         let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::button_click(self.live_ptr()) }
-    }
-    pub fn on_clicked(&self, f: impl FnMut() + 'static) -> usize {
-        self.connect_signal("clicked(bool)", f)
     }
 }
 
@@ -2148,6 +2150,26 @@ impl QAbstractItemModel {
         let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::model_remove_rows(self.live_ptr(), row, count) }
     }
+    /// `QAbstractItemModel::index(row, col, parent)` as a persistent index.
+    /// An out-of-range position (or a parent of another model) gives an
+    /// invalid index rather than undefined behavior.
+    pub fn index(
+        &self,
+        row: i32,
+        col: i32,
+        parent: Option<&PersistentModelIndex>,
+    ) -> PersistentModelIndex {
+        let _call = dtk_sys::NativeCall::new();
+        let parent = parent.map_or(std::ptr::null_mut(), |p| p.ptr);
+        PersistentModelIndex::from_raw(unsafe {
+            ffi::model_index(self.live_ptr(), row, col, parent)
+        })
+    }
+    /// `setData` at a persistent position; false for invalid/foreign indexes.
+    pub fn set_index_data(&self, index: &PersistentModelIndex, data: &QVariant, role: i32) -> bool {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { ffi::model_set_index_data(self.live_ptr(), index.ptr, data.ptr, role) }
+    }
 }
 
 object_wrapper!(QStandardItemModel, ffi::QStandardItemModel);
@@ -2330,10 +2352,6 @@ impl QTimer {
         let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::timer_stop(self.live_ptr()) }
     }
-    /// Returns the callback id for [`unregister_callback`]; 0 = connect failed.
-    pub fn on_timeout(&self, f: impl FnMut() + 'static) -> usize {
-        self.connect_signal("timeout()", f)
-    }
     /// One-shot timer; its closure is released after firing (even on panic),
     /// or when Qt cancels it because the application is destroyed.
     pub fn single_shot(msec: i32, f: impl FnOnce() + 'static) {
@@ -2369,7 +2387,7 @@ impl TableCell {
             .is_some()
     }
     pub fn set_foreground(&self, color: &QColor) -> bool {
-        self.with_item(|item| unsafe { ffi::item_set_foreground(item, color.ptr) })
+        self.with_item(|item| unsafe { ffi::item_set_foreground(item, color) })
             .is_some()
     }
     pub fn set_data_string(&self, role: i32, value: &str) -> bool {
@@ -2412,7 +2430,7 @@ impl Painter {
         unsafe { ffi::painter_restore(self.ptr) }
     }
     pub fn set_pen_color(&self, color: &QColor) {
-        unsafe { ffi::painter_set_pen_color(self.ptr, color.ptr) }
+        unsafe { ffi::painter_set_pen_color(self.ptr, color) }
     }
     pub fn set_font(&self, font: &QFont) {
         unsafe { ffi::painter_set_font(self.ptr, font.ptr) }
@@ -2428,7 +2446,7 @@ impl Painter {
         unsafe { ffi::painter_draw_icon(self.ptr, x, y, w, h, icon.ptr) }
     }
     pub fn fill_rect(&self, x: i32, y: i32, w: i32, h: i32, color: &QColor) {
-        unsafe { ffi::painter_fill_rect(self.ptr, x, y, w, h, color.ptr) }
+        unsafe { ffi::painter_fill_rect(self.ptr, x, y, w, h, color) }
     }
     pub fn set_clip_rect(&self, x: i32, y: i32, w: i32, h: i32) {
         unsafe { ffi::painter_set_clip_rect(self.ptr, x, y, w, h) }
@@ -2453,6 +2471,11 @@ pub struct ModelIndex {
 }
 
 impl ModelIndex {
+    /// Keep this index beyond the callback: Qt updates a persistent index
+    /// across row/column moves and invalidates it when the model is destroyed.
+    pub fn to_persistent(&self) -> PersistentModelIndex {
+        PersistentModelIndex::from_raw(unsafe { ffi::persistent_index_from(self.ptr) })
+    }
     pub fn data_string(&self, role: i32) -> String {
         unsafe { ffi::index_data_string(self.ptr, role) }
     }
@@ -2543,13 +2566,6 @@ impl widgets::DSearchEdit {
     pub fn text(&self) -> String {
         let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::line_edit_text(self.widget_ptr()) }
-    }
-}
-
-impl widgets::DComboBox {
-    /// currentIndexChanged(int). Returns id; 0 = connect failed.
-    pub fn on_current_index_changed(&self, f: impl FnMut(i32) + 'static) -> usize {
-        self.connect_signal_i32("currentIndexChanged(int)", f)
     }
 }
 

@@ -49,14 +49,14 @@ DAbstractDialog *gen_d_abstract_dialog_new() { return new DAbstractDialog; }
 QObject *gen_d_abstract_dialog_as_qobject(DAbstractDialog *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_abstract_dialog_as_widget(DAbstractDialog *self) { return static_cast<QWidget *>(self); }
 int32_t gen_d_abstract_dialog_display_position(DAbstractDialog *self) { return static_cast<int32_t>(self->displayPosition()); }
-void gen_d_abstract_dialog_move_(DAbstractDialog *self, QPoint * pos) { self->move(*pos); }
+void gen_d_abstract_dialog_move_(DAbstractDialog *self, const QPoint &pos) { self->move(pos); }
 void gen_d_abstract_dialog_move_2(DAbstractDialog *self, int32_t x, int32_t y) { self->move(x, y); }
-void gen_d_abstract_dialog_set_geometry(DAbstractDialog *self, QRect * rect) { self->setGeometry(*rect); }
+void gen_d_abstract_dialog_set_geometry(DAbstractDialog *self, const QRect &rect) { self->setGeometry(rect); }
 void gen_d_abstract_dialog_set_geometry_2(DAbstractDialog *self, int32_t x, int32_t y, int32_t width, int32_t height) { self->setGeometry(x, y, width, height); }
 void gen_d_abstract_dialog_move_to_center(DAbstractDialog *self) { self->moveToCenter(); }
 void gen_d_abstract_dialog_move_to_top_right(DAbstractDialog *self) { self->moveToTopRight(); }
-void gen_d_abstract_dialog_move_to_center_by_rect(DAbstractDialog *self, QRect * rect) { self->moveToCenterByRect(*rect); }
-void gen_d_abstract_dialog_move_to_top_right_by_rect(DAbstractDialog *self, QRect * rect) { self->moveToTopRightByRect(*rect); }
+void gen_d_abstract_dialog_move_to_center_by_rect(DAbstractDialog *self, const QRect &rect) { self->moveToCenterByRect(rect); }
+void gen_d_abstract_dialog_move_to_top_right_by_rect(DAbstractDialog *self, const QRect &rect) { self->moveToTopRightByRect(rect); }
 void gen_d_abstract_dialog_set_display_position(DAbstractDialog *self, int32_t displayPosition) { self->setDisplayPosition(static_cast<DAbstractDialog::DisplayPosition>(displayPosition)); }
 DAccessibilityChecker *gen_d_accessibility_checker_new() { return new DAccessibilityChecker; }
 QObject *gen_d_accessibility_checker_as_qobject(DAccessibilityChecker *self) { return static_cast<QObject *>(self); }
@@ -67,9 +67,9 @@ void gen_d_accessibility_checker_start(DAccessibilityChecker *self, int32_t msec
 QObject *gen_d_alert_control_as_qobject(DAlertControl *self) { return static_cast<QObject *>(self); }
 void gen_d_alert_control_set_alert(DAlertControl *self, bool isAlert) { self->setAlert(isAlert); }
 bool gen_d_alert_control_is_alert(DAlertControl *self) { return self->isAlert(); }
-void gen_d_alert_control_set_alert_color(DAlertControl *self, QColor * c) { self->setAlertColor(*c); }
-QColor * gen_d_alert_control_alert_color(DAlertControl *self) { return new QColor(self->alertColor()); }
-QColor * gen_d_alert_control_default_alert_color(DAlertControl *self) { return new QColor(self->defaultAlertColor()); }
+void gen_d_alert_control_set_alert_color(DAlertControl *self, const QColor &c) { self->setAlertColor(c); }
+QColor gen_d_alert_control_alert_color(DAlertControl *self) { return self->alertColor(); }
+QColor gen_d_alert_control_default_alert_color(DAlertControl *self) { return self->defaultAlertColor(); }
 void gen_d_alert_control_set_message_alignment(DAlertControl *self, int32_t alignment) { self->setMessageAlignment(Qt::Alignment::fromInt(alignment)); }
 int32_t gen_d_alert_control_message_alignment(DAlertControl *self) { return (self->messageAlignment()).toInt(); }
 void gen_d_alert_control_show_alert_message(DAlertControl *self, rust::Str text, int32_t duration) { self->showAlertMessage(from_rust_str(text), duration); }
@@ -121,7 +121,7 @@ void gen_d_anchors_base_move_left(DAnchorsBase *self, int32_t arg) { self->moveL
 void gen_d_anchors_base_move_right(DAnchorsBase *self, int32_t arg) { self->moveRight(arg); }
 void gen_d_anchors_base_move_horizontal_center(DAnchorsBase *self, int32_t arg) { self->moveHorizontalCenter(arg); }
 void gen_d_anchors_base_move_vertical_center(DAnchorsBase *self, int32_t arg) { self->moveVerticalCenter(arg); }
-void gen_d_anchors_base_move_center(DAnchorsBase *self, QPoint * arg) { self->moveCenter(*arg); }
+void gen_d_anchors_base_move_center(DAnchorsBase *self, const QPoint &arg) { self->moveCenter(arg); }
 ArrowButtonIcon *gen_arrow_button_icon_new() { return new ArrowButtonIcon; }
 QObject *gen_arrow_button_icon_as_qobject(ArrowButtonIcon *self) { return static_cast<QObject *>(self); }
 QWidget *gen_arrow_button_icon_as_widget(ArrowButtonIcon *self) { return static_cast<QWidget *>(self); }
@@ -150,8 +150,8 @@ int32_t gen_d_arrow_rectangle_arrow_x(DArrowRectangle *self) { return self->arro
 int32_t gen_d_arrow_rectangle_arrow_y(DArrowRectangle *self) { return self->arrowY(); }
 int32_t gen_d_arrow_rectangle_margin(DArrowRectangle *self) { return self->margin(); }
 int32_t gen_d_arrow_rectangle_border_width(DArrowRectangle *self) { return self->borderWidth(); }
-QColor * gen_d_arrow_rectangle_border_color(DArrowRectangle *self) { return new QColor(self->borderColor()); }
-QColor * gen_d_arrow_rectangle_background_color(DArrowRectangle *self) { return new QColor(self->backgroundColor()); }
+QColor gen_d_arrow_rectangle_border_color(DArrowRectangle *self) { return self->borderColor(); }
+QColor gen_d_arrow_rectangle_background_color(DArrowRectangle *self) { return self->backgroundColor(); }
 int32_t gen_d_arrow_rectangle_arrow_direction(DArrowRectangle *self) { return static_cast<int32_t>(self->arrowDirection()); }
 void gen_d_arrow_rectangle_set_radius(DArrowRectangle *self, int32_t value) { self->setRadius(value); }
 void gen_d_arrow_rectangle_set_radius_force_enable(DArrowRectangle *self, bool enable) { self->setRadiusForceEnable(enable); }
@@ -161,8 +161,8 @@ void gen_d_arrow_rectangle_set_arrow_x(DArrowRectangle *self, int32_t value) { s
 void gen_d_arrow_rectangle_set_arrow_y(DArrowRectangle *self, int32_t value) { self->setArrowY(value); }
 void gen_d_arrow_rectangle_set_margin(DArrowRectangle *self, int32_t value) { self->setMargin(value); }
 void gen_d_arrow_rectangle_set_border_width(DArrowRectangle *self, int32_t borderWidth) { self->setBorderWidth(borderWidth); }
-void gen_d_arrow_rectangle_set_border_color(DArrowRectangle *self, QColor * borderColor) { self->setBorderColor(*borderColor); }
-void gen_d_arrow_rectangle_set_background_color(DArrowRectangle *self, QColor * backgroundColor) { self->setBackgroundColor(*backgroundColor); }
+void gen_d_arrow_rectangle_set_border_color(DArrowRectangle *self, const QColor &borderColor) { self->setBorderColor(borderColor); }
+void gen_d_arrow_rectangle_set_background_color(DArrowRectangle *self, const QColor &backgroundColor) { self->setBackgroundColor(backgroundColor); }
 void gen_d_arrow_rectangle_set_background_color_2(DArrowRectangle *self, int32_t type_) { self->setBackgroundColor(static_cast<DBlurEffectWidget::MaskColorType>(type_)); }
 void gen_d_arrow_rectangle_set_arrow_direction(DArrowRectangle *self, int32_t value) { self->setArrowDirection(static_cast<DArrowRectangle::ArrowDirection>(value)); }
 void gen_d_arrow_rectangle_set_width(DArrowRectangle *self, int32_t value) { self->setWidth(value); }
@@ -172,7 +172,7 @@ void gen_d_arrow_rectangle_set_content(DArrowRectangle *self, QWidget * content)
 QWidget * gen_d_arrow_rectangle_get_content(DArrowRectangle *self) { return self->getContent(); }
 void gen_d_arrow_rectangle_resize_with_content(DArrowRectangle *self) { self->resizeWithContent(); }
 void gen_d_arrow_rectangle_move_(DArrowRectangle *self, int32_t x, int32_t y) { self->move(x, y); }
-QSize * gen_d_arrow_rectangle_get_fixed_size(DArrowRectangle *self) { return new QSize(self->getFixedSize()); }
+QSize gen_d_arrow_rectangle_get_fixed_size(DArrowRectangle *self) { return self->getFixedSize(); }
 double gen_d_arrow_rectangle_shadow_x_offset(DArrowRectangle *self) { return self->shadowXOffset(); }
 double gen_d_arrow_rectangle_shadow_y_offset(DArrowRectangle *self) { return self->shadowYOffset(); }
 double gen_d_arrow_rectangle_shadow_blur_radius(DArrowRectangle *self) { return self->shadowBlurRadius(); }
@@ -184,10 +184,10 @@ void gen_d_arrow_rectangle_set_radius_arrow_style_enable(DArrowRectangle *self, 
 DBackgroundGroup *gen_d_background_group_new() { return new DBackgroundGroup; }
 QObject *gen_d_background_group_as_qobject(DBackgroundGroup *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_background_group_as_widget(DBackgroundGroup *self) { return static_cast<QWidget *>(self); }
-QMargins * gen_d_background_group_item_margins(DBackgroundGroup *self) { return new QMargins(self->itemMargins()); }
+QMargins gen_d_background_group_item_margins(DBackgroundGroup *self) { return self->itemMargins(); }
 bool gen_d_background_group_use_widget_background(DBackgroundGroup *self) { return self->useWidgetBackground(); }
 void gen_d_background_group_set_layout(DBackgroundGroup *self, QLayout * layout) { if (!layout_can_install(self, layout)) return; self->setLayout(layout); }
-void gen_d_background_group_set_item_margins(DBackgroundGroup *self, QMargins * itemMargins) { self->setItemMargins(*itemMargins); }
+void gen_d_background_group_set_item_margins(DBackgroundGroup *self, const QMargins &itemMargins) { self->setItemMargins(itemMargins); }
 void gen_d_background_group_set_item_spacing(DBackgroundGroup *self, int32_t spacing) { self->setItemSpacing(spacing); }
 void gen_d_background_group_set_use_widget_background(DBackgroundGroup *self, bool useWidgetBackground) { self->setUseWidgetBackground(useWidgetBackground); }
 DBaseLine *gen_d_base_line_new() { return new DBaseLine; }
@@ -211,7 +211,7 @@ int32_t gen_d_blur_effect_widget_blur_rect_x_radius(DBlurEffectWidget *self) { r
 int32_t gen_d_blur_effect_widget_blur_rect_y_radius(DBlurEffectWidget *self) { return self->blurRectYRadius(); }
 bool gen_d_blur_effect_widget_is_full(DBlurEffectWidget *self) { return self->isFull(); }
 bool gen_d_blur_effect_widget_blur_enabled(DBlurEffectWidget *self) { return self->blurEnabled(); }
-QColor * gen_d_blur_effect_widget_mask_color(DBlurEffectWidget *self) { return new QColor(self->maskColor()); }
+QColor gen_d_blur_effect_widget_mask_color(DBlurEffectWidget *self) { return self->maskColor(); }
 uint8_t gen_d_blur_effect_widget_mask_alpha(DBlurEffectWidget *self) { return self->maskAlpha(); }
 void gen_d_blur_effect_widget_set_mask_path(DBlurEffectWidget *self, QPainterPath * path) { self->setMaskPath(*path); }
 void gen_d_blur_effect_widget_set_source_image(DBlurEffectWidget *self, QImage * image, bool autoScale) { self->setSourceImage(*image, autoScale); }
@@ -221,14 +221,14 @@ void gen_d_blur_effect_widget_set_blend_mode(DBlurEffectWidget *self, int32_t bl
 void gen_d_blur_effect_widget_set_blur_rect_x_radius(DBlurEffectWidget *self, int32_t blurRectXRadius) { self->setBlurRectXRadius(blurRectXRadius); }
 void gen_d_blur_effect_widget_set_blur_rect_y_radius(DBlurEffectWidget *self, int32_t blurRectYRadius) { self->setBlurRectYRadius(blurRectYRadius); }
 void gen_d_blur_effect_widget_set_mask_alpha(DBlurEffectWidget *self, uint8_t alpha) { self->setMaskAlpha(alpha); }
-void gen_d_blur_effect_widget_set_mask_color(DBlurEffectWidget *self, QColor * maskColor) { self->setMaskColor(*maskColor); }
+void gen_d_blur_effect_widget_set_mask_color(DBlurEffectWidget *self, const QColor &maskColor) { self->setMaskColor(maskColor); }
 void gen_d_blur_effect_widget_set_mask_color_2(DBlurEffectWidget *self, int32_t type_) { self->setMaskColor(static_cast<DBlurEffectWidget::MaskColorType>(type_)); }
 void gen_d_blur_effect_widget_set_full(DBlurEffectWidget *self, bool full) { self->setFull(full); }
 void gen_d_blur_effect_widget_set_blur_enabled(DBlurEffectWidget *self, bool blurEnabled) { self->setBlurEnabled(blurEnabled); }
 DBlurEffectGroup *gen_d_blur_effect_group_new() { return new DBlurEffectGroup; }
 void gen_d_blur_effect_group_delete(DBlurEffectGroup *self) { delete self; }
 void gen_d_blur_effect_group_set_source_image(DBlurEffectGroup *self, QImage * image, int32_t blurRadius) { self->setSourceImage(*image, blurRadius); }
-void gen_d_blur_effect_group_add_widget(DBlurEffectGroup *self, DBlurEffectWidget * widget, QPoint * offset) { self->addWidget(widget, *offset); }
+void gen_d_blur_effect_group_add_widget(DBlurEffectGroup *self, DBlurEffectWidget * widget, const QPoint &offset) { self->addWidget(widget, offset); }
 void gen_d_blur_effect_group_remove_widget(DBlurEffectGroup *self, DBlurEffectWidget * widget) { self->removeWidget(widget); }
 DBlurEffectWithBorderWidget *gen_d_blur_effect_with_border_widget_new() { return new DBlurEffectWithBorderWidget; }
 QObject *gen_d_blur_effect_with_border_widget_as_qobject(DBlurEffectWithBorderWidget *self) { return static_cast<QObject *>(self); }
@@ -240,7 +240,7 @@ QObject *gen_d_box_widget_as_qobject(DBoxWidget *self) { return static_cast<QObj
 QWidget *gen_d_box_widget_as_widget(DBoxWidget *self) { return static_cast<QWidget *>(self); }
 QBoxLayout * gen_d_box_widget_layout(DBoxWidget *self) { return self->layout(); }
 void gen_d_box_widget_add_widget(DBoxWidget *self, QWidget * widget) { if (!object_can_adopt(self, widget)) { return; } object_mark_native_adopted(self, widget); self->addWidget(widget); }
-QSize * gen_d_box_widget_size_hint(DBoxWidget *self) { return new QSize(self->sizeHint()); }
+QSize gen_d_box_widget_size_hint(DBoxWidget *self) { return self->sizeHint(); }
 DHBoxWidget *gen_d_h_box_widget_new() { return new DHBoxWidget; }
 QObject *gen_d_h_box_widget_as_qobject(DHBoxWidget *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_h_box_widget_as_widget(DHBoxWidget *self) { return static_cast<QWidget *>(self); }
@@ -253,9 +253,9 @@ void gen_d_button_box_button_set_icon(DButtonBoxButton *self, QIcon * icon) { se
 void gen_d_button_box_button_set_icon_2(DButtonBoxButton *self, int32_t iconType) { self->setIcon(static_cast<DStyle::StandardPixmap>(iconType)); }
 void gen_d_button_box_button_set_icon_3(DButtonBoxButton *self, DDciIcon * icon) { self->setIcon(*icon); }
 DDciIcon * gen_d_button_box_button_dci_icon(DButtonBoxButton *self) { return new DDciIcon(self->dciIcon()); }
-QSize * gen_d_button_box_button_icon_size(DButtonBoxButton *self) { return new QSize(self->iconSize()); }
-QSize * gen_d_button_box_button_size_hint(DButtonBoxButton *self) { return new QSize(self->sizeHint()); }
-QSize * gen_d_button_box_button_minimum_size_hint(DButtonBoxButton *self) { return new QSize(self->minimumSizeHint()); }
+QSize gen_d_button_box_button_icon_size(DButtonBoxButton *self) { return self->iconSize(); }
+QSize gen_d_button_box_button_size_hint(DButtonBoxButton *self) { return self->sizeHint(); }
+QSize gen_d_button_box_button_minimum_size_hint(DButtonBoxButton *self) { return self->minimumSizeHint(); }
 DButtonBox *gen_d_button_box_new() { return new DButtonBox; }
 QObject *gen_d_button_box_as_qobject(DButtonBox *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_button_box_as_widget(DButtonBox *self) { return static_cast<QWidget *>(self); }
@@ -273,17 +273,17 @@ int32_t gen_d_circle_progress_value(DCircleProgress *self) { return self->value(
 void gen_d_circle_progress_set_value(DCircleProgress *self, int32_t value) { self->setValue(value); }
 rust::String gen_d_circle_progress_text(DCircleProgress *self) { return to_rust_string(self->text()); }
 void gen_d_circle_progress_set_text(DCircleProgress *self, rust::Str text) { self->setText(from_rust_str(text)); }
-QColor * gen_d_circle_progress_background_color(DCircleProgress *self) { return new QColor(self->backgroundColor()); }
-void gen_d_circle_progress_set_background_color(DCircleProgress *self, QColor * color) { self->setBackgroundColor(*color); }
-QColor * gen_d_circle_progress_chunk_color(DCircleProgress *self) { return new QColor(self->chunkColor()); }
-void gen_d_circle_progress_set_chunk_color(DCircleProgress *self, QColor * color) { self->setChunkColor(*color); }
+QColor gen_d_circle_progress_background_color(DCircleProgress *self) { return self->backgroundColor(); }
+void gen_d_circle_progress_set_background_color(DCircleProgress *self, const QColor &color) { self->setBackgroundColor(color); }
+QColor gen_d_circle_progress_chunk_color(DCircleProgress *self) { return self->chunkColor(); }
+void gen_d_circle_progress_set_chunk_color(DCircleProgress *self, const QColor &color) { self->setChunkColor(color); }
 int32_t gen_d_circle_progress_line_width(DCircleProgress *self) { return self->lineWidth(); }
 void gen_d_circle_progress_set_line_width(DCircleProgress *self, int32_t width) { self->setLineWidth(width); }
 QObject *gen_d_clip_effect_widget_as_qobject(DClipEffectWidget *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_clip_effect_widget_as_widget(DClipEffectWidget *self) { return static_cast<QWidget *>(self); }
-QMargins * gen_d_clip_effect_widget_margins(DClipEffectWidget *self) { return new QMargins(self->margins()); }
+QMargins gen_d_clip_effect_widget_margins(DClipEffectWidget *self) { return self->margins(); }
 QPainterPath * gen_d_clip_effect_widget_clip_path(DClipEffectWidget *self) { return new QPainterPath(self->clipPath()); }
-void gen_d_clip_effect_widget_set_margins(DClipEffectWidget *self, QMargins * margins) { self->setMargins(*margins); }
+void gen_d_clip_effect_widget_set_margins(DClipEffectWidget *self, const QMargins &margins) { self->setMargins(margins); }
 void gen_d_clip_effect_widget_set_clip_path(DClipEffectWidget *self, QPainterPath * path) { self->setClipPath(*path); }
 DColoredProgressBar *gen_d_colored_progress_bar_new() { return new DColoredProgressBar; }
 QObject *gen_d_colored_progress_bar_as_qobject(DColoredProgressBar *self) { return static_cast<QObject *>(self); }
@@ -296,15 +296,15 @@ QWidget *gen_d_combo_box_as_widget(DComboBox *self) { return static_cast<QWidget
 void gen_d_combo_box_show_popup(DComboBox *self) { self->showPopup(); }
 QObject *gen_d_command_link_button_as_qobject(DCommandLinkButton *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_command_link_button_as_widget(DCommandLinkButton *self) { return static_cast<QWidget *>(self); }
-QSize * gen_d_command_link_button_size_hint(DCommandLinkButton *self) { return new QSize(self->sizeHint()); }
+QSize gen_d_command_link_button_size_hint(DCommandLinkButton *self) { return self->sizeHint(); }
 DCrumbTextFormat *gen_d_crumb_text_format_new() { return new DCrumbTextFormat; }
 void gen_d_crumb_text_format_delete(DCrumbTextFormat *self) { delete self; }
-QColor * gen_d_crumb_text_format_tag_color(DCrumbTextFormat *self) { return new QColor(self->tagColor()); }
-void gen_d_crumb_text_format_set_tag_color(DCrumbTextFormat *self, QColor * color) { self->setTagColor(*color); }
+QColor gen_d_crumb_text_format_tag_color(DCrumbTextFormat *self) { return self->tagColor(); }
+void gen_d_crumb_text_format_set_tag_color(DCrumbTextFormat *self, const QColor &color) { self->setTagColor(color); }
 rust::String gen_d_crumb_text_format_text(DCrumbTextFormat *self) { return to_rust_string(self->text()); }
 void gen_d_crumb_text_format_set_text(DCrumbTextFormat *self, rust::Str text) { self->setText(from_rust_str(text)); }
-QColor * gen_d_crumb_text_format_text_color(DCrumbTextFormat *self) { return new QColor(self->textColor()); }
-void gen_d_crumb_text_format_set_text_color(DCrumbTextFormat *self, QColor * color) { self->setTextColor(*color); }
+QColor gen_d_crumb_text_format_text_color(DCrumbTextFormat *self) { return self->textColor(); }
+void gen_d_crumb_text_format_set_text_color(DCrumbTextFormat *self, const QColor &color) { self->setTextColor(color); }
 QBrush * gen_d_crumb_text_format_background(DCrumbTextFormat *self) { return new QBrush(self->background()); }
 void gen_d_crumb_text_format_set_background(DCrumbTextFormat *self, QBrush * background) { self->setBackground(*background); }
 int32_t gen_d_crumb_text_format_background_radius(DCrumbTextFormat *self) { return self->backgroundRadius(); }
@@ -337,8 +337,8 @@ rust::String gen_d_dialog_message(DDialog *self) { return to_rust_string(self->m
 QIcon * gen_d_dialog_icon(DDialog *self) { return new QIcon(self->icon()); }
 int32_t gen_d_dialog_text_format(DDialog *self) { return static_cast<int32_t>(self->textFormat()); }
 bool gen_d_dialog_on_button_clicked_close(DDialog *self) { return self->onButtonClickedClose(); }
-void gen_d_dialog_set_content_layout_contents_margins(DDialog *self, QMargins * margins) { self->setContentLayoutContentsMargins(*margins); }
-QMargins * gen_d_dialog_content_layout_contents_margins(DDialog *self) { return new QMargins(self->contentLayoutContentsMargins()); }
+void gen_d_dialog_set_content_layout_contents_margins(DDialog *self, const QMargins &margins) { self->setContentLayoutContentsMargins(margins); }
+QMargins gen_d_dialog_content_layout_contents_margins(DDialog *self) { return self->contentLayoutContentsMargins(); }
 bool gen_d_dialog_close_button_visible(DDialog *self) { return self->closeButtonVisible(); }
 int32_t gen_d_dialog_add_button(DDialog *self, rust::Str text, bool isDefault, int32_t type_) { return self->addButton(from_rust_str(text), isDefault, static_cast<DDialog::ButtonType>(type_)); }
 int32_t gen_d_dialog_add_buttons(DDialog *self, rust::Vec<rust::String> text) { return self->addButtons(to_qstringlist(std::move(text))); }
@@ -424,8 +424,8 @@ QObject *gen_d_file_chooser_edit_as_qobject(DFileChooserEdit *self) { return sta
 QWidget *gen_d_file_chooser_edit_as_widget(DFileChooserEdit *self) { return static_cast<QWidget *>(self); }
 void gen_d_file_chooser_edit_set_name_filters(DFileChooserEdit *self, rust::Vec<rust::String> filters) { self->setNameFilters(to_qstringlist(std::move(filters))); }
 rust::Vec<rust::String> gen_d_file_chooser_edit_name_filters(DFileChooserEdit *self) { return to_rust_string_vec(self->nameFilters()); }
-void gen_d_file_chooser_edit_set_directory_url(DFileChooserEdit *self, QUrl * directory) { self->setDirectoryUrl(*directory); }
-QUrl * gen_d_file_chooser_edit_directory_url(DFileChooserEdit *self) { return new QUrl(self->directoryUrl()); }
+void gen_d_file_chooser_edit_set_directory_url(DFileChooserEdit *self, const QUrl &directory) { self->setDirectoryUrl(directory); }
+QUrl gen_d_file_chooser_edit_directory_url(DFileChooserEdit *self) { return self->directoryUrl(); }
 void gen_d_file_chooser_edit_set_dialog_display_position(DFileChooserEdit *self, int32_t dialogDisplayPosition) { self->setDialogDisplayPosition(static_cast<DFileChooserEdit::DialogDisplayPosition>(dialogDisplayPosition)); }
 int32_t gen_d_file_chooser_edit_dialog_display_position(DFileChooserEdit *self) { return static_cast<int32_t>(self->dialogDisplayPosition()); }
 void gen_d_file_chooser_edit_init_dialog(DFileChooserEdit *self) { self->initDialog(); }
@@ -453,11 +453,11 @@ void gen_d_floating_message_set_icon_2(DFloatingMessage *self, DDciIcon * icon) 
 void gen_d_floating_message_set_message(DFloatingMessage *self, rust::Str str) { self->setMessage(from_rust_str(str)); }
 void gen_d_floating_message_set_widget(DFloatingMessage *self, QWidget * w) { if (!object_can_adopt(self, w)) { return; } object_mark_native_adopted(self, w); self->setWidget(w); }
 void gen_d_floating_message_set_duration(DFloatingMessage *self, int32_t msec) { self->setDuration(msec); }
-QSize * gen_d_floating_message_size_hint(DFloatingMessage *self) { return new QSize(self->sizeHint()); }
+QSize gen_d_floating_message_size_hint(DFloatingMessage *self) { return self->sizeHint(); }
 DFloatingWidget *gen_d_floating_widget_new() { return new DFloatingWidget; }
 QObject *gen_d_floating_widget_as_qobject(DFloatingWidget *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_floating_widget_as_widget(DFloatingWidget *self) { return static_cast<QWidget *>(self); }
-QSize * gen_d_floating_widget_size_hint(DFloatingWidget *self) { return new QSize(self->sizeHint()); }
+QSize gen_d_floating_widget_size_hint(DFloatingWidget *self) { return self->sizeHint(); }
 void gen_d_floating_widget_set_widget(DFloatingWidget *self, QWidget * widget) { if (!object_can_adopt(self, widget)) { return; } object_mark_native_adopted(self, widget); self->setWidget(widget); }
 void gen_d_floating_widget_set_fram_radius(DFloatingWidget *self, int32_t radius) { self->setFramRadius(radius); }
 void gen_d_floating_widget_init_style_option(DFloatingWidget *self, DStyleOptionFloatingWidget * option) { self->initStyleOption(option); }
@@ -475,9 +475,9 @@ void gen_d_flow_layout_add_stretch(DFlowLayout *self, int32_t stretch) { self->a
 bool gen_d_flow_layout_has_height_for_width(DFlowLayout *self) { return self->hasHeightForWidth(); }
 int32_t gen_d_flow_layout_height_for_width(DFlowLayout *self, int32_t arg0) { return self->heightForWidth(arg0); }
 int32_t gen_d_flow_layout_count(DFlowLayout *self) { return self->count(); }
-QSize * gen_d_flow_layout_minimum_size(DFlowLayout *self) { return new QSize(self->minimumSize()); }
-void gen_d_flow_layout_set_geometry(DFlowLayout *self, QRect * rect) { self->setGeometry(*rect); }
-QSize * gen_d_flow_layout_size_hint(DFlowLayout *self) { return new QSize(self->sizeHint()); }
+QSize gen_d_flow_layout_minimum_size(DFlowLayout *self) { return self->minimumSize(); }
+void gen_d_flow_layout_set_geometry(DFlowLayout *self, const QRect &rect) { self->setGeometry(rect); }
+QSize gen_d_flow_layout_size_hint(DFlowLayout *self) { return self->sizeHint(); }
 int32_t gen_d_flow_layout_expanding_directions(DFlowLayout *self) { return (self->expandingDirections()).toInt(); }
 int32_t gen_d_flow_layout_horizontal_spacing(DFlowLayout *self) { return self->horizontalSpacing(); }
 int32_t gen_d_flow_layout_vertical_spacing(DFlowLayout *self) { return self->verticalSpacing(); }
@@ -488,7 +488,7 @@ DFontComboBox *gen_d_font_combo_box_new() { return new DFontComboBox; }
 QObject *gen_d_font_combo_box_as_qobject(DFontComboBox *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_font_combo_box_as_widget(DFontComboBox *self) { return static_cast<QWidget *>(self); }
 QFont * gen_d_font_combo_box_current_font(DFontComboBox *self) { return new QFont(self->currentFont()); }
-QSize * gen_d_font_combo_box_size_hint(DFontComboBox *self) { return new QSize(self->sizeHint()); }
+QSize gen_d_font_combo_box_size_hint(DFontComboBox *self) { return self->sizeHint(); }
 void gen_d_font_combo_box_set_current_font(DFontComboBox *self, QFont * f) { self->setCurrentFont(*f); }
 DFrame *gen_d_frame_new() { return new DFrame; }
 QObject *gen_d_frame_as_qobject(DFrame *self) { return static_cast<QObject *>(self); }
@@ -503,12 +503,13 @@ QObject *gen_d_vertical_line_as_qobject(DVerticalLine *self) { return static_cas
 QWidget *gen_d_vertical_line_as_widget(DVerticalLine *self) { return static_cast<QWidget *>(self); }
 DGraphicsClipEffect *gen_d_graphics_clip_effect_new() { return new DGraphicsClipEffect; }
 QObject *gen_d_graphics_clip_effect_as_qobject(DGraphicsClipEffect *self) { return static_cast<QObject *>(self); }
-QMargins * gen_d_graphics_clip_effect_margins(DGraphicsClipEffect *self) { return new QMargins(self->margins()); }
+QMargins gen_d_graphics_clip_effect_margins(DGraphicsClipEffect *self) { return self->margins(); }
 QPainterPath * gen_d_graphics_clip_effect_clip_path(DGraphicsClipEffect *self) { return new QPainterPath(self->clipPath()); }
-void gen_d_graphics_clip_effect_set_margins(DGraphicsClipEffect *self, QMargins * margins) { self->setMargins(*margins); }
+void gen_d_graphics_clip_effect_set_margins(DGraphicsClipEffect *self, const QMargins &margins) { self->setMargins(margins); }
 void gen_d_graphics_clip_effect_set_clip_path(DGraphicsClipEffect *self, QPainterPath * clipPath) { self->setClipPath(*clipPath); }
 DGraphicsGlowEffect *gen_d_graphics_glow_effect_new() { return new DGraphicsGlowEffect; }
 QObject *gen_d_graphics_glow_effect_as_qobject(DGraphicsGlowEffect *self) { return static_cast<QObject *>(self); }
+QRectF gen_d_graphics_glow_effect_bounding_rect_for(DGraphicsGlowEffect *self, const QRectF &rect) { return self->boundingRectFor(rect); }
 void gen_d_graphics_glow_effect_set_offset(DGraphicsGlowEffect *self, double dx, double dy) { self->setOffset(dx, dy); }
 void gen_d_graphics_glow_effect_set_x_offset(DGraphicsGlowEffect *self, double dx) { self->setXOffset(dx); }
 double gen_d_graphics_glow_effect_x_offset(DGraphicsGlowEffect *self) { return self->xOffset(); }
@@ -518,8 +519,8 @@ void gen_d_graphics_glow_effect_set_distance(DGraphicsGlowEffect *self, double d
 double gen_d_graphics_glow_effect_distance(DGraphicsGlowEffect *self) { return self->distance(); }
 void gen_d_graphics_glow_effect_set_blur_radius(DGraphicsGlowEffect *self, double blurRadius) { self->setBlurRadius(blurRadius); }
 double gen_d_graphics_glow_effect_blur_radius(DGraphicsGlowEffect *self) { return self->blurRadius(); }
-void gen_d_graphics_glow_effect_set_color(DGraphicsGlowEffect *self, QColor * color) { self->setColor(*color); }
-QColor * gen_d_graphics_glow_effect_color(DGraphicsGlowEffect *self) { return new QColor(self->color()); }
+void gen_d_graphics_glow_effect_set_color(DGraphicsGlowEffect *self, const QColor &color) { self->setColor(color); }
+QColor gen_d_graphics_glow_effect_color(DGraphicsGlowEffect *self) { return self->color(); }
 double gen_d_graphics_glow_effect_opacity(DGraphicsGlowEffect *self) { return self->opacity(); }
 void gen_d_graphics_glow_effect_set_opacity(DGraphicsGlowEffect *self, double opacity) { self->setOpacity(opacity); }
 DHeaderLine *gen_d_header_line_new() { return new DHeaderLine; }
@@ -535,9 +536,9 @@ void gen_d_icon_button_set_icon(DIconButton *self, QIcon * icon) { self->setIcon
 void gen_d_icon_button_set_icon_2(DIconButton *self, int32_t iconType) { self->setIcon(static_cast<DStyle::StandardPixmap>(iconType)); }
 void gen_d_icon_button_set_icon_3(DIconButton *self, DDciIcon * icon) { self->setIcon(*icon); }
 DDciIcon * gen_d_icon_button_dci_icon(DIconButton *self) { return new DDciIcon(self->dciIcon()); }
-QSize * gen_d_icon_button_size_hint(DIconButton *self) { return new QSize(self->sizeHint()); }
-QSize * gen_d_icon_button_minimum_size_hint(DIconButton *self) { return new QSize(self->minimumSizeHint()); }
-QSize * gen_d_icon_button_icon_size(DIconButton *self) { return new QSize(self->iconSize()); }
+QSize gen_d_icon_button_size_hint(DIconButton *self) { return self->sizeHint(); }
+QSize gen_d_icon_button_minimum_size_hint(DIconButton *self) { return self->minimumSizeHint(); }
+QSize gen_d_icon_button_icon_size(DIconButton *self) { return self->iconSize(); }
 bool gen_d_icon_button_is_flat(DIconButton *self) { return self->isFlat(); }
 void gen_d_icon_button_set_enabled_circle(DIconButton *self, bool status) { self->setEnabledCircle(status); }
 bool gen_d_icon_button_enabled_circle(DIconButton *self) { return self->enabledCircle(); }
@@ -562,13 +563,13 @@ int32_t gen_d_image_viewer_rotate_angle(DImageViewer *self) { return self->rotat
 void gen_d_image_viewer_reset_rotate_angle(DImageViewer *self) { self->resetRotateAngle(); }
 void gen_d_image_viewer_clear(DImageViewer *self) { self->clear(); }
 void gen_d_image_viewer_center_on(DImageViewer *self, double x, double y) { self->centerOn(x, y); }
-QRect * gen_d_image_viewer_visible_image_rect(DImageViewer *self) { return new QRect(self->visibleImageRect()); }
-void gen_d_image_viewer_scale_at_point(DImageViewer *self, QPoint * pos, double factor) { self->scaleAtPoint(*pos, factor); }
+QRect gen_d_image_viewer_visible_image_rect(DImageViewer *self) { return self->visibleImageRect(); }
+void gen_d_image_viewer_scale_at_point(DImageViewer *self, const QPoint &pos, double factor) { self->scaleAtPoint(pos, factor); }
 void gen_d_image_viewer_begin_crop_image(DImageViewer *self) { self->beginCropImage(); }
 void gen_d_image_viewer_end_crop_image(DImageViewer *self) { self->endCropImage(); }
 void gen_d_image_viewer_reset_crop_image(DImageViewer *self) { self->resetCropImage(); }
 void gen_d_image_viewer_set_crop_aspect_ratio(DImageViewer *self, double w, double h) { self->setCropAspectRatio(w, h); }
-QRect * gen_d_image_viewer_crop_image_rect(DImageViewer *self) { return new QRect(self->cropImageRect()); }
+QRect gen_d_image_viewer_crop_image_rect(DImageViewer *self) { return self->cropImageRect(); }
 DIndeterminateProgressbar *gen_d_indeterminate_progressbar_new() { return new DIndeterminateProgressbar; }
 QObject *gen_d_indeterminate_progressbar_as_qobject(DIndeterminateProgressbar *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_indeterminate_progressbar_as_widget(DIndeterminateProgressbar *self) { return static_cast<QWidget *>(self); }
@@ -682,15 +683,15 @@ QObject *gen_d_list_view_as_qobject(DListView *self) { return static_cast<QObjec
 QWidget *gen_d_list_view_as_widget(DListView *self) { return static_cast<QWidget *>(self); }
 QWidget * gen_d_list_view_get_header_widget(DListView *self, int32_t index) { return self->getHeaderWidget(index); }
 QWidget * gen_d_list_view_get_footer_widget(DListView *self, int32_t index) { return self->getFooterWidget(index); }
-bool gen_d_list_view_is_active_rect(DListView *self, QRect * rect) { return self->isActiveRect(*rect); }
-bool gen_d_list_view_is_visual_rect(DListView *self, QRect * rect) { return self->isVisualRect(*rect); }
+bool gen_d_list_view_is_active_rect(DListView *self, const QRect &rect) { return self->isActiveRect(rect); }
+bool gen_d_list_view_is_visual_rect(DListView *self, const QRect &rect) { return self->isVisualRect(rect); }
 int32_t gen_d_list_view_count(DListView *self) { if (!self->model()) return 0; return self->count(); }
 int32_t gen_d_list_view_orientation(DListView *self) { return static_cast<int32_t>(self->orientation()); }
 void gen_d_list_view_set_model(DListView *self, QAbstractItemModel * model) { self->setModel(model); }
-QSize * gen_d_list_view_minimum_size_hint(DListView *self) { return new QSize(self->minimumSizeHint()); }
+QSize gen_d_list_view_minimum_size_hint(DListView *self) { return self->minimumSizeHint(); }
 int32_t gen_d_list_view_background_type(DListView *self) { return static_cast<int32_t>(self->backgroundType()); }
-QMargins * gen_d_list_view_item_margins(DListView *self) { return new QMargins(self->itemMargins()); }
-QSize * gen_d_list_view_item_size(DListView *self) { return new QSize(self->itemSize()); }
+QMargins gen_d_list_view_item_margins(DListView *self) { return self->itemMargins(); }
+QSize gen_d_list_view_item_size(DListView *self) { return self->itemSize(); }
 bool gen_d_list_view_add_item(DListView *self, QVariant * data) { if (!self->model() || self->model()->columnCount() == 0) return false; return self->addItem(*data); }
 bool gen_d_list_view_add_items(DListView *self, QVariantList * datas) { if (!self->model() || self->model()->columnCount() == 0) return false; return self->addItems(*datas); }
 bool gen_d_list_view_insert_item(DListView *self, int32_t index, QVariant * data) { if (!self->model() || self->model()->columnCount() == 0) return false; return self->insertItem(index, *data); }
@@ -704,19 +705,19 @@ int32_t gen_d_list_view_add_footer_widget(DListView *self, QWidget * widget) { i
 void gen_d_list_view_remove_footer_widget(DListView *self, int32_t index) { if (!self->getFooterWidget(index)) return; self->removeFooterWidget(index); }
 QWidget * gen_d_list_view_take_footer_widget(DListView *self, int32_t index) { if (!self->getFooterWidget(index)) return nullptr; return self->takeFooterWidget(index); }
 void gen_d_list_view_set_background_type(DListView *self, int32_t backgroundType) { self->setBackgroundType(static_cast<DStyledItemDelegate::BackgroundType>(backgroundType)); }
-void gen_d_list_view_set_item_margins(DListView *self, QMargins * itemMargins) { self->setItemMargins(*itemMargins); }
-void gen_d_list_view_set_item_size(DListView *self, QSize * itemSize) { self->setItemSize(*itemSize); }
+void gen_d_list_view_set_item_margins(DListView *self, const QMargins &itemMargins) { self->setItemMargins(itemMargins); }
+void gen_d_list_view_set_item_size(DListView *self, const QSize &itemSize) { self->setItemSize(itemSize); }
 void gen_d_list_view_set_item_spacing(DListView *self, int32_t spacing) { self->setItemSpacing(spacing); }
 void gen_d_list_view_set_item_radius(DListView *self, int32_t radius) { self->setItemRadius(radius); }
 DLoadingIndicator *gen_d_loading_indicator_new() { return loading_indicator_new(); }
 QObject *gen_d_loading_indicator_as_qobject(DLoadingIndicator *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_loading_indicator_as_widget(DLoadingIndicator *self) { return static_cast<QWidget *>(self); }
-QColor * gen_d_loading_indicator_background_color(DLoadingIndicator *self) { return new QColor(self->backgroundColor()); }
+QColor gen_d_loading_indicator_background_color(DLoadingIndicator *self) { return self->backgroundColor(); }
 bool gen_d_loading_indicator_loading(DLoadingIndicator *self) { return self->loading(); }
 QWidget * gen_d_loading_indicator_widget_source(DLoadingIndicator *self) { return loading_indicator_widget(self); }
 QPixmap * gen_d_loading_indicator_image_source(DLoadingIndicator *self) { return new QPixmap(self->imageSource()); }
 int32_t gen_d_loading_indicator_ani_duration(DLoadingIndicator *self) { return self->aniDuration(); }
-QSize * gen_d_loading_indicator_size_hint(DLoadingIndicator *self) { return new QSize(self->sizeHint()); }
+QSize gen_d_loading_indicator_size_hint(DLoadingIndicator *self) { return self->sizeHint(); }
 bool gen_d_loading_indicator_smooth(DLoadingIndicator *self) { return self->smooth(); }
 int32_t gen_d_loading_indicator_direction(DLoadingIndicator *self) { return static_cast<int32_t>(self->direction()); }
 double gen_d_loading_indicator_rotate(DLoadingIndicator *self) { return self->rotate(); }
@@ -724,7 +725,7 @@ void gen_d_loading_indicator_start(DLoadingIndicator *self) { self->start(); }
 void gen_d_loading_indicator_stop(DLoadingIndicator *self) { self->stop(); }
 void gen_d_loading_indicator_set_loading(DLoadingIndicator *self, bool flag) { self->setLoading(flag); }
 void gen_d_loading_indicator_set_ani_duration(DLoadingIndicator *self, int32_t msecs) { self->setAniDuration(msecs); }
-void gen_d_loading_indicator_set_background_color(DLoadingIndicator *self, QColor * color) { self->setBackgroundColor(*color); }
+void gen_d_loading_indicator_set_background_color(DLoadingIndicator *self, const QColor &color) { self->setBackgroundColor(color); }
 void gen_d_loading_indicator_set_rotate(DLoadingIndicator *self, QVariant * angle) { self->setRotate(*angle); }
 void gen_d_loading_indicator_set_widget_source(DLoadingIndicator *self, QWidget * widgetSource) { loading_indicator_set_widget(self, widgetSource); }
 void gen_d_loading_indicator_set_image_source(DLoadingIndicator *self, QPixmap * imageSource) { loading_indicator_set_image(self, *imageSource); }
@@ -735,13 +736,13 @@ DMessageManager * gen_d_message_manager_instance() { return const_cast<DMessageM
 void gen_d_message_manager_send_message(DMessageManager *self, QWidget * par, DFloatingMessage * floMsg) { self->sendMessage(par, floMsg); }
 void gen_d_message_manager_send_message_2(DMessageManager *self, QWidget * par, QIcon * icon, rust::Str message) { self->sendMessage(par, *icon, from_rust_str(message)); }
 void gen_d_message_manager_send_message_3(DMessageManager *self, QWidget * par, DDciIcon * icon, rust::Str message) { self->sendMessage(par, *icon, from_rust_str(message)); }
-bool gen_d_message_manager_set_content_margens(DMessageManager *self, QWidget * par, QMargins * margins) { return self->setContentMargens(par, *margins); }
+bool gen_d_message_manager_set_content_margens(DMessageManager *self, QWidget * par, const QMargins &margins) { return self->setContentMargens(par, margins); }
 DMPRISControl *gen_d_m_p_r_i_s_control_new() { return new DMPRISControl; }
 QObject *gen_d_m_p_r_i_s_control_as_qobject(DMPRISControl *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_m_p_r_i_s_control_as_widget(DMPRISControl *self) { return static_cast<QWidget *>(self); }
 bool gen_d_m_p_r_i_s_control_is_working(DMPRISControl *self) { return self->isWorking(); }
 void gen_d_m_p_r_i_s_control_set_picture_visible(DMPRISControl *self, bool visible) { self->setPictureVisible(visible); }
-void gen_d_m_p_r_i_s_control_set_picture_size(DMPRISControl *self, QSize * size) { self->setPictureSize(*size); }
+void gen_d_m_p_r_i_s_control_set_picture_size(DMPRISControl *self, const QSize &size) { self->setPictureSize(size); }
 DPageIndicator *gen_d_page_indicator_new() { return new DPageIndicator; }
 QObject *gen_d_page_indicator_as_qobject(DPageIndicator *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_page_indicator_as_widget(DPageIndicator *self) { return static_cast<QWidget *>(self); }
@@ -751,10 +752,10 @@ void gen_d_page_indicator_next_page(DPageIndicator *self) { self->nextPage(); }
 void gen_d_page_indicator_previous_page(DPageIndicator *self) { self->previousPage(); }
 void gen_d_page_indicator_set_current_page(DPageIndicator *self, int32_t index) { self->setCurrentPage(index); }
 int32_t gen_d_page_indicator_current_page_index(DPageIndicator *self) { return self->currentPageIndex(); }
-QColor * gen_d_page_indicator_point_color(DPageIndicator *self) { return new QColor(self->pointColor()); }
-void gen_d_page_indicator_set_point_color(DPageIndicator *self, QColor * color) { self->setPointColor(*color); }
-QColor * gen_d_page_indicator_secondary_point_color(DPageIndicator *self) { return new QColor(self->secondaryPointColor()); }
-void gen_d_page_indicator_set_secondary_point_color(DPageIndicator *self, QColor * color) { self->setSecondaryPointColor(*color); }
+QColor gen_d_page_indicator_point_color(DPageIndicator *self) { return self->pointColor(); }
+void gen_d_page_indicator_set_point_color(DPageIndicator *self, const QColor &color) { self->setPointColor(color); }
+QColor gen_d_page_indicator_secondary_point_color(DPageIndicator *self) { return self->secondaryPointColor(); }
+void gen_d_page_indicator_set_secondary_point_color(DPageIndicator *self, const QColor &color) { self->setSecondaryPointColor(color); }
 int32_t gen_d_page_indicator_point_radius(DPageIndicator *self) { return self->pointRadius(); }
 void gen_d_page_indicator_set_point_radius(DPageIndicator *self, int32_t size) { self->setPointRadius(size); }
 int32_t gen_d_page_indicator_secondary_point_radius(DPageIndicator *self) { return self->secondaryPointRadius(); }
@@ -793,20 +794,20 @@ QObject *gen_color_button_as_qobject(ColorButton *self) { return static_cast<QOb
 QWidget *gen_color_button_as_widget(ColorButton *self) { return static_cast<QWidget *>(self); }
 QObject *gen_color_label_as_qobject(ColorLabel *self) { return static_cast<QObject *>(self); }
 QWidget *gen_color_label_as_widget(ColorLabel *self) { return static_cast<QWidget *>(self); }
-QColor * gen_color_label_get_color(ColorLabel *self, double h, double s, double v) { return new QColor(self->getColor(h, s, v)); }
+QColor gen_color_label_get_color(ColorLabel *self, double h, double s, double v) { return self->getColor(h, s, v); }
 void gen_color_label_set_hue(ColorLabel *self, int32_t hue) { self->setHue(hue); }
-void gen_color_label_pick_color(ColorLabel *self, QPoint * pos) { self->pickColor(*pos); }
+void gen_color_label_pick_color(ColorLabel *self, const QPoint &pos) { self->pickColor(pos); }
 ColorSlider *gen_color_slider_new() { return new ColorSlider; }
 QObject *gen_color_slider_as_qobject(ColorSlider *self) { return static_cast<QObject *>(self); }
 QWidget *gen_color_slider_as_widget(ColorSlider *self) { return static_cast<QWidget *>(self); }
-QColor * gen_color_slider_get_color(ColorSlider *self, double h, double s, double v) { return new QColor(self->getColor(h, s, v)); }
+QColor gen_color_slider_get_color(ColorSlider *self, double h, double s, double v) { return self->getColor(h, s, v); }
 DPrintPickColorWidget *gen_d_print_pick_color_widget_new() { return new DPrintPickColorWidget; }
 QObject *gen_d_print_pick_color_widget_as_qobject(DPrintPickColorWidget *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_print_pick_color_widget_as_widget(DPrintPickColorWidget *self) { return static_cast<QWidget *>(self); }
 void gen_d_print_pick_color_widget_init_u_i(DPrintPickColorWidget *self) { self->initUI(); }
 void gen_d_print_pick_color_widget_init_connection(DPrintPickColorWidget *self) { self->initConnection(); }
-void gen_d_print_pick_color_widget_set_rgb_edit(DPrintPickColorWidget *self, QColor * color, bool btnColor) { self->setRgbEdit(*color, btnColor); }
-void gen_d_print_pick_color_widget_convert_color(DPrintPickColorWidget *self, QColor * color, bool btnColor) { self->convertColor(*color, btnColor); }
+void gen_d_print_pick_color_widget_set_rgb_edit(DPrintPickColorWidget *self, const QColor &color, bool btnColor) { self->setRgbEdit(color, btnColor); }
+void gen_d_print_pick_color_widget_convert_color(DPrintPickColorWidget *self, const QColor &color, bool btnColor) { self->convertColor(color, btnColor); }
 void gen_d_print_pick_color_widget_slot_color_pick(DPrintPickColorWidget *self, rust::Str uuid, rust::Str colorName) { self->slotColorPick(from_rust_str(uuid), from_rust_str(colorName)); }
 void gen_d_print_pick_color_widget_slot_edit_color(DPrintPickColorWidget *self, rust::Str str) { self->slotEditColor(from_rust_str(str)); }
 DPrintPreviewDialog *gen_d_print_preview_dialog_new() { return new DPrintPreviewDialog; }
@@ -885,8 +886,8 @@ void gen_d_print_preview_widget_set_sample_water_mark(DPrintPreviewWidget *self)
 void gen_d_print_preview_widget_set_custom_water_mark(DPrintPreviewWidget *self, rust::Str text) { self->setCustomWaterMark(from_rust_str(text)); }
 void gen_d_print_preview_widget_set_text_water_mark(DPrintPreviewWidget *self, rust::Str text) { self->setTextWaterMark(from_rust_str(text)); }
 void gen_d_print_preview_widget_set_water_mark_font(DPrintPreviewWidget *self, QFont * font) { self->setWaterMarkFont(*font); }
-QColor * gen_d_print_preview_widget_water_mark_color(DPrintPreviewWidget *self) { return new QColor(self->waterMarkColor()); }
-void gen_d_print_preview_widget_set_water_mark_color(DPrintPreviewWidget *self, QColor * color) { self->setWaterMarkColor(*color); }
+QColor gen_d_print_preview_widget_water_mark_color(DPrintPreviewWidget *self) { return self->waterMarkColor(); }
+void gen_d_print_preview_widget_set_water_mark_color(DPrintPreviewWidget *self, const QColor &color) { self->setWaterMarkColor(color); }
 void gen_d_print_preview_widget_set_water_mark_layout(DPrintPreviewWidget *self, int32_t layout) { self->setWaterMarkLayout(layout); }
 void gen_d_print_preview_widget_set_imposition(DPrintPreviewWidget *self, int32_t im) { self->setImposition(static_cast<DPrintPreviewWidget::Imposition>(im)); }
 int32_t gen_d_print_preview_widget_imposition(DPrintPreviewWidget *self) { return static_cast<int32_t>(self->imposition()); }
@@ -911,8 +912,8 @@ void gen_d_print_preview_widget_print(DPrintPreviewWidget *self, bool isSavedPic
 DProgressBar *gen_d_progress_bar_new() { return new DProgressBar; }
 QObject *gen_d_progress_bar_as_qobject(DProgressBar *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_progress_bar_as_widget(DProgressBar *self) { return static_cast<QWidget *>(self); }
-QSize * gen_d_progress_bar_size_hint(DProgressBar *self) { return new QSize(self->sizeHint()); }
-QSize * gen_d_progress_bar_minimum_size_hint(DProgressBar *self) { return new QSize(self->minimumSizeHint()); }
+QSize gen_d_progress_bar_size_hint(DProgressBar *self) { return self->sizeHint(); }
+QSize gen_d_progress_bar_minimum_size_hint(DProgressBar *self) { return self->minimumSizeHint(); }
 DSearchComboBox *gen_d_search_combo_box_new() { return new DSearchComboBox; }
 QObject *gen_d_search_combo_box_as_qobject(DSearchComboBox *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_search_combo_box_as_widget(DSearchComboBox *self) { return static_cast<QWidget *>(self); }
@@ -941,7 +942,7 @@ QObject *gen_d_settings_widget_factory_as_qobject(DSettingsWidgetFactory *self) 
 DShadowLine *gen_d_shadow_line_new() { return new DShadowLine; }
 QObject *gen_d_shadow_line_as_qobject(DShadowLine *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_shadow_line_as_widget(DShadowLine *self) { return static_cast<QWidget *>(self); }
-QSize * gen_d_shadow_line_size_hint(DShadowLine *self) { return new QSize(self->sizeHint()); }
+QSize gen_d_shadow_line_size_hint(DShadowLine *self) { return self->sizeHint(); }
 DShortcutEditLabel *gen_d_shortcut_edit_label_new() { return new DShortcutEditLabel; }
 QObject *gen_d_shortcut_edit_label_as_qobject(DShortcutEditLabel *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_shortcut_edit_label_as_widget(DShortcutEditLabel *self) { return static_cast<QWidget *>(self); }
@@ -981,7 +982,7 @@ QWidget *gen_d_slider_as_widget(DSlider *self) { return static_cast<QWidget *>(s
 int32_t gen_d_slider_orientation(DSlider *self) { return static_cast<int32_t>(self->orientation()); }
 void gen_d_slider_set_left_icon(DSlider *self, QIcon * left) { self->setLeftIcon(*left); }
 void gen_d_slider_set_right_icon(DSlider *self, QIcon * right) { self->setRightIcon(*right); }
-void gen_d_slider_set_icon_size(DSlider *self, QSize * size) { self->setIconSize(*size); }
+void gen_d_slider_set_icon_size(DSlider *self, const QSize &size) { self->setIconSize(size); }
 void gen_d_slider_set_minimum(DSlider *self, int32_t min) { self->setMinimum(min); }
 int32_t gen_d_slider_minimum(DSlider *self) { return self->minimum(); }
 void gen_d_slider_set_value(DSlider *self, int32_t value) { self->setValue(value); }
@@ -996,7 +997,7 @@ void gen_d_slider_set_above_ticks(DSlider *self, rust::Vec<rust::String> info) {
 void gen_d_slider_set_below_ticks(DSlider *self, rust::Vec<rust::String> info) { self->setBelowTicks(to_qstringlist(std::move(info))); }
 void gen_d_slider_set_mouse_wheel_enabled(DSlider *self, bool enabled) { self->setMouseWheelEnabled(enabled); }
 void gen_d_slider_set_tip_value(DSlider *self, rust::Str value) { self->setTipValue(from_rust_str(value)); }
-QSize * gen_d_slider_size_hint(DSlider *self) { return new QSize(self->sizeHint()); }
+QSize gen_d_slider_size_hint(DSlider *self) { return self->sizeHint(); }
 void gen_d_slider_set_handle_visible(DSlider *self, bool b) { self->setHandleVisible(b); }
 bool gen_d_slider_handle_visible(DSlider *self) { return self->handleVisible(); }
 void gen_d_slider_set_enabled_across_style(DSlider *self, bool enabled) { self->setEnabledAcrossStyle(enabled); }
@@ -1024,7 +1025,7 @@ QWidget *gen_d_spinner_as_widget(DSpinner *self) { return static_cast<QWidget *>
 bool gen_d_spinner_is_playing(DSpinner *self) { return self->isPlaying(); }
 void gen_d_spinner_start(DSpinner *self) { self->start(); }
 void gen_d_spinner_stop(DSpinner *self) { self->stop(); }
-void gen_d_spinner_set_background_color(DSpinner *self, QColor * color) { self->setBackgroundColor(*color); }
+void gen_d_spinner_set_background_color(DSpinner *self, const QColor &color) { self->setBackgroundColor(color); }
 QObject *gen_d_abstract_stack_widget_transition_as_qobject(DAbstractStackWidgetTransition *self) { return static_cast<QObject *>(self); }
 DSlideStackWidgetTransition *gen_d_slide_stack_widget_transition_new() { return new DSlideStackWidgetTransition; }
 QObject *gen_d_slide_stack_widget_transition_as_qobject(DSlideStackWidgetTransition *self) { return static_cast<QObject *>(self); }
@@ -1047,8 +1048,8 @@ void gen_d_stack_widget_set_transition(DStackWidget *self, DAbstractStackWidgetT
 void gen_d_stack_widget_set_animation_duration(DStackWidget *self, int32_t animationDuration) { self->setAnimationDuration(animationDuration); }
 DStyle *gen_d_style_new() { return new DStyle; }
 QObject *gen_d_style_as_qobject(DStyle *self) { return static_cast<QObject *>(self); }
-QColor * gen_d_style_adjust_color(QColor * base, int8_t hueFloat, int8_t saturationFloat, int8_t lightnessFloat, int8_t redFloat, int8_t greenFloat, int8_t blueFloat, int8_t alphaFloat) { return new QColor(DStyle::adjustColor(*base, hueFloat, saturationFloat, lightnessFloat, redFloat, greenFloat, blueFloat, alphaFloat)); }
-QColor * gen_d_style_blend_color(QColor * substrate, QColor * superstratum) { return new QColor(DStyle::blendColor(*substrate, *superstratum)); }
+QColor gen_d_style_adjust_color(const QColor &base, int8_t hueFloat, int8_t saturationFloat, int8_t lightnessFloat, int8_t redFloat, int8_t greenFloat, int8_t blueFloat, int8_t alphaFloat) { return DStyle::adjustColor(base, hueFloat, saturationFloat, lightnessFloat, redFloat, greenFloat, blueFloat, alphaFloat); }
+QColor gen_d_style_blend_color(const QColor &substrate, const QColor &superstratum) { return DStyle::blendColor(substrate, superstratum); }
 void gen_d_style_set_focus_rect_visible(QWidget * widget, bool visible) { DStyle::setFocusRectVisible(widget, visible); }
 void gen_d_style_set_frame_radius(QWidget * widget, int32_t radius) { DStyle::setFrameRadius(widget, radius); }
 void gen_d_style_set_unchecked_item_indicator_visible(QWidget * widget, bool visible) { DStyle::setUncheckedItemIndicatorVisible(widget, visible); }
@@ -1059,15 +1060,15 @@ bool gen_d_style_is_menu_keyboard_search_disabled() { return DStyle::isMenuKeybo
 QPalette * gen_d_style_standard_palette(DStyle *self) { return new QPalette(self->standardPalette()); }
 DStyle * gen_d_style_helper_dstyle(DStyleHelper *self) { return const_cast<DStyle *>(self->dstyle()); }
 bool gen_d_style_painter_begin(DStylePainter *self, QWidget * w) { return self->begin(w); }
-void gen_d_style_painter_draw_item_pixmap(DStylePainter *self, QRect * r, int32_t flags, QPixmap * pixmap) { self->drawItemPixmap(*r, flags, *pixmap); }
+void gen_d_style_painter_draw_item_pixmap(DStylePainter *self, const QRect &r, int32_t flags, QPixmap * pixmap) { self->drawItemPixmap(r, flags, *pixmap); }
 void gen_d_styled_icon_engine_set_icon_name(DStyledIconEngine *self, rust::Str name) { self->setIconName(from_rust_str(name)); }
 DViewItemAction *gen_d_view_item_action_new() { return new DViewItemAction; }
 QObject *gen_d_view_item_action_as_qobject(DViewItemAction *self) { return static_cast<QObject *>(self); }
 int32_t gen_d_view_item_action_alignment(DViewItemAction *self) { return (self->alignment()).toInt(); }
-QSize * gen_d_view_item_action_icon_size(DViewItemAction *self) { return new QSize(self->iconSize()); }
-QSize * gen_d_view_item_action_maximum_size(DViewItemAction *self) { return new QSize(self->maximumSize()); }
-QMargins * gen_d_view_item_action_click_area_margins(DViewItemAction *self) { return new QMargins(self->clickAreaMargins()); }
-void gen_d_view_item_action_set_click_area_margins(DViewItemAction *self, QMargins * margins) { self->setClickAreaMargins(*margins); }
+QSize gen_d_view_item_action_icon_size(DViewItemAction *self) { return self->iconSize(); }
+QSize gen_d_view_item_action_maximum_size(DViewItemAction *self) { return self->maximumSize(); }
+QMargins gen_d_view_item_action_click_area_margins(DViewItemAction *self) { return self->clickAreaMargins(); }
+void gen_d_view_item_action_set_click_area_margins(DViewItemAction *self, const QMargins &margins) { self->setClickAreaMargins(margins); }
 void gen_d_view_item_action_set_text_color_role(DViewItemAction *self, int32_t role) { self->setTextColorRole(static_cast<DPalette::ColorType>(role)); }
 void gen_d_view_item_action_set_text_color_role_2(DViewItemAction *self, int32_t role) { self->setTextColorRole(static_cast<DPalette::ColorRole>(role)); }
 int32_t gen_d_view_item_action_text_color_type(DViewItemAction *self) { return static_cast<int32_t>(self->textColorType()); }
@@ -1081,12 +1082,12 @@ void gen_d_view_item_action_set_dci_icon(DViewItemAction *self, DDciIcon * dciIc
 DDciIcon * gen_d_view_item_action_dci_icon(DViewItemAction *self) { return new DDciIcon(self->dciIcon()); }
 QObject *gen_d_styled_item_delegate_as_qobject(DStyledItemDelegate *self) { return static_cast<QObject *>(self); }
 int32_t gen_d_styled_item_delegate_background_type(DStyledItemDelegate *self) { return static_cast<int32_t>(self->backgroundType()); }
-QMargins * gen_d_styled_item_delegate_margins(DStyledItemDelegate *self) { return new QMargins(self->margins()); }
-QSize * gen_d_styled_item_delegate_item_size(DStyledItemDelegate *self) { return new QSize(self->itemSize()); }
+QMargins gen_d_styled_item_delegate_margins(DStyledItemDelegate *self) { return self->margins(); }
+QSize gen_d_styled_item_delegate_item_size(DStyledItemDelegate *self) { return self->itemSize(); }
 int32_t gen_d_styled_item_delegate_spacing(DStyledItemDelegate *self) { return self->spacing(); }
 void gen_d_styled_item_delegate_set_background_type(DStyledItemDelegate *self, int32_t backgroundType) { self->setBackgroundType(static_cast<DStyledItemDelegate::BackgroundType>(backgroundType)); }
-void gen_d_styled_item_delegate_set_margins(DStyledItemDelegate *self, QMargins * margins) { self->setMargins(*margins); }
-void gen_d_styled_item_delegate_set_item_size(DStyledItemDelegate *self, QSize * itemSize) { self->setItemSize(*itemSize); }
+void gen_d_styled_item_delegate_set_margins(DStyledItemDelegate *self, const QMargins &margins) { self->setMargins(margins); }
+void gen_d_styled_item_delegate_set_item_size(DStyledItemDelegate *self, const QSize &itemSize) { self->setItemSize(itemSize); }
 void gen_d_styled_item_delegate_set_item_spacing(DStyledItemDelegate *self, int32_t spacing) { self->setItemSpacing(spacing); }
 void gen_d_standard_item_set_text_color_role(DStandardItem *self, int32_t role) { self->setTextColorRole(static_cast<DPalette::ColorType>(role)); }
 void gen_d_standard_item_set_text_color_role_2(DStandardItem *self, int32_t role) { self->setTextColorRole(static_cast<DPalette::ColorRole>(role)); }
@@ -1133,7 +1134,7 @@ int32_t gen_d_font_size_manager_font_pixel_size_2(QFont * font) { return DFontSi
 DSwitchButton *gen_d_switch_button_new() { return new DSwitchButton; }
 QObject *gen_d_switch_button_as_qobject(DSwitchButton *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_switch_button_as_widget(DSwitchButton *self) { return static_cast<QWidget *>(self); }
-QSize * gen_d_switch_button_size_hint(DSwitchButton *self) { return new QSize(self->sizeHint()); }
+QSize gen_d_switch_button_size_hint(DSwitchButton *self) { return self->sizeHint(); }
 DSwitchHeaderLine *gen_d_switch_header_line_new() { return new DSwitchHeaderLine; }
 QObject *gen_d_switch_header_line_as_qobject(DSwitchHeaderLine *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_switch_header_line_as_widget(DSwitchHeaderLine *self) { return static_cast<QWidget *>(self); }
@@ -1147,8 +1148,8 @@ DBaseLine * gen_d_switch_line_expand_header(DSwitchLineExpand *self) { return co
 DTabBar *gen_d_tab_bar_new() { return new DTabBar; }
 QObject *gen_d_tab_bar_as_qobject(DTabBar *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_tab_bar_as_widget(DTabBar *self) { return static_cast<QWidget *>(self); }
-void gen_d_tab_bar_set_tab_minimum_size(DTabBar *self, int32_t index, QSize * size) { self->setTabMinimumSize(index, *size); }
-void gen_d_tab_bar_set_tab_maximum_size(DTabBar *self, int32_t index, QSize * size) { self->setTabMaximumSize(index, *size); }
+void gen_d_tab_bar_set_tab_minimum_size(DTabBar *self, int32_t index, const QSize &size) { self->setTabMinimumSize(index, size); }
+void gen_d_tab_bar_set_tab_maximum_size(DTabBar *self, int32_t index, const QSize &size) { self->setTabMaximumSize(index, size); }
 bool gen_d_tab_bar_visible_add_button(DTabBar *self) { return self->visibleAddButton(); }
 int32_t gen_d_tab_bar_shape(DTabBar *self) { return static_cast<int32_t>(self->shape()); }
 void gen_d_tab_bar_set_shape(DTabBar *self, int32_t shape) { self->setShape(static_cast<QTabBar::Shape>(shape)); }
@@ -1172,14 +1173,14 @@ void gen_d_tab_bar_set_tab_whats_this(DTabBar *self, int32_t index, rust::Str te
 rust::String gen_d_tab_bar_tab_whats_this(DTabBar *self, int32_t index) { return to_rust_string(self->tabWhatsThis(index)); }
 void gen_d_tab_bar_set_tab_data(DTabBar *self, int32_t index, QVariant * data) { self->setTabData(index, *data); }
 QVariant * gen_d_tab_bar_tab_data(DTabBar *self, int32_t index) { return new QVariant(self->tabData(index)); }
-QRect * gen_d_tab_bar_tab_rect(DTabBar *self, int32_t index) { return new QRect(self->tabRect(index)); }
-int32_t gen_d_tab_bar_tab_at(DTabBar *self, QPoint * pos) { return self->tabAt(*pos); }
+QRect gen_d_tab_bar_tab_rect(DTabBar *self, int32_t index) { return self->tabRect(index); }
+int32_t gen_d_tab_bar_tab_at(DTabBar *self, const QPoint &pos) { return self->tabAt(pos); }
 int32_t gen_d_tab_bar_current_index(DTabBar *self) { return self->currentIndex(); }
 int32_t gen_d_tab_bar_count(DTabBar *self) { return self->count(); }
 void gen_d_tab_bar_set_draw_base(DTabBar *self, bool drawTheBase) { self->setDrawBase(drawTheBase); }
 bool gen_d_tab_bar_draw_base(DTabBar *self) { return self->drawBase(); }
-QSize * gen_d_tab_bar_icon_size(DTabBar *self) { return new QSize(self->iconSize()); }
-void gen_d_tab_bar_set_icon_size(DTabBar *self, QSize * size) { self->setIconSize(*size); }
+QSize gen_d_tab_bar_icon_size(DTabBar *self) { return self->iconSize(); }
+void gen_d_tab_bar_set_icon_size(DTabBar *self, const QSize &size) { self->setIconSize(size); }
 bool gen_d_tab_bar_uses_scroll_buttons(DTabBar *self) { return self->usesScrollButtons(); }
 void gen_d_tab_bar_set_uses_scroll_buttons(DTabBar *self, bool useButtons) { self->setUsesScrollButtons(useButtons); }
 bool gen_d_tab_bar_tabs_closable(DTabBar *self) { return self->tabsClosable(); }
@@ -1201,21 +1202,21 @@ void gen_d_tab_bar_set_auto_hide(DTabBar *self, bool hide) { self->setAutoHide(h
 bool gen_d_tab_bar_change_current_on_drag(DTabBar *self) { return self->changeCurrentOnDrag(); }
 void gen_d_tab_bar_set_change_current_on_drag(DTabBar *self, bool change) { self->setChangeCurrentOnDrag(change); }
 int32_t gen_d_tab_bar_start_drag_distance(DTabBar *self) { return self->startDragDistance(); }
-QColor * gen_d_tab_bar_mask_color(DTabBar *self) { return new QColor(self->maskColor()); }
-QColor * gen_d_tab_bar_flash_color(DTabBar *self) { return new QColor(self->flashColor()); }
+QColor gen_d_tab_bar_mask_color(DTabBar *self) { return self->maskColor(); }
+QColor gen_d_tab_bar_flash_color(DTabBar *self) { return self->flashColor(); }
 void gen_d_tab_bar_set_enabled_embed_style(DTabBar *self, bool enable) { self->setEnabledEmbedStyle(enable); }
 void gen_d_tab_bar_set_tab_label_alignment(DTabBar *self, int32_t alignment) { self->setTabLabelAlignment(Qt::Alignment::fromInt(alignment)); }
 void gen_d_tab_bar_set_current_index(DTabBar *self, int32_t index) { self->setCurrentIndex(index); }
 void gen_d_tab_bar_set_visible_add_button(DTabBar *self, bool visibleAddButton) { self->setVisibleAddButton(visibleAddButton); }
 void gen_d_tab_bar_set_start_drag_distance(DTabBar *self, int32_t startDragDistance) { self->setStartDragDistance(startDragDistance); }
-void gen_d_tab_bar_set_mask_color(DTabBar *self, QColor * maskColor) { self->setMaskColor(*maskColor); }
-void gen_d_tab_bar_set_flash_color(DTabBar *self, QColor * flashColor) { self->setFlashColor(*flashColor); }
+void gen_d_tab_bar_set_mask_color(DTabBar *self, const QColor &maskColor) { self->setMaskColor(maskColor); }
+void gen_d_tab_bar_set_flash_color(DTabBar *self, const QColor &flashColor) { self->setFlashColor(flashColor); }
 void gen_d_tab_bar_start_drag(DTabBar *self, int32_t index) { self->startDrag(index); }
 void gen_d_tab_bar_stop_drag(DTabBar *self, int32_t action) { self->stopDrag(static_cast<Qt::DropAction>(action)); }
 DTabletWindowOptionButton *gen_d_tablet_window_option_button_new() { return new DTabletWindowOptionButton; }
 QObject *gen_d_tablet_window_option_button_as_qobject(DTabletWindowOptionButton *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_tablet_window_option_button_as_widget(DTabletWindowOptionButton *self) { return static_cast<QWidget *>(self); }
-QSize * gen_d_tablet_window_option_button_size_hint(DTabletWindowOptionButton *self) { return new QSize(self->sizeHint()); }
+QSize gen_d_tablet_window_option_button_size_hint(DTabletWindowOptionButton *self) { return self->sizeHint(); }
 DTextEdit *gen_d_text_edit_new() { return new DTextEdit; }
 QObject *gen_d_text_edit_as_qobject(DTextEdit *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_text_edit_as_widget(DTextEdit *self) { return static_cast<QWidget *>(self); }
@@ -1235,7 +1236,7 @@ void gen_d_tick_effect_set_fixed_pixel_move(DTickEffect *self, int32_t pixel) { 
 DTipLabel *gen_d_tip_label_new() { return new DTipLabel; }
 QObject *gen_d_tip_label_as_qobject(DTipLabel *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_tip_label_as_widget(DTipLabel *self) { return static_cast<QWidget *>(self); }
-void gen_d_tip_label_show(DTipLabel *self, QPoint * pos) { self->show(*pos); }
+void gen_d_tip_label_show(DTipLabel *self, const QPoint &pos) { self->show(pos); }
 void gen_d_tip_label_set_foreground_role(DTipLabel *self, int32_t color) { self->setForegroundRole(static_cast<DPalette::ColorType>(color)); }
 QObject *gen_d_titlebar_tool_base_interface_as_qobject(DTitlebarToolBaseInterface *self) { return static_cast<QObject *>(self); }
 rust::String gen_d_titlebar_tool_base_interface_id(DTitlebarToolBaseInterface *self) { return to_rust_string(self->id()); }
@@ -1260,8 +1261,8 @@ void gen_d_tool_tip_set_tool_tip_show_mode(QWidget * widget, int32_t mode) { DTo
 int32_t gen_d_tool_tip_tool_tip_show_mode(QWidget * widget) { return static_cast<int32_t>(DToolTip::toolTipShowMode(widget)); }
 bool gen_d_tool_tip_need_update_tool_tip(QWidget * widget, bool showToolTip) { return DToolTip::needUpdateToolTip(widget, showToolTip); }
 void gen_d_tool_tip_set_show_tool_tip(QWidget * widget, bool showToolTip) { DToolTip::setShowToolTip(widget, showToolTip); }
-QSize * gen_d_tool_tip_size_hint(DToolTip *self) { return new QSize(self->sizeHint()); }
-void gen_d_tool_tip_show(DToolTip *self, QPoint * pos, int32_t duration) { self->show(*pos, duration); }
+QSize gen_d_tool_tip_size_hint(DToolTip *self) { return self->sizeHint(); }
+void gen_d_tool_tip_show(DToolTip *self, const QPoint &pos, int32_t duration) { self->show(pos, duration); }
 DWarningButton *gen_d_warning_button_new() { return new DWarningButton; }
 QObject *gen_d_warning_button_as_qobject(DWarningButton *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_warning_button_as_widget(DWarningButton *self) { return static_cast<QWidget *>(self); }
@@ -1286,8 +1287,8 @@ rust::String gen_water_mark_data_text(WaterMarkData *self) { return to_rust_stri
 void gen_water_mark_data_set_text(WaterMarkData *self, rust::Str text) { self->setText(from_rust_str(text)); }
 QFont * gen_water_mark_data_font(WaterMarkData *self) { return new QFont(self->font()); }
 void gen_water_mark_data_set_font(WaterMarkData *self, QFont * font) { self->setFont(*font); }
-QColor * gen_water_mark_data_color(WaterMarkData *self) { return new QColor(self->color()); }
-void gen_water_mark_data_set_color(WaterMarkData *self, QColor * color) { self->setColor(*color); }
+QColor gen_water_mark_data_color(WaterMarkData *self) { return self->color(); }
+void gen_water_mark_data_set_color(WaterMarkData *self, const QColor &color) { self->setColor(color); }
 double gen_water_mark_data_rotation(WaterMarkData *self) { return self->rotation(); }
 void gen_water_mark_data_set_rotation(WaterMarkData *self, double rotation) { self->setRotation(rotation); }
 double gen_water_mark_data_opacity(WaterMarkData *self) { return self->opacity(); }
@@ -1312,24 +1313,24 @@ void gen_d_water_progress_set_text_visible(DWaterProgress *self, bool visible) {
 DWindowCloseButton *gen_d_window_close_button_new() { return new DWindowCloseButton; }
 QObject *gen_d_window_close_button_as_qobject(DWindowCloseButton *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_window_close_button_as_widget(DWindowCloseButton *self) { return static_cast<QWidget *>(self); }
-QSize * gen_d_window_close_button_size_hint(DWindowCloseButton *self) { return new QSize(self->sizeHint()); }
+QSize gen_d_window_close_button_size_hint(DWindowCloseButton *self) { return self->sizeHint(); }
 DWindowMaxButton *gen_d_window_max_button_new() { return new DWindowMaxButton; }
 QObject *gen_d_window_max_button_as_qobject(DWindowMaxButton *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_window_max_button_as_widget(DWindowMaxButton *self) { return static_cast<QWidget *>(self); }
 bool gen_d_window_max_button_is_maximized(DWindowMaxButton *self) { return self->isMaximized(); }
-QSize * gen_d_window_max_button_size_hint(DWindowMaxButton *self) { return new QSize(self->sizeHint()); }
+QSize gen_d_window_max_button_size_hint(DWindowMaxButton *self) { return self->sizeHint(); }
 void gen_d_window_max_button_set_maximized(DWindowMaxButton *self, bool isMaximized) { self->setMaximized(isMaximized); }
 DWindowMinButton *gen_d_window_min_button_new() { return new DWindowMinButton; }
 QObject *gen_d_window_min_button_as_qobject(DWindowMinButton *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_window_min_button_as_widget(DWindowMinButton *self) { return static_cast<QWidget *>(self); }
-QSize * gen_d_window_min_button_size_hint(DWindowMinButton *self) { return new QSize(self->sizeHint()); }
+QSize gen_d_window_min_button_size_hint(DWindowMinButton *self) { return self->sizeHint(); }
 DWindowOptionButton *gen_d_window_option_button_new() { return new DWindowOptionButton; }
 QObject *gen_d_window_option_button_as_qobject(DWindowOptionButton *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_window_option_button_as_widget(DWindowOptionButton *self) { return static_cast<QWidget *>(self); }
-QSize * gen_d_window_option_button_size_hint(DWindowOptionButton *self) { return new QSize(self->sizeHint()); }
+QSize gen_d_window_option_button_size_hint(DWindowOptionButton *self) { return self->sizeHint(); }
 DWindowQuitFullButton *gen_d_window_quit_full_button_new() { return new DWindowQuitFullButton; }
 QObject *gen_d_window_quit_full_button_as_qobject(DWindowQuitFullButton *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_window_quit_full_button_as_widget(DWindowQuitFullButton *self) { return static_cast<QWidget *>(self); }
-QSize * gen_d_window_quit_full_button_size_hint(DWindowQuitFullButton *self) { return new QSize(self->sizeHint()); }
+QSize gen_d_window_quit_full_button_size_hint(DWindowQuitFullButton *self) { return self->sizeHint(); }
 
 } // namespace dtkrs

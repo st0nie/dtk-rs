@@ -1,5 +1,6 @@
 //! Owned QImage mapping through DTK image viewer and watermark APIs.
 //! QT_QPA_PLATFORM=offscreen cargo run --example image_selfcheck
+use dtk::ColorExt;
 use dtk::widgets::{DImageViewer, DWaterMarkHelper, DWaterMarkWidget, WaterMarkData};
 use dtk::{DApplication, QColor, QImage, QTimer};
 
@@ -8,7 +9,7 @@ fn main() {
     let mut pixels = QImage::new(2, 3);
     assert!(!pixels.is_null());
     assert_eq!((pixels.width(), pixels.height()), (2, 3));
-    let color = QColor::rgba(34, 87, 205, 128);
+    let color = QColor::from_rgba(34, 87, 205, 128);
     pixels.fill(&color);
     pixels.set_text("Comment", "Rust|中文\0tail");
     assert_eq!(pixels.text("Comment"), "Rust|中文\0tail");

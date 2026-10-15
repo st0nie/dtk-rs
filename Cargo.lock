@@ -246,6 +246,7 @@ dependencies = [
 name = "dtk"
 version = "0.1.0"
 dependencies = [
+ "cxx-qt-lib",
  "dtk-cxxqt",
  "dtk-sys",
  "libc",
@@ -270,6 +271,7 @@ version = "0.1.0"
 dependencies = [
  "cxx",
  "cxx-build",
+ "cxx-qt-lib",
  "pkg-config",
 ]
 

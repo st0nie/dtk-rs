@@ -17,6 +17,9 @@ fn main() {
     // CXX-Qt relies on (standard, PIC, Qt flags) is altered.
     let builder = unsafe {
         builder.cc_builder(move |cc| {
+            cc.include("include");
+            // Alias headers missing from DTK6 packaging (shared with dtk-sys).
+            cc.include("../dtk-sys/compat");
             for include in &includes {
                 cc.include(include);
             }
@@ -26,4 +29,5 @@ fn main() {
         })
     };
     builder.build();
+    println!("cargo:rerun-if-changed=include/dtk_cxxqt_casts.h");
 }
