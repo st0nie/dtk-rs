@@ -188,8 +188,12 @@ class QtAncestryTests(unittest.TestCase):
             methods = re.findall(r"pub (?:unsafe )?fn [^{]+\{(.*?)(?=\n    \}|\Z)", generated, re.S)
             self.assertTrue(methods)
             for body in methods:
-                self.assertIn("let _call = dtk_sys::NativeCall::new();", body)
-                self.assertLess(body.index("NativeCall::new()"), body.index("unsafe"))
+                frame = re.search(r"let _call = dtk_sys::NativeCall::(new|paint)\(\);", body)
+                self.assertIsNotNone(frame, body)
+                self.assertLess(frame.start(), body.index("unsafe"))
+                if frame.group(1) == "paint":
+                    # Only audited painter/style-option operations use the paint frame.
+                    self.assertRegex(body, r"\.ptr as _")
 
     def test_output_pointer_requires_exclusive_owned_opaque_view(self):
         generated = Path(REPO, "dtk/src/widgets.rs").read_text()

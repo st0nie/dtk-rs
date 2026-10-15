@@ -120,6 +120,13 @@ construction, timer registration and nested native loops reject before entering
 Qt; this applies to **all aliases**, not just the apparent receiver.
 A deferred destruction request may be recorded but cannot be delivered while
 that borrowed frame exists. Nested paint pointers are never replayed.
+`NativeCall::paint()` is the single exception inside a synchronous borrow:
+generated drawing and style-query operations whose painter/style option
+arguments are callback-scoped borrows (QStyle/DStyle draw*/pixelMetric/...,
+DBlurEffectGroup::paint, DGraphicsGlowEffect::draw, DStyledIconEngine::paint).
+They read widget/style state and draw; none deletes, reparents or runs a loop
+(dtkwidget `dstyle.cpp`, `dblureffectwidget.cpp`; Qt `qcommonstyle.cpp`).
+Rust-defined `ListModel<T>` hooks run under the same synchronous borrow.
 
 ### Suspended native/modal loops
 

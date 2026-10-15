@@ -26,6 +26,7 @@ public:
 
 std::unique_ptr<NativeCallFrame> runtime_call_new(bool control);
 bool runtime_call_allowed(bool control);
+std::unique_ptr<NativeCallFrame> runtime_paint_call_new();
 bool runtime_native_borrow_active();
 bool runtime_can_dispatch_callbacks();
 bool runtime_can_finish_call();

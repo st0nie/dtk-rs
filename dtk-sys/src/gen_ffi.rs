@@ -12,6 +12,11 @@ pub mod genffi {
         type QAction;
         type QBoxLayout;
         type QLayout;
+        type QPainter;
+        type QPersistentModelIndex;
+        type QStyle;
+        type QStyleOption;
+        type QStyleOptionViewItem;
         type QWidget;
         type QBrush;
         type QFont;
@@ -502,6 +507,11 @@ pub mod genffi {
             self_: *mut DBackgroundGroup,
             layout: *mut QLayout,
         );
+        unsafe fn gen_d_background_group_set_background_role(
+            self_: *mut DBackgroundGroup,
+            role: i32,
+        );
+        unsafe fn gen_d_background_group_background_role(self_: *mut DBackgroundGroup) -> i32;
         unsafe fn gen_d_background_group_set_item_margins(
             self_: *mut DBackgroundGroup,
             itemMargins: &QMargins,
@@ -595,6 +605,11 @@ pub mod genffi {
             self_: *mut DBlurEffectGroup,
             widget: *mut DBlurEffectWidget,
         );
+        unsafe fn gen_d_blur_effect_group_paint(
+            self_: *mut DBlurEffectGroup,
+            pa: *mut QPainter,
+            widget: *mut DBlurEffectWidget,
+        );
         unsafe fn gen_d_blur_effect_with_border_widget_new() -> *mut DBlurEffectWithBorderWidget;
         unsafe fn gen_d_blur_effect_with_border_widget_as_qobject(
             self_: *mut DBlurEffectWithBorderWidget,
@@ -628,7 +643,8 @@ pub mod genffi {
         unsafe fn gen_d_button_box_button_as_widget(self_: *mut DButtonBoxButton) -> *mut QWidget;
         unsafe fn gen_d_button_box_button_set_icon(self_: *mut DButtonBoxButton, icon: *mut QIcon);
         unsafe fn gen_d_button_box_button_set_icon_2(self_: *mut DButtonBoxButton, iconType: i32);
-        unsafe fn gen_d_button_box_button_set_icon_3(
+        unsafe fn gen_d_button_box_button_set_icon_3(self_: *mut DButtonBoxButton, iconType: i32);
+        unsafe fn gen_d_button_box_button_set_icon_4(
             self_: *mut DButtonBoxButton,
             icon: *mut DDciIcon,
         );
@@ -1106,6 +1122,10 @@ pub mod genffi {
         unsafe fn gen_d_graphics_glow_effect_as_qobject(
             self_: *mut DGraphicsGlowEffect,
         ) -> *mut QObject;
+        unsafe fn gen_d_graphics_glow_effect_draw(
+            self_: *mut DGraphicsGlowEffect,
+            painter: *mut QPainter,
+        );
         unsafe fn gen_d_graphics_glow_effect_bounding_rect_for(
             self_: *mut DGraphicsGlowEffect,
             rect: &QRectF,
@@ -1151,7 +1171,8 @@ pub mod genffi {
         unsafe fn gen_d_icon_button_as_widget(self_: *mut DIconButton) -> *mut QWidget;
         unsafe fn gen_d_icon_button_set_icon(self_: *mut DIconButton, icon: *mut QIcon);
         unsafe fn gen_d_icon_button_set_icon_2(self_: *mut DIconButton, iconType: i32);
-        unsafe fn gen_d_icon_button_set_icon_3(self_: *mut DIconButton, icon: *mut DDciIcon);
+        unsafe fn gen_d_icon_button_set_icon_3(self_: *mut DIconButton, iconType: i32);
+        unsafe fn gen_d_icon_button_set_icon_4(self_: *mut DIconButton, icon: *mut DDciIcon);
         unsafe fn gen_d_icon_button_dci_icon(self_: *mut DIconButton) -> *mut DDciIcon;
         unsafe fn gen_d_icon_button_size_hint(self_: *mut DIconButton) -> QSize;
         unsafe fn gen_d_icon_button_minimum_size_hint(self_: *mut DIconButton) -> QSize;
@@ -1360,6 +1381,33 @@ pub mod genffi {
         unsafe fn gen_d_variant_list_model_as_model(
             self_: *mut DVariantListModel,
         ) -> *mut QAbstractItemModel;
+        unsafe fn gen_d_variant_list_model_row_count(
+            self_: *mut DVariantListModel,
+            parent: *mut QPersistentModelIndex,
+        ) -> i32;
+        unsafe fn gen_d_variant_list_model_data(
+            self_: *mut DVariantListModel,
+            index: *mut QPersistentModelIndex,
+            role: i32,
+        ) -> *mut QVariant;
+        unsafe fn gen_d_variant_list_model_set_data(
+            self_: *mut DVariantListModel,
+            index: *mut QPersistentModelIndex,
+            value: *mut QVariant,
+            role: i32,
+        ) -> bool;
+        unsafe fn gen_d_variant_list_model_insert_rows(
+            self_: *mut DVariantListModel,
+            row: i32,
+            count: i32,
+            parent: *mut QPersistentModelIndex,
+        ) -> bool;
+        unsafe fn gen_d_variant_list_model_remove_rows(
+            self_: *mut DVariantListModel,
+            row: i32,
+            count: i32,
+            parent: *mut QPersistentModelIndex,
+        ) -> bool;
         unsafe fn gen_d_list_view_new() -> *mut DListView;
         unsafe fn gen_d_list_view_as_qobject(self_: *mut DListView) -> *mut QObject;
         unsafe fn gen_d_list_view_as_widget(self_: *mut DListView) -> *mut QWidget;
@@ -1419,6 +1467,7 @@ pub mod genffi {
             self_: *mut DListView,
             index: i32,
         ) -> *mut QWidget;
+        unsafe fn gen_d_list_view_edit(self_: *mut DListView, index: *mut QPersistentModelIndex);
         unsafe fn gen_d_list_view_set_background_type(self_: *mut DListView, backgroundType: i32);
         unsafe fn gen_d_list_view_set_item_margins(self_: *mut DListView, itemMargins: &QMargins);
         unsafe fn gen_d_list_view_set_item_size(self_: *mut DListView, itemSize: &QSize);
@@ -1959,6 +2008,23 @@ pub mod genffi {
             self_: *mut DSimpleListItem,
             item: *mut DSimpleListItem,
         ) -> bool;
+        unsafe fn gen_d_simple_list_item_draw_background(
+            self_: *mut DSimpleListItem,
+            rect: &QRect,
+            painter: *mut QPainter,
+            index: i32,
+            isSelect: bool,
+            isHover: bool,
+        );
+        unsafe fn gen_d_simple_list_item_draw_foreground(
+            self_: *mut DSimpleListItem,
+            rect: &QRect,
+            painter: *mut QPainter,
+            column: i32,
+            index: i32,
+            isSelect: bool,
+            isHover: bool,
+        );
         unsafe fn gen_d_simple_list_view_as_qobject(self_: *mut DSimpleListView) -> *mut QObject;
         unsafe fn gen_d_simple_list_view_as_widget(self_: *mut DSimpleListView) -> *mut QWidget;
         unsafe fn gen_d_simple_list_view_set_row_height(self_: *mut DSimpleListView, height: i32);
@@ -2138,6 +2204,7 @@ pub mod genffi {
             alphaFloat: i8,
         ) -> QColor;
         unsafe fn gen_d_style_blend_color(substrate: &QColor, superstratum: &QColor) -> QColor;
+        unsafe fn gen_d_style_get_state(option: *mut QStyleOption) -> i32;
         unsafe fn gen_d_style_set_focus_rect_visible(widget: *mut QWidget, visible: bool);
         unsafe fn gen_d_style_set_frame_radius(widget: *mut QWidget, radius: i32);
         unsafe fn gen_d_style_set_unchecked_item_indicator_visible(
@@ -2148,16 +2215,204 @@ pub mod genffi {
         unsafe fn gen_d_style_shortcut_underline_visible() -> bool;
         unsafe fn gen_d_style_set_menu_keyboard_search_disabled(disabled: bool);
         unsafe fn gen_d_style_is_menu_keyboard_search_disabled() -> bool;
+        unsafe fn gen_d_style_draw_primitive(
+            style: *mut QStyle,
+            pe: i32,
+            opt: *mut QStyleOption,
+            p: *mut QPainter,
+            w: *mut QWidget,
+        );
+        unsafe fn gen_d_style_draw_control(
+            style: *mut QStyle,
+            ce: i32,
+            opt: *mut QStyleOption,
+            p: *mut QPainter,
+            w: *mut QWidget,
+        );
+        unsafe fn gen_d_style_pixel_metric(
+            style: *mut QStyle,
+            m: i32,
+            opt: *mut QStyleOption,
+            widget: *mut QWidget,
+        ) -> i32;
+        unsafe fn gen_d_style_sub_element_rect(
+            style: *mut QStyle,
+            r: i32,
+            opt: *mut QStyleOption,
+            widget: *mut QWidget,
+        ) -> QRect;
+        unsafe fn gen_d_style_size_from_contents(
+            style: *mut QStyle,
+            ct: i32,
+            opt: *mut QStyleOption,
+            contentsSize: &QSize,
+            widget: *mut QWidget,
+        ) -> QSize;
+        unsafe fn gen_d_style_standard_icon(
+            style: *mut QStyle,
+            st: i32,
+            opt: *mut QStyleOption,
+            widget: *mut QWidget,
+        ) -> *mut QIcon;
+        unsafe fn gen_d_style_draw_primitive_2(
+            self_: *mut DStyle,
+            pe: i32,
+            opt: *mut QStyleOption,
+            p: *mut QPainter,
+            w: *mut QWidget,
+        );
+        unsafe fn gen_d_style_draw_control_2(
+            self_: *mut DStyle,
+            ce: i32,
+            opt: *mut QStyleOption,
+            p: *mut QPainter,
+            w: *mut QWidget,
+        );
+        unsafe fn gen_d_style_pixel_metric_2(
+            self_: *mut DStyle,
+            m: i32,
+            opt: *mut QStyleOption,
+            widget: *mut QWidget,
+        ) -> i32;
+        unsafe fn gen_d_style_sub_element_rect_2(
+            self_: *mut DStyle,
+            r: i32,
+            opt: *mut QStyleOption,
+            widget: *mut QWidget,
+        ) -> QRect;
+        unsafe fn gen_d_style_size_from_contents_2(
+            self_: *mut DStyle,
+            ct: i32,
+            opt: *mut QStyleOption,
+            contentsSize: &QSize,
+            widget: *mut QWidget,
+        ) -> QSize;
+        unsafe fn gen_d_style_standard_icon_2(
+            self_: *mut DStyle,
+            st: i32,
+            opt: *mut QStyleOption,
+            widget: *mut QWidget,
+        ) -> *mut QIcon;
+        unsafe fn gen_d_style_draw_primitive_3(
+            self_: *mut DStyle,
+            pe: i32,
+            opt: *mut QStyleOption,
+            p: *mut QPainter,
+            w: *mut QWidget,
+        );
+        unsafe fn gen_d_style_draw_control_3(
+            self_: *mut DStyle,
+            ce: i32,
+            opt: *mut QStyleOption,
+            p: *mut QPainter,
+            w: *mut QWidget,
+        );
+        unsafe fn gen_d_style_pixel_metric_3(
+            self_: *mut DStyle,
+            m: i32,
+            opt: *mut QStyleOption,
+            widget: *mut QWidget,
+        ) -> i32;
+        unsafe fn gen_d_style_sub_element_rect_3(
+            self_: *mut DStyle,
+            r: i32,
+            opt: *mut QStyleOption,
+            widget: *mut QWidget,
+        ) -> QRect;
+        unsafe fn gen_d_style_size_from_contents_3(
+            self_: *mut DStyle,
+            ct: i32,
+            opt: *mut QStyleOption,
+            contentsSize: &QSize,
+            widget: *mut QWidget,
+        ) -> QSize;
+        unsafe fn gen_d_style_standard_icon_3(
+            self_: *mut DStyle,
+            st: i32,
+            opt: *mut QStyleOption,
+            widget: *mut QWidget,
+        ) -> *mut QIcon;
         unsafe fn gen_d_style_standard_palette(self_: *mut DStyle) -> *mut QPalette;
+        unsafe fn gen_d_style_generated_icon_pixmap(
+            self_: *mut DStyle,
+            iconMode: i32,
+            pixmap: *mut QPixmap,
+            opt: *mut QStyleOption,
+        ) -> *mut QPixmap;
+        unsafe fn gen_d_style_generated_brush(
+            self_: *mut DStyle,
+            option: *mut QStyleOption,
+            base: *mut QBrush,
+            cg: i32,
+            role: i32,
+        ) -> *mut QBrush;
+        unsafe fn gen_d_style_generated_brush_2(
+            self_: *mut DStyle,
+            state: i32,
+            option: *mut QStyleOption,
+            base: *mut QBrush,
+            cg: i32,
+            role: i32,
+        ) -> *mut QBrush;
+        unsafe fn gen_d_style_view_item_size(
+            style: *mut QStyle,
+            option: *mut QStyleOptionViewItem,
+            role: i32,
+        ) -> QSize;
+        unsafe fn gen_d_style_view_item_draw_text(
+            style: *mut QStyle,
+            p: *mut QPainter,
+            option: *mut QStyleOptionViewItem,
+            rect: &QRect,
+        ) -> QRect;
+        unsafe fn gen_d_style_view_item_draw_text_2(
+            self_: *mut DStyle,
+            p: *mut QPainter,
+            option: *mut QStyleOptionViewItem,
+            rect: &QRect,
+        ) -> QRect;
         unsafe fn gen_d_style_helper_dstyle(self_: *mut DStyleHelper) -> *mut DStyle;
         unsafe fn gen_d_style_painter_begin(self_: *mut DStylePainter, w: *mut QWidget) -> bool;
+        unsafe fn gen_d_style_painter_draw_item_text(
+            self_: *mut DStylePainter,
+            r: &QRect,
+            flags: i32,
+            pal: *mut QPalette,
+            enabled: bool,
+            text: &str,
+            textRole: i32,
+        );
         unsafe fn gen_d_style_painter_draw_item_pixmap(
             self_: *mut DStylePainter,
             r: &QRect,
             flags: i32,
             pixmap: *mut QPixmap,
         );
+        unsafe fn gen_d_styled_icon_engine_draw_icon(
+            icon: *mut QIcon,
+            pa: *mut QPainter,
+            rect: &QRectF,
+        );
         unsafe fn gen_d_styled_icon_engine_set_icon_name(self_: *mut DStyledIconEngine, name: &str);
+        unsafe fn gen_d_styled_icon_engine_pixmap(
+            self_: *mut DStyledIconEngine,
+            size: &QSize,
+            mode: i32,
+            state: i32,
+        ) -> *mut QPixmap;
+        unsafe fn gen_d_styled_icon_engine_paint(
+            self_: *mut DStyledIconEngine,
+            painter: *mut QPainter,
+            palette: *mut QPalette,
+            rect: &QRectF,
+        );
+        unsafe fn gen_d_styled_icon_engine_paint_2(
+            self_: *mut DStyledIconEngine,
+            painter: *mut QPainter,
+            rect: &QRect,
+            mode: i32,
+            state: i32,
+        );
         unsafe fn gen_d_view_item_action_new() -> *mut DViewItemAction;
         unsafe fn gen_d_view_item_action_as_qobject(self_: *mut DViewItemAction) -> *mut QObject;
         unsafe fn gen_d_view_item_action_alignment(self_: *mut DViewItemAction) -> i32;
@@ -2196,6 +2451,23 @@ pub mod genffi {
         unsafe fn gen_d_styled_item_delegate_as_qobject(
             self_: *mut DStyledItemDelegate,
         ) -> *mut QObject;
+        unsafe fn gen_d_styled_item_delegate_paint(
+            self_: *mut DStyledItemDelegate,
+            painter: *mut QPainter,
+            option: *mut QStyleOptionViewItem,
+            index: *mut QPersistentModelIndex,
+        );
+        unsafe fn gen_d_styled_item_delegate_size_hint(
+            self_: *mut DStyledItemDelegate,
+            option: *mut QStyleOptionViewItem,
+            index: *mut QPersistentModelIndex,
+        ) -> QSize;
+        unsafe fn gen_d_styled_item_delegate_update_editor_geometry(
+            self_: *mut DStyledItemDelegate,
+            editor: *mut QWidget,
+            option: *mut QStyleOptionViewItem,
+            index: *mut QPersistentModelIndex,
+        );
         unsafe fn gen_d_styled_item_delegate_background_type(
             self_: *mut DStyledItemDelegate,
         ) -> i32;

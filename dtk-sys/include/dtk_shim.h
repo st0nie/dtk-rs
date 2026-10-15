@@ -63,6 +63,10 @@
 #include "cxx-qt-lib/qsizef.h"
 #include "cxx-qt-lib/qurl.h"
 #include <QPainter>
+#include <QStyle>
+#include <QStyleOption>
+#include <QAbstractListModel>
+#include <DStyle>
 #include <QStyledItemDelegate>
 #include <QModelIndex>
 #include <QPersistentModelIndex>
@@ -124,6 +128,10 @@ using ::QSizeF;
 using ::QRectF;
 using ::QMarginsF;
 using ::QPainter;
+using ::QStyle;
+using ::QStyleOption;
+using ::QStyleOptionViewItem;
+using Dtk::Widget::DStyle;
 using ::QModelIndex;
 using ::QPersistentModelIndex;
 using ::QSocketNotifier;
@@ -470,6 +478,40 @@ QSocketNotifier *socket_notifier_new(int32_t fd, QObject *parent); // Read type;
 void socket_notifier_set_enabled(QSocketNotifier *n, bool on);
 
 // ---- generic paint delegate ----
+// ---- QStyle / QStyleOption / painting surfaces ----
+// QWidget::style(): the widget's own or the application style; borrowed.
+QStyle *widget_style(QWidget *w);
+// qobject_cast to DTK's DStyle (null for a plain Qt style); borrowed.
+DStyle *style_as_dstyle(QStyle *style);
+QStyleOption *style_option_new();
+QStyleOption *style_option_clone(const QStyleOption *opt);
+void style_option_init_from(QStyleOption *opt, QWidget *w);
+void style_option_set_rect(QStyleOption *opt, const QRect &rect);
+QRect style_option_rect(const QStyleOption *opt);
+void style_option_set_state(QStyleOption *opt, int32_t state);
+int32_t style_option_state(const QStyleOption *opt);
+void style_option_delete(QStyleOption *opt);
+QStyleOptionViewItem *view_item_option_new();
+QStyleOptionViewItem *view_item_option_clone(const QStyleOptionViewItem *opt);
+QStyleOption *view_item_option_base(QStyleOptionViewItem *opt);
+void view_item_option_set_text(QStyleOptionViewItem *opt, rust::Str text);
+rust::String view_item_option_text(const QStyleOptionViewItem *opt);
+void view_item_option_delete(QStyleOptionViewItem *opt);
+// A QPainter on a Rust-owned QImage, ended and deleted by painter_finish.
+QPainter *painter_begin_image(QImage *image);
+void painter_finish(QPainter *p);
+bool painter_is_active(QPainter *p);
+
+// ---- Rust-defined list model (state stays in Rust; see RustListModel) ----
+QAbstractItemModel *rust_list_model_new(size_t cb_id, bool editable, QObject *parent);
+void rust_list_model_begin_insert(QAbstractItemModel *m, int32_t first, int32_t last);
+void rust_list_model_end_insert(QAbstractItemModel *m);
+void rust_list_model_begin_remove(QAbstractItemModel *m, int32_t first, int32_t last);
+void rust_list_model_end_remove(QAbstractItemModel *m);
+void rust_list_model_begin_reset(QAbstractItemModel *m);
+void rust_list_model_end_reset(QAbstractItemModel *m);
+void rust_list_model_changed(QAbstractItemModel *m, int32_t first, int32_t last);
+
 QStyledItemDelegate *rust_delegate_new(size_t paint_cb_id, QObject *parent);
 
 // ---- QPainter primitives ----

@@ -12,6 +12,11 @@ pub mod genffi {
         type QAction;
         type QBoxLayout;
         type QLayout;
+        type QPainter;
+        type QPersistentModelIndex;
+        type QStyle;
+        type QStyleOption;
+        type QStyleOptionViewItem;
         type QWidget;
         type QBrush;
         type QFont;

@@ -110,12 +110,31 @@ EXT_VALUE_TYPES = {"DDciIcon": ("Dtk::Gui", "DDciIcon"),
                    "DPalette": ("Dtk::Gui", "DPalette")}
 # Qt-class enums usable as i32 (header pulled in via the DTK widget headers)
 QT_ENUMS = {"QLineEdit::EchoMode", "QTabBar::Shape", "QTabBar::ButtonPosition",
-            "QTabBar::SelectionBehavior", "QStandardPaths::StandardLocation"}
+            "QTabBar::SelectionBehavior", "QStandardPaths::StandardLocation",
+            # Style/painting enums: out-of-range values hit the switch
+            # default of QCommonStyle/DStyle (no-op/0), like other widget enums.
+            "QStyle::PrimitiveElement", "QStyle::ControlElement", "QStyle::PixelMetric",
+            "QStyle::SubElement", "QStyle::ContentsType", "QStyle::StandardPixmap",
+            "QStyle::ComplexControl", "QStyle::StyleHint", "QIcon::Mode", "QIcon::State",
+            "QPalette::ColorRole", "QPalette::ColorGroup"}
 # DTK-outer-class enums (dtkgui) usable as i32
 EXT_ENUMS = {"DPalette::ColorType", "DPalette::ColorRole"}
 # Qt pointer types allowed across the bridge (QWidget-style `as _` casts; each needs
 # `type X;` in both bridges + a hand-written wrapper in dtk/src/lib.rs)
-QT_PTRS = {"QWidget", "QAbstractButton", "QLayout", "QBoxLayout", "QAction", "QAbstractItemModel"}
+QT_PTRS = {"QWidget", "QAbstractButton", "QLayout", "QBoxLayout", "QAction", "QAbstractItemModel", "QStyle"}
+# Source-audited painting APIs that are NOT emitted although their types map.
+UNSAFE_PAINTING = {
+    ("DStyledIconEngine", "setFrontRole"): "dtkwidget dstyle.cpp stores `m_widget = widget` without a QPointer; later paint dereferences it",
+    **{("DStyleHelper", m): "dstyle.h DStyleHelper keeps `const QStyle *m_style` raw and has no scope-bound constructor"
+       for m in ("setStyle", "style", "generatedBrush", "getColor", "drawPrimitive", "drawControl", "pixelMetric",
+                 "subElementRect", "sizeFromContents", "standardIcon")},
+    **{("DStylePainter", m): "dstyle.h DStylePainter keeps raw widget/style pointers and has no safe constructor"
+       for m in ("style", "drawPrimitive", "drawControl")},
+}
+# Owned hand-written style option values accepted by `const T *` / `const T &`.
+STYLE_OPTIONS = {"QStyleOption", "QStyleOptionViewItem"}
+# Opaque non-QObject Qt types declared in every generated bridge.
+QT_OPAQUE = {"QPainter", "QPersistentModelIndex", "QStyleOption", "QStyleOptionViewItem"}
 # types that are QFlags in Qt (fromInt/toInt conversion)
 QT_QFLAGS = {"Qt::Alignment", "Qt::WindowFlags", "Qt::MouseButtons", "Qt::KeyboardModifiers",
              "Qt::Orientations", "Qt::ItemFlags", "Qt::MatchFlags", "Qt::ApplicationStates",
@@ -254,6 +273,19 @@ class Ctx:
         ptr = t.endswith("*")
         base = t.rstrip("*").strip()
         base = base.replace("DTK_CORE_NAMESPACE::", "").replace("DGUI_NAMESPACE::", "").replace("DTK_GUI_NAMESPACE::", "")
+        const = bool(re.search(r"\bconst\b", cpp))
+        # Painting/model types (section "Painting and model APIs" in
+        # ARCHITECTURE.md): callback- or closure-scoped borrows, never owners.
+        if base == "QPainter" and ptr and not is_return:
+            return ("&crate::Painter", "QPainter *", "painter", base)
+        if base in STYLE_OPTIONS and not is_return and const and (ptr or "&" in cpp):
+            return (f"&{base}", f"const {base} *", "styleopt", base)
+        if base == "QModelIndex" and not ptr:
+            if is_return:
+                return ("crate::PersistentModelIndex", "QPersistentModelIndex *", "index", base)
+            if const or "&" not in cpp:
+                return ("&crate::PersistentModelIndex", "QPersistentModelIndex *", "index", base)
+            return None
         # Qt enums / QFlags (some are nested under a Qt class rather than Qt::)
         if base in QT_QFLAGS:
             return ("i32", "int32_t", "qflags", base)
@@ -531,6 +563,14 @@ def gen_method(ctx, cls, is_static, ret, name, params):
             args.append((f"{pname}: *mut {pcls}", f"{pcpp} {pname}", f"*{pname}", kind, pcls))
         elif pkind == "qval":
             args.append((f"{pname}: &{pcls}", f"const {pcls} &{pname}", pname, "qval", pcls))
+        elif pkind == "painter":
+            args.append((f"{pname}: *mut QPainter", f"QPainter *{pname}", pname, "painter", pcls))
+        elif pkind == "styleopt":
+            call = pname if ptype.rstrip().endswith("*") else f"*{pname}"
+            args.append((f"{pname}: *mut {pcls}", f"{pcls} *{pname}", call, "styleopt", pcls))
+        elif pkind == "index":
+            args.append((f"{pname}: *mut QPersistentModelIndex", f"QPersistentModelIndex *{pname}",
+                         f"QModelIndex(*{pname})", "index", pcls))
         elif pkind == "qflags":
             args.append((f"{pname}: i32", f"int32_t {pname}", f"{q[3]}::fromInt({pname})", "qflags", q[3]))
         elif pkind in ("enum", "qtenum"):
@@ -582,6 +622,8 @@ def collect_models(headers, excluded=(), included=None):
         skipped = c["skipped"]
         for is_static, ret, name, params, raw in c["methods"]:
             g, why = gen_method(ctx, c["name"], is_static, ret, name, params)
+            if g is not None and (c["name"], name) in UNSAFE_PAINTING:
+                g, why = None, f"retained raw pointer: {UNSAFE_PAINTING[c['name'], name]}"
             if g is None:
                 skipped.append((raw, why))
             else:
@@ -694,7 +736,7 @@ def emit(classes, domain="widget"):
     # QObject is used only for checked base casts, not for mapping arbitrary
     # QObject* method parameters until the Rust API has a general QObject view.
     bridge.append("        type QObject;\n")
-    for qp in sorted(QT_PTRS):
+    for qp in sorted(QT_PTRS | QT_OPAQUE):
         bridge.append(f"        type {qp};\n")
     for vt in sorted(VALUE_TYPES):
         bridge.append(f"        type {vt};\n")
@@ -702,7 +744,7 @@ def emit(classes, domain="widget"):
         bridge.append(f"        #[namespace = \"\"]\n        type {vt} = cxx_qt_lib::{vt};\n")
     for vt in sorted(EXT_VALUE_TYPES):
         bridge.append(f"        type {vt};\n")
-    wrapper.append("// auto-generated by tools/gen.py, do not edit\n#![allow(clippy::all, non_snake_case, unused_imports)]\nuse crate::{QAbstractButton, QAbstractItemModel, QAction, QBoxLayout, QLayout, Signal0, SignalBool, SignalI32, SignalI32I32, QWidget};\nuse crate::{QBrush, QColor, QFont, QIcon, QImage, QKeySequence, QMargins, QMarginsF, QPainterPath, QPalette, QPixmap, QPoint, QPointF, QRect, QRectF, QSize, QSizeF, QUrl, QVariant, QVariantList};\nuse crate::{DDciIcon, DPalette, Owned, OwnedOpaque, QtLifecycle};\nuse dtk_sys::ffi;\n"
+    wrapper.append("// auto-generated by tools/gen.py, do not edit\n#![allow(clippy::all, non_snake_case, unused_imports)]\nuse crate::{QAbstractButton, QAbstractItemModel, QAction, QBoxLayout, QLayout, Signal0, SignalBool, SignalI32, SignalI32I32, QWidget};\nuse crate::QStyle;\nuse crate::{QBrush, QColor, QFont, QIcon, QImage, QKeySequence, QMargins, QMarginsF, QPainterPath, QPalette, QPixmap, QPoint, QPointF, QRect, QRectF, QSize, QSizeF, QUrl, QVariant, QVariantList};\nuse crate::{DDciIcon, DPalette, Owned, OwnedOpaque, QtLifecycle};\nuse dtk_sys::ffi;\n"
                    f"use dtk_sys::{stem}_ffi::genffi;\nuse std::marker::PhantomData;\n")
     title = "widget" if domain == "widget" else f"{domain} (selected classes)"
     report.append(f"# DTK6 {title} binding coverage report\n")
@@ -724,7 +766,7 @@ def emit(classes, domain="widget"):
         shim_h.append(f"using ::{vt};\n")
     for vt, (ns, _inc) in EXT_VALUE_TYPES.items():
         shim_h.append(f"using {ns}::{vt};\n")
-    for qp in sorted(QT_PTRS - {"QWidget"}):  # QWidget already via dtk_shim.h
+    for qp in sorted((QT_PTRS | QT_OPAQUE) - {"QWidget"}):  # QWidget already via dtk_shim.h
         shim_h.append(f"using ::{qp};\n")
     for c in classes:
         name = c["name"]
@@ -833,6 +875,10 @@ def emit(classes, domain="widget"):
                 input_contract, rule = pointer_input_contract(name, meth)
                 params = ", ".join(f"{a[4]}*" for a in pointer_args)
                 ownership_report.append(f"| `{name}::{meth}` parameters | `{params}` | {input_contract} | native `{c['header']}` implementation: {rule} |\n")
+            scoped_args = [a for a in args if a[3] in ("painter", "styleopt", "index")]
+            if scoped_args:
+                params = ", ".join(f"{a[4]}" for a in scoped_args)
+                ownership_report.append(f"| `{name}::{meth}` painting/model inputs | `{params}` | call borrow: `&Painter` (callback/closure scoped), owned `QStyleOption*`/`PersistentModelIndex` values; none retained | `{c['header']}`; ARCHITECTURE.md painting and model APIs |\n")
             value_args = [a for a in args if a[3] in ("val", "valmut", "qval")]
             if value_args:
                 params = ", ".join(a[1] for a in value_args)
@@ -860,6 +906,8 @@ def emit(classes, domain="widget"):
                 call = f"to_rust_string(QString({call}))"
             elif ret_kind in ("val", "valcopy"):
                 call = f"new {ret_cls}({call})"
+            elif ret_kind == "index":
+                call = f"new QPersistentModelIndex({call})"
             elif ret_kind in ("enum", "qtenum"):
                 call = f"static_cast<int32_t>({call})"
             elif ret_kind == "qflags":
@@ -965,6 +1013,16 @@ def emit(classes, domain="widget"):
                     # cxx-qt-lib by-value type: borrowed `&T`, no pointer cast.
                     wr_args.append(f"{pname}: &{pcls}")
                     call_args.append(pname)
+                elif pkind == "painter":
+                    # Callback/closure-scoped painter borrow (crate::Painter).
+                    wr_args.append(f"{pname}: &crate::Painter")
+                    call_args.append(f"{pname}.ptr as _")
+                elif pkind == "styleopt":
+                    wr_args.append(f"{pname}: &crate::{pcls}")
+                    call_args.append(f"{pname}.ptr as _")
+                elif pkind == "index":
+                    wr_args.append(f"{pname}: &crate::PersistentModelIndex")
+                    call_args.append(f"{pname}.ptr as _")
                 elif pkind in ("enum", "qtenum", "qflags") and pcls in domain_enums:
                     rust_enum, _members = domain_enums[pcls]
                     wr_args.append(f"{pname}: {rust_enum}")
@@ -1003,6 +1061,9 @@ def emit(classes, domain="widget"):
             elif ret_kind == "qval":
                 ret_decl = f" -> {ret_cls}"
                 expr = f"unsafe {{ genffi::{fn_name}({calls}) }}"
+            elif ret_kind == "index":
+                ret_decl = " -> crate::PersistentModelIndex"
+                expr = f"crate::PersistentModelIndex::from_raw(unsafe {{ genffi::{fn_name}({calls}) }} as _)"
             elif ret_kind == "val":
                 ret_decl = f" -> {ret_cls}"
                 expr = f"{ret_cls}::from_raw(unsafe {{ genffi::{fn_name}({calls}) }} as _)"  # see qtptr audit comment above
@@ -1059,7 +1120,11 @@ def emit(classes, domain="widget"):
                 precheck = f"        crate::{runtime_check}();\n"
             if is_static and name in STATIC_REQUIRES_APPLICATION:
                 precheck = f"        crate::{runtime_check}();\n"
-            wrapper.append(f"{safety}    pub {marker}fn {mname}({sig}){ret_decl} {{\n{precheck}        let _call = dtk_sys::NativeCall::new();\n        {expr}\n    }}\n")
+            # Drawing onto a borrowed QPainter is admitted inside the synchronous
+            # paint borrow that lends it (dtk_sys::NativeCall::paint).
+            # Read-only style queries on an option are admitted there too.
+            frame = "paint" if any(a[3] in ("painter", "styleopt") for a in args) else "new"
+            wrapper.append(f"{safety}    pub {marker}fn {mname}({sig}){ret_decl} {{\n{precheck}        let _call = dtk_sys::NativeCall::{frame}();\n        {expr}\n    }}\n")
         wrapper.append("}\n\n")
         total_skip_n = len(c["skipped"])
         total_skip += total_skip_n

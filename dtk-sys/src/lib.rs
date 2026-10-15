@@ -27,6 +27,7 @@ pub mod ffi {
         type NativeCallFrame;
         unsafe fn runtime_call_new(control: bool) -> UniquePtr<NativeCallFrame>;
         unsafe fn runtime_call_allowed(control: bool) -> bool;
+        unsafe fn runtime_paint_call_new() -> UniquePtr<NativeCallFrame>;
         unsafe fn runtime_native_borrow_active() -> bool;
         unsafe fn runtime_can_dispatch_callbacks() -> bool;
         unsafe fn runtime_can_finish_call() -> bool;
@@ -73,6 +74,10 @@ pub mod ffi {
         type QVariantList;
         type DDciIcon;
         type QPainter;
+        type QStyle;
+        type QStyleOption;
+        type QStyleOptionViewItem;
+        type DStyle;
         // Trivially copyable Qt values: cxx-qt-lib's by-value Rust types are
         // the same C++ types (static layout asserts in cxx-qt-lib). No heap
         // allocation, deleter or ownership: plain copies cross the bridge.
@@ -481,6 +486,43 @@ pub mod ffi {
         ) -> *mut QStyledItemDelegate;
 
         // QPainter primitives
+        // QStyle / QStyleOption / painting surfaces
+        unsafe fn widget_style(w: *mut QWidget) -> *mut QStyle;
+        unsafe fn style_as_dstyle(style: *mut QStyle) -> *mut DStyle;
+        unsafe fn style_option_new() -> *mut QStyleOption;
+        unsafe fn style_option_clone(opt: *const QStyleOption) -> *mut QStyleOption;
+        unsafe fn style_option_init_from(opt: *mut QStyleOption, w: *mut QWidget);
+        unsafe fn style_option_set_rect(opt: *mut QStyleOption, rect: &QRect);
+        unsafe fn style_option_rect(opt: *const QStyleOption) -> QRect;
+        unsafe fn style_option_set_state(opt: *mut QStyleOption, state: i32);
+        unsafe fn style_option_state(opt: *const QStyleOption) -> i32;
+        unsafe fn style_option_delete(opt: *mut QStyleOption);
+        unsafe fn view_item_option_new() -> *mut QStyleOptionViewItem;
+        unsafe fn view_item_option_clone(
+            opt: *const QStyleOptionViewItem,
+        ) -> *mut QStyleOptionViewItem;
+        unsafe fn view_item_option_base(opt: *mut QStyleOptionViewItem) -> *mut QStyleOption;
+        unsafe fn view_item_option_set_text(opt: *mut QStyleOptionViewItem, text: &str);
+        unsafe fn view_item_option_text(opt: *const QStyleOptionViewItem) -> String;
+        unsafe fn view_item_option_delete(opt: *mut QStyleOptionViewItem);
+        unsafe fn painter_begin_image(image: *mut QImage) -> *mut QPainter;
+        unsafe fn painter_finish(p: *mut QPainter);
+        unsafe fn painter_is_active(p: *mut QPainter) -> bool;
+
+        // Rust-defined list model
+        unsafe fn rust_list_model_new(
+            cb_id: usize,
+            editable: bool,
+            parent: *mut QObject,
+        ) -> *mut QAbstractItemModel;
+        unsafe fn rust_list_model_begin_insert(m: *mut QAbstractItemModel, first: i32, last: i32);
+        unsafe fn rust_list_model_end_insert(m: *mut QAbstractItemModel);
+        unsafe fn rust_list_model_begin_remove(m: *mut QAbstractItemModel, first: i32, last: i32);
+        unsafe fn rust_list_model_end_remove(m: *mut QAbstractItemModel);
+        unsafe fn rust_list_model_begin_reset(m: *mut QAbstractItemModel);
+        unsafe fn rust_list_model_end_reset(m: *mut QAbstractItemModel);
+        unsafe fn rust_list_model_changed(m: *mut QAbstractItemModel, first: i32, last: i32);
+
         unsafe fn painter_draw_text_at(p: *mut QPainter, x: i32, y: i32, text: &str);
         unsafe fn painter_draw_line(p: *mut QPainter, x1: i32, y1: i32, x2: i32, y2: i32);
         unsafe fn painter_save(p: *mut QPainter);
@@ -629,10 +671,20 @@ pub mod ffi {
         fn dtk_cb_pw_ime(id: usize, commit: String, preedit: String);
         fn dtk_cb_pw_resize(id: usize, w: i32, h: i32);
         fn dtk_cb_pw_focus(id: usize, focus_in: bool);
+        // Rust-defined list model queries (synchronous borrow in C++).
+        fn dtk_cb_model_rows(id: usize) -> i32;
+        fn dtk_cb_model_data(id: usize, row: i32, role: i32) -> *mut QVariant;
+        unsafe fn dtk_cb_model_set_data(
+            id: usize,
+            row: i32,
+            role: i32,
+            value: *mut QVariant,
+        ) -> bool;
         unsafe fn dtk_cb_paint(
             id: usize,
             painter: *mut QPainter,
             index: *mut QModelIndex,
+            option: *mut QStyleOptionViewItem,
             x: i32,
             y: i32,
             w: i32,
@@ -764,6 +816,8 @@ pub enum PwEvent {
 pub struct PaintData {
     pub painter: *mut ffi::QPainter,
     pub index: *mut ffi::QModelIndex,
+    /// The item's initialized style option (read-only during the callback).
+    pub option: *mut ffi::QStyleOptionViewItem,
     pub x: i32,
     pub y: i32,
     pub w: i32,
@@ -781,6 +835,7 @@ enum Cb {
     Owned(Box<dyn FnMut(Box<dyn std::any::Any>)>),
     Guard(Box<dyn FnMut() -> bool>),
     Paint(Box<dyn FnMut(PaintData)>),
+    Model(Box<dyn ModelCallbacks>),
     Pw(Box<dyn FnMut(PwEvent)>),
 }
 
@@ -940,6 +995,20 @@ pub fn register_cb_pw(f: impl FnMut(PwEvent) + 'static) -> usize {
 
 pub fn register_cb_guard(f: impl FnMut() -> bool + 'static) -> usize {
     register_callback(Cb::Guard(Box::new(f)))
+}
+
+/// Synchronous Rust-defined list model hooks (called by the C++ model inside
+/// a `SynchronousBorrow`; QObject operations are rejected while they run).
+pub trait ModelCallbacks {
+    fn rows(&mut self) -> i32;
+    /// A new heap QVariant (ownership passes to C++) or null for "no data".
+    fn data(&mut self, row: i32, role: i32) -> *mut ffi::QVariant;
+    /// `value` is a borrowed QVariant valid for this call only.
+    fn set_data(&mut self, row: i32, role: i32, value: *mut ffi::QVariant) -> bool;
+}
+
+pub fn register_cb_model(model: impl ModelCallbacks + 'static) -> usize {
+    register_callback(Cb::Model(Box::new(model)))
 }
 
 pub fn register_cb_paint(f: impl FnMut(PaintData) + 'static) -> usize {
@@ -1279,11 +1348,44 @@ fn dtk_cb_guard(id: usize) -> bool {
     result
 }
 
+fn with_model<R>(id: usize, fallback: R, f: impl FnOnce(&mut dyn ModelCallbacks) -> R) -> R {
+    // A model queried reentrantly from its own hook (impossible from safe
+    // Rust: QObject access is rejected) or after cancellation answers with
+    // the fallback instead of aliasing the checked-out model.
+    let mut cb = begin_dispatch(id);
+    let result = if let Some(Cb::Model(model)) = &mut cb {
+        match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| f(&mut **model))) {
+            Ok(r) => r,
+            Err(_) => {
+                eprintln!("dtk-rs: model callback {id} panicked, swallowed at FFI boundary");
+                fallback
+            }
+        }
+    } else {
+        fallback
+    };
+    finish_dispatch(id, cb);
+    result
+}
+
+fn dtk_cb_model_rows(id: usize) -> i32 {
+    with_model(id, 0, |m| m.rows())
+}
+
+fn dtk_cb_model_data(id: usize, row: i32, role: i32) -> *mut ffi::QVariant {
+    with_model(id, std::ptr::null_mut(), |m| m.data(row, role))
+}
+
+unsafe fn dtk_cb_model_set_data(id: usize, row: i32, role: i32, value: *mut ffi::QVariant) -> bool {
+    with_model(id, false, |m| m.set_data(row, role, value))
+}
+
 #[allow(clippy::too_many_arguments)] // fixed C++ callback ABI
 unsafe fn dtk_cb_paint(
     id: usize,
     painter: *mut ffi::QPainter,
     index: *mut ffi::QModelIndex,
+    option: *mut ffi::QStyleOptionViewItem,
     x: i32,
     y: i32,
     w: i32,
@@ -1296,6 +1398,7 @@ unsafe fn dtk_cb_paint(
             f(PaintData {
                 painter,
                 index,
+                option,
                 x,
                 y,
                 w,

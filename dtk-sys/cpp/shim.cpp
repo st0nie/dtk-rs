@@ -12,6 +12,7 @@
 #include <QInputMethod>
 #include <QClipboard>
 #include <QProxyStyle>
+#include <algorithm>
 #include <DGuiApplicationHelper>
 #include <DPalette>
 
@@ -189,8 +190,12 @@ public:
         style->drawControl(QStyle::CE_ItemViewItem, &base, p, base.widget);
 
         // Rust callback draws the overlay (icon + text) on top.
+        // The full option (after initStyleOption) is lent read-only, so Rust
+        // can drive DStyle/QStyle drawing with the item's real state.
         SynchronousBorrow borrow;
-        dtk_cb_paint(m_cb_id, p, const_cast<QModelIndex *>(&idx), opt.rect.x(), opt.rect.y(),
+        QStyleOptionViewItem full(opt);
+        initStyleOption(&full, idx);
+        dtk_cb_paint(m_cb_id, p, const_cast<QModelIndex *>(&idx), &full, opt.rect.x(), opt.rect.y(),
                      opt.rect.width(), opt.rect.height(), static_cast<int32_t>(opt.state));
     }
 
@@ -988,6 +993,137 @@ void socket_notifier_set_enabled(QSocketNotifier *n, bool on) {
 // ---- generic paint delegate ----
 QStyledItemDelegate *rust_delegate_new(size_t paint_cb_id, QObject *parent) {
     return new RustDelegate(paint_cb_id, parent);
+}
+
+QStyle *widget_style(QWidget *w) { return w->style(); }
+DStyle *style_as_dstyle(QStyle *style) { return qobject_cast<DStyle *>(style); }
+QStyleOption *style_option_new() { return new QStyleOption; }
+// Rust-owned options never keep QObject pointers (styleObject is a raw
+// QObject*): a stored option must not dangle after its widget is deleted.
+QStyleOption *style_option_clone(const QStyleOption *opt) {
+    auto *copy = new QStyleOption(*opt);
+    copy->styleObject = nullptr;
+    return copy;
+}
+void style_option_init_from(QStyleOption *opt, QWidget *w) {
+    opt->initFrom(w);
+    opt->styleObject = nullptr;
+}
+void style_option_set_rect(QStyleOption *opt, const QRect &rect) { opt->rect = rect; }
+QRect style_option_rect(const QStyleOption *opt) { return opt->rect; }
+void style_option_set_state(QStyleOption *opt, int32_t state) { opt->state = QStyle::State::fromInt(state); }
+int32_t style_option_state(const QStyleOption *opt) { return opt->state.toInt(); }
+void style_option_delete(QStyleOption *opt) { delete opt; }
+QStyleOptionViewItem *view_item_option_new() { return new QStyleOptionViewItem; }
+QStyleOptionViewItem *view_item_option_clone(const QStyleOptionViewItem *opt) {
+    // Owned copies drop the raw `widget`, `styleObject` and model `index`
+    // pointers; only the callback-borrowed original may carry them.
+    auto *copy = new QStyleOptionViewItem(*opt);
+    copy->widget = nullptr;
+    copy->styleObject = nullptr;
+    copy->index = QModelIndex();
+    return copy;
+}
+QStyleOption *view_item_option_base(QStyleOptionViewItem *opt) { return opt; }
+void view_item_option_set_text(QStyleOptionViewItem *opt, rust::Str text) { opt->text = from_rust_str(text); }
+rust::String view_item_option_text(const QStyleOptionViewItem *opt) { return to_rust_string(opt->text); }
+void view_item_option_delete(QStyleOptionViewItem *opt) { delete opt; }
+QPainter *painter_begin_image(QImage *image) { return new QPainter(image); }
+void painter_finish(QPainter *p) {
+    if (p->isActive())
+        p->end();
+    delete p;
+}
+bool painter_is_active(QPainter *p) { return p->isActive(); }
+
+// Rust-defined list model. The C++ object holds only a callback id: the
+// Rust items live in Rust (Rc<RefCell<Vec<T>>>), never inside the QObject,
+// so no exclusive Rust reference to C++ state exists (no Pin<&mut T>).
+// Qt's synchronous queries run Rust under a SynchronousBorrow (QObject
+// access rejected), like paint callbacks; mutations come from Rust and are
+// bracketed by begin*/end* inside one native transaction.
+class RustListModel : public QAbstractListModel {
+public:
+    RustListModel(size_t cb_id, bool editable, QObject *parent)
+        : QAbstractListModel(parent), m_cb_id(cb_id), m_editable(editable) {
+        dispose_on_destroy(this, cb_id);
+    }
+    int rowCount(const QModelIndex &parent = QModelIndex()) const override {
+        if (parent.isValid())
+            return 0;
+        SynchronousBorrow borrow;
+        return std::max(0, dtk_cb_model_rows(m_cb_id));
+    }
+    QVariant data(const QModelIndex &index, int role) const override {
+        if (!valid(index))
+            return {};
+        QVariant *value = nullptr;
+        {
+            SynchronousBorrow borrow;
+            value = dtk_cb_model_data(m_cb_id, index.row(), role);
+        }
+        if (!value)
+            return {};
+        QVariant result = std::move(*value);
+        delete value;
+        return result;
+    }
+    bool setData(const QModelIndex &index, const QVariant &value, int role) override {
+        if (!m_editable || !valid(index))
+            return false;
+        bool changed = false;
+        {
+            QVariant copy(value);
+            SynchronousBorrow borrow;
+            changed = dtk_cb_model_set_data(m_cb_id, index.row(), role, &copy);
+        }
+        if (changed)
+            Q_EMIT dataChanged(index, index, {role});
+        return changed;
+    }
+    Qt::ItemFlags flags(const QModelIndex &index) const override {
+        Qt::ItemFlags f = QAbstractListModel::flags(index);
+        if (m_editable && valid(index))
+            f |= Qt::ItemIsEditable;
+        return f;
+    }
+    using QAbstractListModel::beginInsertRows;
+    using QAbstractListModel::endInsertRows;
+    using QAbstractListModel::beginRemoveRows;
+    using QAbstractListModel::endRemoveRows;
+    using QAbstractListModel::beginResetModel;
+    using QAbstractListModel::endResetModel;
+
+private:
+    bool valid(const QModelIndex &index) const {
+        return index.isValid() && index.model() == this && !index.parent().isValid()
+            && index.column() == 0 && index.row() >= 0 && index.row() < rowCount();
+    }
+    size_t m_cb_id;
+    bool m_editable;
+};
+
+static RustListModel *as_rust_model(QAbstractItemModel *m) {
+    auto *model = dynamic_cast<RustListModel *>(m);
+    Q_ASSERT(model);
+    return model;
+}
+QAbstractItemModel *rust_list_model_new(size_t cb_id, bool editable, QObject *parent) {
+    return new RustListModel(cb_id, editable, parent);
+}
+void rust_list_model_begin_insert(QAbstractItemModel *m, int32_t first, int32_t last) {
+    as_rust_model(m)->beginInsertRows(QModelIndex(), first, last);
+}
+void rust_list_model_end_insert(QAbstractItemModel *m) { as_rust_model(m)->endInsertRows(); }
+void rust_list_model_begin_remove(QAbstractItemModel *m, int32_t first, int32_t last) {
+    as_rust_model(m)->beginRemoveRows(QModelIndex(), first, last);
+}
+void rust_list_model_end_remove(QAbstractItemModel *m) { as_rust_model(m)->endRemoveRows(); }
+void rust_list_model_begin_reset(QAbstractItemModel *m) { as_rust_model(m)->beginResetModel(); }
+void rust_list_model_end_reset(QAbstractItemModel *m) { as_rust_model(m)->endResetModel(); }
+void rust_list_model_changed(QAbstractItemModel *m, int32_t first, int32_t last) {
+    auto *model = as_rust_model(m);
+    Q_EMIT model->dataChanged(model->index(first, 0), model->index(last, 0));
 }
 
 // ---- QPainter primitives ----

@@ -2410,12 +2410,29 @@ impl TableCell {
 
 object_wrapper!(PaintDelegate, ffi::QStyledItemDelegate);
 
-/// painter handed to the paint callback (valid only inside it)
+/// A borrowed `QPainter`: handed to paint callbacks or [`Painter::on_image`]
+/// closures and valid only inside them (never Clone/Copy/storable).
 pub struct Painter {
-    ptr: *mut ffi::QPainter,
+    pub(crate) ptr: *mut ffi::QPainter,
 }
 
 impl Painter {
+    /// Paint onto a Rust-owned image. The painter exists only for `f` and
+    /// is ended before this returns; `&mut` keeps the image exclusive.
+    pub fn on_image<R>(image: &mut QImage, f: impl FnOnce(&Painter) -> R) -> R {
+        struct Finish(*mut ffi::QPainter);
+        impl Drop for Finish {
+            fn drop(&mut self) {
+                unsafe { ffi::painter_finish(self.0) }
+            }
+        }
+        let painter = Finish(unsafe { ffi::painter_begin_image(image.ptr) });
+        assert!(
+            unsafe { ffi::painter_is_active(painter.0) },
+            "cannot paint on a null QImage"
+        );
+        f(&Painter { ptr: painter.0 })
+    }
     /// draw text with the baseline at (x, y) — for cell-grid rendering
     pub fn draw_line(&self, x1: i32, y1: i32, x2: i32, y2: i32) {
         unsafe { ffi::painter_draw_line(self.ptr, x1, y1, x2, y2) }
@@ -2462,6 +2479,152 @@ impl Painter {
     /// elide text to width using the painter's current font; use qt::elide::* for mode
     pub fn elided_text(&self, text: &str, mode: i32, width: i32) -> String {
         unsafe { ffi::painter_elided_text(self.ptr, text, mode, width) }
+    }
+}
+
+// ---- QStyle and style options ----
+
+object_wrapper!(QStyle, ffi::QStyle);
+
+impl QStyle {
+    /// DTK's `DStyle` when this is a DTK style (deepin platform theme),
+    /// otherwise None. A borrowed, separately guarded view.
+    pub fn as_dstyle(&self) -> Option<widgets::DStyle> {
+        let _call = dtk_sys::NativeCall::new();
+        let ptr = unsafe { ffi::style_as_dstyle(self.live_ptr()) };
+        (!ptr.is_null()).then(|| widgets::DStyle::from_raw(ptr as _))
+    }
+}
+
+impl QWidget {
+    /// `QWidget::style()`: the widget's or the application's style (borrowed).
+    pub fn style(&self) -> QStyle {
+        let _call = dtk_sys::NativeCall::new();
+        QStyle::from_raw(unsafe { ffi::widget_style(self.live_ptr()) })
+    }
+}
+
+/// Owned `QStyleOption` value for QStyle/DStyle queries and drawing.
+///
+/// A Rust-owned option never holds QObject pointers: `init_from` copies the
+/// widget's state/palette/rect/direction and clears `styleObject`, so the
+/// option cannot dangle when the widget is destroyed.
+pub struct QStyleOption {
+    pub(crate) ptr: *mut ffi::QStyleOption,
+    owned: bool,
+    _not_send: PhantomData<*mut ()>,
+}
+
+impl QStyleOption {
+    pub fn new() -> Self {
+        Self::from_owned(unsafe { ffi::style_option_new() })
+    }
+    fn from_owned(ptr: *mut ffi::QStyleOption) -> Self {
+        assert!(!ptr.is_null());
+        Self {
+            ptr,
+            owned: true,
+            _not_send: PhantomData,
+        }
+    }
+    /// Copy state from a live widget (`QStyleOption::initFrom`).
+    pub fn init_from(&self, widget: &QWidget) {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { ffi::style_option_init_from(self.ptr, widget.live_ptr()) }
+    }
+    pub fn rect(&self) -> QRect {
+        unsafe { ffi::style_option_rect(self.ptr) }
+    }
+    pub fn set_rect(&self, rect: &QRect) {
+        unsafe { ffi::style_option_set_rect(self.ptr, rect) }
+    }
+    /// `QStyle::State` flags (see `qt::state`).
+    pub fn state(&self) -> i32 {
+        unsafe { ffi::style_option_state(self.ptr) }
+    }
+    pub fn set_state(&self, state: i32) {
+        unsafe { ffi::style_option_set_state(self.ptr, state) }
+    }
+}
+
+impl Clone for QStyleOption {
+    fn clone(&self) -> Self {
+        Self::from_owned(unsafe { ffi::style_option_clone(self.ptr) })
+    }
+}
+impl Default for QStyleOption {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+impl Drop for QStyleOption {
+    fn drop(&mut self) {
+        if self.owned {
+            let ptr = self.ptr;
+            dtk_sys::defer_cleanup(move || unsafe { ffi::style_option_delete(ptr) });
+        }
+    }
+}
+
+/// `QStyleOptionViewItem`: owned, or borrowed by a [`PaintDelegate`]
+/// callback (then valid only inside it). Its [`QStyleOption`] base is
+/// available through `Deref` (read and set rect/state; no `DerefMut`).
+///
+/// `clone()` always produces an owned copy whose `widget`, `styleObject` and
+/// `index` (QObject/model pointers) are cleared, so it cannot dangle.
+pub struct QStyleOptionViewItem {
+    pub(crate) ptr: *mut ffi::QStyleOptionViewItem,
+    base: std::mem::ManuallyDrop<QStyleOption>,
+    owned: bool,
+}
+
+impl QStyleOptionViewItem {
+    pub fn new() -> Self {
+        Self::wrap(unsafe { ffi::view_item_option_new() }, true)
+    }
+    fn wrap(ptr: *mut ffi::QStyleOptionViewItem, owned: bool) -> Self {
+        assert!(!ptr.is_null());
+        let base = QStyleOption {
+            ptr: unsafe { ffi::view_item_option_base(ptr) },
+            owned: false,
+            _not_send: PhantomData,
+        };
+        Self {
+            ptr,
+            base: std::mem::ManuallyDrop::new(base),
+            owned,
+        }
+    }
+    pub fn text(&self) -> String {
+        unsafe { ffi::view_item_option_text(self.ptr) }
+    }
+    pub fn set_text(&self, text: &str) {
+        unsafe { ffi::view_item_option_set_text(self.ptr, text) }
+    }
+}
+
+impl std::ops::Deref for QStyleOptionViewItem {
+    type Target = QStyleOption;
+    fn deref(&self) -> &QStyleOption {
+        &self.base
+    }
+}
+impl Clone for QStyleOptionViewItem {
+    fn clone(&self) -> Self {
+        Self::wrap(unsafe { ffi::view_item_option_clone(self.ptr) }, true)
+    }
+}
+impl Default for QStyleOptionViewItem {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+impl Drop for QStyleOptionViewItem {
+    fn drop(&mut self) {
+        if self.owned {
+            let ptr = self.ptr;
+            dtk_sys::defer_cleanup(move || unsafe { ffi::view_item_option_delete(ptr) });
+        }
     }
 }
 
@@ -2512,6 +2675,205 @@ impl PaintDelegate {
         Owned::new(Self::from_raw(unsafe {
             ffi::rust_delegate_new(id, parent_ptr)
         }))
+    }
+
+    /// Like [`new`](Self::new), but hands the item's initialized
+    /// [`QStyleOptionViewItem`] (rect, state, palette, text, ...) so the
+    /// overlay can be drawn with `QStyle`/`DStyle`. All three borrows are valid
+    /// only inside the callback; `option.clone()` makes an owned copy.
+    pub fn new_styled(
+        parent: &impl Signal0,
+        f: impl FnMut(&Painter, &QStyleOptionViewItem, &ModelIndex) + 'static,
+    ) -> Owned<PaintDelegate> {
+        require_application();
+        let _call = dtk_sys::NativeCall::new();
+        let parent_ptr = parent.qobject_ptr();
+        let mut f = f;
+        let id = dtk_sys::register_cb_paint(move |data| {
+            let option = QStyleOptionViewItem::wrap(data.option, false);
+            f(
+                &Painter { ptr: data.painter },
+                &option,
+                &ModelIndex { ptr: data.index },
+            );
+        });
+        Owned::new(Self::from_raw(unsafe {
+            ffi::rust_delegate_new(id, parent_ptr)
+        }))
+    }
+}
+
+// ---- Rust-defined list model ----
+
+/// A list model whose rows are Rust values (`Vec<T>`), exposed to Qt views
+/// as a real `QAbstractItemModel` (one column, no children).
+///
+/// Design (no `Pin<&mut T>`, no CXX-Qt `RustQt` object): the C++ QObject only
+/// stores a callback id; the items live in an `Rc<RefCell<Vec<T>>>` owned by
+/// Rust. Qt's synchronous `rowCount`/`data`/`setData` run the Rust hooks under
+/// a synchronous native borrow, exactly like paint callbacks: a hook cannot
+/// enter Qt (QObject operations, including mutating this model, panic and are
+/// contained, answering "no data"). Mutations from Rust run in one native
+/// transaction, bracketed by `beginInsertRows`/`endInsertRows` etc., and
+/// never hold the `RefCell` borrow while Qt is notified, so views may query
+/// the model from those notifications. The parent owns the QObject; dropping
+/// this handle does not delete it.
+pub struct ListModel<T: 'static> {
+    model: Owned<QAbstractItemModel>,
+    items: Rc<std::cell::RefCell<Vec<T>>>,
+}
+
+type DataHook<T> = Box<dyn Fn(&T, i32) -> Option<QVariant>>;
+type SetDataHook<T> = Box<dyn FnMut(&mut T, i32, &QVariant) -> bool>;
+
+struct ListHooks<T> {
+    items: Rc<std::cell::RefCell<Vec<T>>>,
+    data: DataHook<T>,
+    set_data: Option<SetDataHook<T>>,
+}
+
+impl<T> dtk_sys::ModelCallbacks for ListHooks<T> {
+    fn rows(&mut self) -> i32 {
+        self.items
+            .try_borrow()
+            .map_or(0, |items| i32::try_from(items.len()).unwrap_or(i32::MAX))
+    }
+    fn data(&mut self, row: i32, role: i32) -> *mut ffi::QVariant {
+        let Ok(items) = self.items.try_borrow() else {
+            return std::ptr::null_mut();
+        };
+        let value = usize::try_from(row)
+            .ok()
+            .and_then(|r| items.get(r))
+            .and_then(|item| (self.data)(item, role));
+        value.map_or(std::ptr::null_mut(), |v| {
+            let ptr = v.ptr;
+            std::mem::forget(v); // ownership passes to the C++ caller
+            ptr
+        })
+    }
+    fn set_data(&mut self, row: i32, role: i32, value: *mut ffi::QVariant) -> bool {
+        let Some(set) = &mut self.set_data else {
+            return false;
+        };
+        let Ok(mut items) = self.items.try_borrow_mut() else {
+            return false;
+        };
+        let Some(item) = usize::try_from(row).ok().and_then(|r| items.get_mut(r)) else {
+            return false;
+        };
+        // Borrowed C++ QVariant, valid for this call: never deleted here.
+        let value = std::mem::ManuallyDrop::new(QVariant::from_raw(value));
+        set(item, role, &value)
+    }
+}
+
+impl<T: 'static> ListModel<T> {
+    /// Read-only model; `data(item, role)` returns None for "no data".
+    pub fn new(
+        parent: &impl Signal0,
+        items: Vec<T>,
+        data: impl Fn(&T, i32) -> Option<QVariant> + 'static,
+    ) -> Self {
+        Self::create(parent, items, Box::new(data), None)
+    }
+    /// Editable model (`Qt::ItemIsEditable`); `set_data` returns whether the
+    /// item changed, which emits `dataChanged`.
+    pub fn new_editable(
+        parent: &impl Signal0,
+        items: Vec<T>,
+        data: impl Fn(&T, i32) -> Option<QVariant> + 'static,
+        set_data: impl FnMut(&mut T, i32, &QVariant) -> bool + 'static,
+    ) -> Self {
+        Self::create(parent, items, Box::new(data), Some(Box::new(set_data)))
+    }
+    fn create(
+        parent: &impl Signal0,
+        items: Vec<T>,
+        data: DataHook<T>,
+        set_data: Option<SetDataHook<T>>,
+    ) -> Self {
+        require_application();
+        let _call = dtk_sys::NativeCall::new();
+        let items = Rc::new(std::cell::RefCell::new(items));
+        let editable = set_data.is_some();
+        let id = dtk_sys::register_cb_model(ListHooks {
+            items: items.clone(),
+            data,
+            set_data,
+        });
+        let ptr = unsafe { ffi::rust_list_model_new(id, editable, parent.qobject_ptr()) };
+        Self {
+            model: Owned::new(QAbstractItemModel::from_raw(ptr)),
+            items,
+        }
+    }
+    /// The Qt model view for `set_model`, signals and generic queries.
+    pub fn as_model(&self) -> QAbstractItemModel {
+        (*self.model).clone()
+    }
+    pub fn len(&self) -> usize {
+        self.items.borrow().len()
+    }
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+    /// Read one item (None when out of range).
+    pub fn with<R>(&self, row: usize, f: impl FnOnce(&T) -> R) -> Option<R> {
+        self.items.borrow().get(row).map(f)
+    }
+    fn native(&self) -> (dtk_sys::NativeCall, *mut ffi::QAbstractItemModel) {
+        let call = dtk_sys::NativeCall::new();
+        (call, self.model.live_ptr())
+    }
+    pub fn push(&self, item: T) {
+        let row = self.len();
+        self.insert(row, item);
+    }
+    /// Insert at `row` (panics past the end, like `Vec::insert`).
+    pub fn insert(&self, row: usize, item: T) {
+        assert!(row <= self.len(), "ListModel::insert out of range");
+        let (_call, model) = self.native();
+        let r = i32::try_from(row).expect("row fits in i32");
+        unsafe { ffi::rust_list_model_begin_insert(model, r, r) };
+        self.items.borrow_mut().insert(row, item);
+        unsafe { ffi::rust_list_model_end_insert(model) };
+    }
+    /// Remove and return the item (None when out of range).
+    pub fn remove(&self, row: usize) -> Option<T> {
+        if row >= self.len() {
+            return None;
+        }
+        let (_call, model) = self.native();
+        let r = i32::try_from(row).expect("row fits in i32");
+        unsafe { ffi::rust_list_model_begin_remove(model, r, r) };
+        let item = self.items.borrow_mut().remove(row);
+        unsafe { ffi::rust_list_model_end_remove(model) };
+        Some(item)
+    }
+    /// Mutate one item in place and emit `dataChanged`; false when out of range.
+    /// `f` runs inside the model's native transaction, so it cannot enter Qt
+    /// (where a view could observe the borrowed rows).
+    pub fn update(&self, row: usize, f: impl FnOnce(&mut T)) -> bool {
+        let (_call, model) = self.native();
+        {
+            let mut items = self.items.borrow_mut();
+            let Some(item) = items.get_mut(row) else {
+                return false;
+            };
+            f(item);
+        }
+        let r = i32::try_from(row).expect("row fits in i32");
+        unsafe { ffi::rust_list_model_changed(model, r, r) };
+        true
+    }
+    /// Replace every item (`beginResetModel`/`endResetModel`).
+    pub fn reset(&self, items: Vec<T>) {
+        let (_call, model) = self.native();
+        unsafe { ffi::rust_list_model_begin_reset(model) };
+        let old = std::mem::replace(&mut *self.items.borrow_mut(), items);
+        unsafe { ffi::rust_list_model_end_reset(model) };
+        drop(old);
     }
 }
 

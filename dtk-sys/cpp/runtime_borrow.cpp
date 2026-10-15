@@ -98,6 +98,16 @@ bool runtime_call_allowed(bool control) {
 std::unique_ptr<NativeCallFrame> runtime_call_new(bool control) {
     return runtime_call_allowed(control) ? std::make_unique<NativeCallFrame>() : nullptr;
 }
+bool runtime_paint_call_allowed() {
+    // Audited drawing operations that take a callback-scoped QPainter: they
+    // read style/widget state and draw, but never delete, reparent or spin an
+    // event loop. Admitted inside the synchronous paint borrow that owns
+    // their painter; otherwise the ordinary rule applies.
+    return synchronous_borrows || calls.empty();
+}
+std::unique_ptr<NativeCallFrame> runtime_paint_call_new() {
+    return runtime_paint_call_allowed() ? std::make_unique<NativeCallFrame>() : nullptr;
+}
 bool runtime_native_borrow_active() { return !calls.empty() || synchronous_borrows; }
 bool runtime_can_dispatch_callbacks() {
     return !synchronous_borrows && (calls.empty() || suspended_call());

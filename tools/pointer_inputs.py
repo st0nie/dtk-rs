@@ -23,6 +23,7 @@ POINTER_INPUTS = {
     "DBlurEffectGroup": {
         "addWidget": ("retained borrow", "widget destructor removes itself from group; group destructor clears widget group pointers"),
         "removeWidget": ("borrow; releases relation", "removes map entry and clears widget group pointer"),
+        "paint": ("call borrow", "dblureffectwidget.cpp: drawPixmap(widget->rect(), blurPixmap, ...) on the borrowed painter; const map lookup, nothing retained"),
     },
     "DBoxWidget": {"addWidget": ("Qt adoption", "QBoxLayout owns item and reparents widget to containing widget")},
     "DButtonBox": {
@@ -99,6 +100,12 @@ POINTER_INPUTS = {
         "setFocusRectVisible": ("borrow", "widget style property"),
         "setFrameRadius": ("borrow", "widget style property"),
         "setUncheckedItemIndicatorVisible": ("borrow", "widget style property"),
+        **{m: ("call borrow", "dstyle.cpp: QStyle/QWidget only read during this call (style dispatch, widget palette/state); not retained")
+           for m in ("drawPrimitive", "drawControl", "pixelMetric", "subElementRect", "sizeFromContents",
+                     "standardIcon", "viewItemSize", "viewItemDrawText")},
+    },
+    "DStyledItemDelegate": {
+        "updateEditorGeometry": ("call borrow", "dstyleditemdelegate.cpp: sets editor geometry from option/index; editor not retained or adopted"),
     },
     "DStylePainter": {"begin": ("callback-scoped device borrow", "QPainter paint device lifetime; this opaque class has no safe constructor/getter")},
     "DViewItemAction": {"setWidget": ("retained borrow", "stores QPointer QWidget and hides it; no transfer")},

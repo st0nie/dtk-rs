@@ -1,12 +1,13 @@
 # DTK6 widget binding coverage report
 
-classes: 146, methods generated: 987, skipped: 202
+classes: 146, methods generated: 1034, skipped: 155
 
 Qt ancestry: 85 widgets, 26 QObjects, 35 opaque types
 
 ## skip reasons
-- unsupported param type: 146
-- unsupported return type: 55
+- unsupported param type: 84
+- unsupported return type: 52
+- retained raw pointer: 18
 - required native parent: 1
 
 ## DAboutDialog — 19 methods generated, 0 skipped
@@ -40,17 +41,14 @@ Qt ancestry: 85 widgets, 26 QObjects, 35 opaque types
 
 ## DArrowRectangle — 39 methods generated, 0 skipped
 
-## DBackgroundGroup — 6 methods generated, 2 skipped
-- `void setBackgroundRole(QPalette::ColorRole role);` ← unsupported param type: QPalette::ColorRole
-- `QPalette::ColorRole backgroundRole() const;` ← unsupported return type: QPalette::ColorRole
+## DBackgroundGroup — 8 methods generated, 0 skipped
 
 ## DBaseLine — 8 methods generated, 0 skipped
 
 ## DBlurEffectWidget — 21 methods generated, 1 skipped
 - `void updateBlurSourceImage(const QRegion &ren);` ← unsupported param type: const QRegion &
 
-## DBlurEffectGroup — 3 methods generated, 1 skipped
-- `void paint(QPainter *pa, DBlurEffectWidget *widget) const;` ← unsupported param type: QPainter *
+## DBlurEffectGroup — 4 methods generated, 0 skipped
 
 ## DBlurEffectWithBorderWidget — 0 methods generated, 0 skipped
 
@@ -65,8 +63,7 @@ Qt ancestry: 85 widgets, 26 QObjects, 35 opaque types
 
 ## DVBoxWidget — 0 methods generated, 0 skipped
 
-## DButtonBoxButton — 7 methods generated, 1 skipped
-- `void setIcon(QStyle::StandardPixmap iconType);` ← unsupported param type: QStyle::StandardPixmap
+## DButtonBoxButton — 8 methods generated, 0 skipped
 
 ## DButtonBox — 7 methods generated, 2 skipped
 - `void setButtonList(const QList<DButtonBoxButton*> &list, bool checkable);` ← unsupported param type: const QList<DButtonBoxButton*> &
@@ -158,13 +155,11 @@ Qt ancestry: 85 widgets, 26 QObjects, 35 opaque types
 
 ## DGraphicsClipEffect — 4 methods generated, 0 skipped
 
-## DGraphicsGlowEffect — 14 methods generated, 1 skipped
-- `void draw(QPainter *painter);` ← unsupported param type: QPainter *
+## DGraphicsGlowEffect — 15 methods generated, 0 skipped
 
 ## DHeaderLine — 3 methods generated, 0 skipped
 
-## DIconButton — 12 methods generated, 1 skipped
-- `void setIcon(QStyle::StandardPixmap iconType);` ← unsupported param type: QStyle::StandardPixmap
+## DIconButton — 13 methods generated, 0 skipped
 
 ## DImageViewer — 23 methods generated, 0 skipped
 
@@ -187,17 +182,11 @@ Qt ancestry: 85 widgets, 26 QObjects, 35 opaque types
 - `void setLeftWidgets(const QList<QWidget *> &list);` ← unsupported param type: const QList<QWidget *> &
 - `void setRightWidgets(const QList<QWidget *> &list);` ← unsupported param type: const QList<QWidget *> &
 
-## DVariantListModel — 0 methods generated, 5 skipped
-- `int rowCount(const QModelIndex &parent = QModelIndex()) const;` ← unsupported param type: const QModelIndex &
-- `QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;` ← unsupported param type: const QModelIndex &
-- `bool setData(const QModelIndex &index, const QVariant &value, int role);` ← unsupported param type: const QModelIndex &
-- `bool insertRows(int row, int count, const QModelIndex &parent = QModelIndex());` ← unsupported param type: const QModelIndex &
-- `bool removeRows(int row, int count, const QModelIndex &parent = QModelIndex());` ← unsupported param type: const QModelIndex &
+## DVariantListModel — 5 methods generated, 0 skipped
 
-## DListView — 28 methods generated, 3 skipped
+## DListView — 29 methods generated, 2 skipped
 - `State state() const;` ← unsupported return type: State
 - `void setOrientation(QListView::Flow flow, bool wrapping);` ← unsupported param type: QListView::Flow
-- `void edit(const QModelIndex &index);` ← unsupported param type: const QModelIndex &
 
 ## DLoadingIndicator — 19 methods generated, 3 skipped
 - `QEasingCurve::Type aniEasingType() const;` ← unsupported return type: QEasingCurve::Type
@@ -296,9 +285,7 @@ Qt ancestry: 85 widgets, 26 QObjects, 35 opaque types
 
 ## DShortcutEditLabel — 1 methods generated, 0 skipped
 
-## DSimpleListItem — 1 methods generated, 2 skipped
-- `virtual void drawBackground(QRect rect, QPainter *painter, int index, bool isSel` ← unsupported param type: QPainter *
-- `virtual void drawForeground(QRect rect, QPainter *painter, int column, int index` ← unsupported param type: QPainter *
+## DSimpleListItem — 3 methods generated, 0 skipped
 
 ## DSimpleListView — 25 methods generated, 8 skipped
 - `void setColumnTitleInfo(QList<QString> titles, QList<int> widths, int height);` ← unsupported param type: QList<QString>
@@ -340,89 +327,56 @@ Qt ancestry: 85 widgets, 26 QObjects, 35 opaque types
 - `QEasingCurve::Type animationType() const;` ← unsupported return type: QEasingCurve::Type
 - `void setAnimationType(QEasingCurve::Type animationType);` ← unsupported param type: QEasingCurve::Type
 
-## DStyle — 10 methods generated, 37 skipped
+## DStyle — 35 methods generated, 12 skipped
 - `static QPair<QIcon::Mode, QIcon::State> toIconModeState(const QStyleOption *opti` ← unsupported return type: QPair<QIcon::Mode, QIcon::State>
 - `static DDciIcon::Mode toDciIconMode(const QStyleOption *option);` ← unsupported return type: DDciIcon::Mode
-- `static DStyle::StyleState getState(const QStyleOption *option);` ← unsupported param type: const QStyleOption *
 - `static void setRedPointVisible(QObject *object, bool visible);` ← unsupported param type: QObject *
 - `static void setLineEditIconMargin(QObject *object, int margin);` ← unsupported param type: QObject *
-- `static void drawPrimitive(const QStyle *style, DStyle::PrimitiveElement pe, cons` ← unsupported param type: const QStyle *
-- `static void drawControl(const QStyle *style, DStyle::ControlElement ce, const QS` ← unsupported param type: const QStyle *
-- `static int pixelMetric(const QStyle *style, DStyle::PixelMetric m, const QStyleO` ← unsupported param type: const QStyle *
-- `static QRect subElementRect(const QStyle *style, DStyle::SubElement r, const QSt` ← unsupported param type: const QStyle *
-- `static QSize sizeFromContents(const QStyle *style, DStyle::ContentsType ct, cons` ← unsupported param type: const QStyle *
-- `static QIcon standardIcon(const QStyle *style, StandardPixmap st, const QStyleOp` ← unsupported param type: const QStyle *
-- `inline void drawPrimitive(DStyle::PrimitiveElement pe, const QStyleOption *opt, ` ← unsupported param type: const QStyleOption *
-- `inline void drawControl(DStyle::ControlElement ce, const QStyleOption *opt, QPai` ← unsupported param type: const QStyleOption *
-- `inline int pixelMetric(DStyle::PixelMetric m, const QStyleOption *opt = nullptr,` ← unsupported param type: const QStyleOption *
-- `inline QRect subElementRect(DStyle::SubElement r, const QStyleOption *opt, const` ← unsupported param type: const QStyleOption *
-- `inline QSize sizeFromContents(DStyle::ContentsType ct, const QStyleOption *opt, ` ← unsupported param type: const QStyleOption *
-- `inline QIcon standardIcon(DStyle::StandardPixmap st, const QStyleOption *opt = n` ← unsupported param type: const QStyleOption *
-- `void drawPrimitive(QStyle::PrimitiveElement pe, const QStyleOption *opt, QPainte` ← unsupported param type: QStyle::PrimitiveElement
-- `void drawControl(QStyle::ControlElement ce, const QStyleOption *opt, QPainter *p` ← unsupported param type: QStyle::ControlElement
-- `int pixelMetric(QStyle::PixelMetric m, const QStyleOption *opt = nullptr, const ` ← unsupported param type: QStyle::PixelMetric
 - `int styleHint(StyleHint sh, const QStyleOption *opt, const QWidget *w, QStyleHin` ← unsupported param type: StyleHint
-- `QRect subElementRect(QStyle::SubElement r, const QStyleOption *opt, const QWidge` ← unsupported param type: QStyle::SubElement
-- `QSize sizeFromContents(QStyle::ContentsType ct, const QStyleOption *opt, const Q` ← unsupported param type: QStyle::ContentsType
-- `QIcon standardIcon(QStyle::StandardPixmap st, const QStyleOption *opt = nullptr,` ← unsupported param type: QStyle::StandardPixmap
-- `QPixmap generatedIconPixmap(QIcon::Mode iconMode, const QPixmap &pixmap, const Q` ← unsupported param type: QIcon::Mode
-- `QBrush generatedBrush(const QStyleOption *option, const QBrush &base, QPalette::` ← unsupported param type: const QStyleOption *
-- `QBrush generatedBrush(StyleState state, const QStyleOption *option, const QBrush` ← unsupported param type: const QStyleOption *
 - `virtual QBrush generatedBrush(StateFlags flags, const QBrush &base, QPalette::Co` ← unsupported param type: StateFlags
-- `QBrush generatedBrush(const QStyleOption *option, const QBrush &base, DPalette::` ← unsupported param type: const QStyleOption *
-- `QBrush generatedBrush(StyleState state, const QStyleOption *option, const QBrush` ← unsupported param type: const QStyleOption *
+- `QBrush generatedBrush(const QStyleOption *option, const QBrush &base, DPalette::` ← unsupported param type: DPalette::ColorGroup
+- `QBrush generatedBrush(StyleState state, const QStyleOption *option, const QBrush` ← unsupported param type: DPalette::ColorGroup
 - `virtual QBrush generatedBrush(StateFlags flags, const QBrush &base, DPalette::Co` ← unsupported param type: StateFlags
 - `static QSizeF viewItemTextLayout(QTextLayout &textLayout, int lineWidth);` ← unsupported param type: QTextLayout &
-- `static QSize viewItemSize(const QStyle *style, const QStyleOptionViewItem *optio` ← unsupported param type: const QStyle *
-- `static void viewItemLayout(const QStyle *style, const QStyleOptionViewItem *opt,` ← unsupported param type: const QStyle *
-- `virtual void viewItemLayout(const QStyleOptionViewItem *opt, QRect *pixmapRect, ` ← unsupported param type: const QStyleOptionViewItem *
-- `static QRect viewItemDrawText(const QStyle *style, QPainter *p, const QStyleOpti` ← unsupported param type: const QStyle *
-- `virtual QRect viewItemDrawText(QPainter *p, const QStyleOptionViewItem *option, ` ← unsupported param type: QPainter *
+- `static void viewItemLayout(const QStyle *style, const QStyleOptionViewItem *opt,` ← unsupported param type: QRect *
+- `virtual void viewItemLayout(const QStyleOptionViewItem *opt, QRect *pixmapRect, ` ← unsupported param type: QRect *
 
 ## DStyleHelper — 1 methods generated, 14 skipped
 - `inline DStyleHelper(const QStyle *style = QApplication::style());` ← unsupported return type: D
-- `inline void setStyle(const QStyle *style);` ← unsupported param type: const QStyle *
-- `inline const QStyle *style() const` ← unsupported return type: const QStyle *
-- `inline QBrush generatedBrush(const QStyleOption *option, const QBrush &base, QPa` ← unsupported param type: const QStyleOption *
-- `inline QBrush generatedBrush(const QStyleOption *option, const QBrush &base, QPa` ← unsupported param type: const QStyleOption *
-- `inline QColor getColor(const QStyleOption *option, QPalette::ColorRole role) con` ← unsupported param type: const QStyleOption *
-- `inline QColor getColor(const QStyleOption *option, const DPalette &palette, DPal` ← unsupported param type: const QStyleOption *
+- `inline void setStyle(const QStyle *style);` ← retained raw pointer: dstyle.h DStyleHelper keeps `const QStyle *m_style` raw and has no scope-bound constructor
+- `inline const QStyle *style() const` ← retained raw pointer: dstyle.h DStyleHelper keeps `const QStyle *m_style` raw and has no scope-bound constructor
+- `inline QBrush generatedBrush(const QStyleOption *option, const QBrush &base, QPa` ← retained raw pointer: dstyle.h DStyleHelper keeps `const QStyle *m_style` raw and has no scope-bound constructor
+- `inline QBrush generatedBrush(const QStyleOption *option, const QBrush &base, QPa` ← retained raw pointer: dstyle.h DStyleHelper keeps `const QStyle *m_style` raw and has no scope-bound constructor
+- `inline QColor getColor(const QStyleOption *option, QPalette::ColorRole role) con` ← retained raw pointer: dstyle.h DStyleHelper keeps `const QStyle *m_style` raw and has no scope-bound constructor
+- `inline QColor getColor(const QStyleOption *option, const DPalette &palette, DPal` ← retained raw pointer: dstyle.h DStyleHelper keeps `const QStyle *m_style` raw and has no scope-bound constructor
 - `inline QColor getColor(const T *option, DPalette::ColorType type) const` ← unsupported param type: const T *
-- `inline void drawPrimitive(DStyle::PrimitiveElement pe, const QStyleOption *opt, ` ← unsupported param type: const QStyleOption *
-- `inline void drawControl(DStyle::ControlElement ce, const QStyleOption *opt, QPai` ← unsupported param type: const QStyleOption *
-- `inline int pixelMetric(DStyle::PixelMetric m, const QStyleOption *opt = nullptr,` ← unsupported param type: const QStyleOption *
-- `inline QRect subElementRect(DStyle::SubElement r, const QStyleOption *opt, const` ← unsupported param type: const QStyleOption *
-- `inline QSize sizeFromContents(DStyle::ContentsType ct, const QStyleOption *opt, ` ← unsupported param type: const QStyleOption *
-- `inline QIcon standardIcon(DStyle::StandardPixmap standardIcon, const QStyleOptio` ← unsupported param type: const QStyleOption *
+- `inline void drawPrimitive(DStyle::PrimitiveElement pe, const QStyleOption *opt, ` ← retained raw pointer: dstyle.h DStyleHelper keeps `const QStyle *m_style` raw and has no scope-bound constructor
+- `inline void drawControl(DStyle::ControlElement ce, const QStyleOption *opt, QPai` ← retained raw pointer: dstyle.h DStyleHelper keeps `const QStyle *m_style` raw and has no scope-bound constructor
+- `inline int pixelMetric(DStyle::PixelMetric m, const QStyleOption *opt = nullptr,` ← retained raw pointer: dstyle.h DStyleHelper keeps `const QStyle *m_style` raw and has no scope-bound constructor
+- `inline QRect subElementRect(DStyle::SubElement r, const QStyleOption *opt, const` ← retained raw pointer: dstyle.h DStyleHelper keeps `const QStyle *m_style` raw and has no scope-bound constructor
+- `inline QSize sizeFromContents(DStyle::ContentsType ct, const QStyleOption *opt, ` ← retained raw pointer: dstyle.h DStyleHelper keeps `const QStyle *m_style` raw and has no scope-bound constructor
+- `inline QIcon standardIcon(DStyle::StandardPixmap standardIcon, const QStyleOptio` ← retained raw pointer: dstyle.h DStyleHelper keeps `const QStyle *m_style` raw and has no scope-bound constructor
 
-## DStylePainter — 2 methods generated, 11 skipped
+## DStylePainter — 3 methods generated, 10 skipped
 - `inline DStylePainter() : QPainter(), widget(nullptr), wstyle(nullptr);` ← unsupported return type: D
 - `inline explicit DStylePainter(QWidget *w);` ← unsupported return type: D
 - `inline DStylePainter(QPaintDevice *pd, QWidget *w);` ← unsupported return type: D
 - `inline bool begin(QPaintDevice *pd, QWidget *w);` ← unsupported param type: QPaintDevice *
-- `inline void drawPrimitive(QStyle::PrimitiveElement pe, const QStyleOption &opt);` ← unsupported param type: QStyle::PrimitiveElement
-- `inline void drawPrimitive(DStyle::PrimitiveElement pe, const QStyleOption &opt);` ← unsupported param type: const QStyleOption &
-- `inline void drawControl(QStyle::ControlElement ce, const QStyleOption &opt);` ← unsupported param type: QStyle::ControlElement
-- `inline void drawControl(DStyle::ControlElement ce, const QStyleOption &opt);` ← unsupported param type: const QStyleOption &
-- `inline void drawComplexControl(QStyle::ComplexControl cc, const QStyleOptionComp` ← unsupported param type: QStyle::ComplexControl
-- `inline void drawItemText(const QRect &r, int flags, const QPalette &pal, bool en` ← unsupported param type: QPalette::ColorRole
-- `inline QStyle *style() const;` ← unsupported return type: QStyle *
+- `inline void drawPrimitive(QStyle::PrimitiveElement pe, const QStyleOption &opt);` ← retained raw pointer: dstyle.h DStylePainter keeps raw widget/style pointers and has no safe constructor
+- `inline void drawPrimitive(DStyle::PrimitiveElement pe, const QStyleOption &opt);` ← retained raw pointer: dstyle.h DStylePainter keeps raw widget/style pointers and has no safe constructor
+- `inline void drawControl(QStyle::ControlElement ce, const QStyleOption &opt);` ← retained raw pointer: dstyle.h DStylePainter keeps raw widget/style pointers and has no safe constructor
+- `inline void drawControl(DStyle::ControlElement ce, const QStyleOption &opt);` ← retained raw pointer: dstyle.h DStylePainter keeps raw widget/style pointers and has no safe constructor
+- `inline void drawComplexControl(QStyle::ComplexControl cc, const QStyleOptionComp` ← unsupported param type: const QStyleOptionComplex &
+- `inline QStyle *style() const;` ← retained raw pointer: dstyle.h DStylePainter keeps raw widget/style pointers and has no safe constructor
 
-## DStyledIconEngine — 1 methods generated, 7 skipped
-- `static void drawIcon(const QIcon &icon, QPainter *pa, const QRectF &rect);` ← unsupported param type: QPainter *
+## DStyledIconEngine — 5 methods generated, 3 skipped
 - `void bindDrawFun(DrawFun drawFun);` ← unsupported param type: DrawFun
-- `QPixmap pixmap(const QSize &size, QIcon::Mode mode, QIcon::State state) override` ← unsupported param type: QIcon::Mode
-- `void paint(QPainter *painter, const QPalette &palette, const QRectF &rect);` ← unsupported param type: QPainter *
-- `void paint(QPainter *painter, const QRect &rect, QIcon::Mode mode, QIcon::State ` ← unsupported param type: QPainter *
 - `QIconEngine *clone() const override;` ← unsupported return type: QIconEngine *
-- `void setFrontRole(const QWidget* widget, QPalette::ColorRole role);` ← unsupported param type: QPalette::ColorRole
+- `void setFrontRole(const QWidget* widget, QPalette::ColorRole role);` ← retained raw pointer: dtkwidget dstyle.cpp stores `m_widget = widget` without a QPointer; later paint dereferences it
 
 ## DViewItemAction — 16 methods generated, 0 skipped
 
-## DStyledItemDelegate — 8 methods generated, 4 skipped
-- `void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIn` ← unsupported param type: QPainter *
-- `QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) con` ← unsupported param type: const QStyleOptionViewItem &
-- `void updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, c` ← unsupported param type: const QStyleOptionViewItem &
+## DStyledItemDelegate — 11 methods generated, 1 skipped
 - `DStyledItemDelegate(parent = nullptr)` ← required native parent: dtkwidget/src/widgets/dstyleditemdelegate.cpp: constructor requires a live QAbstractItemView; nullptr default is dereferenced
 
 ## DStandardItem — 12 methods generated, 5 skipped

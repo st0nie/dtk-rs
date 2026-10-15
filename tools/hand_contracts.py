@@ -53,6 +53,16 @@ PARENTED = {
 for key in PARENTED:
     INPUTS[key] = "borrow existing parent; constructor creates a NEW parent-owned allocation, not ownership of the parent"
 
+INPUTS["painter_begin_image", "image"] = "exclusive &mut QImage borrow for the closure; painter ended before return"
+INPUTS["style_option_init_from", "w"] = "call borrow; initFrom copies state, styleObject cleared (no retained QObject)"
+INPUTS["rust_list_model_new", "parent"] = "borrow existing parent; constructor creates a NEW parent-owned model"
+for name in ("begin_insert", "end_insert", "begin_remove", "end_remove", "begin_reset", "end_reset", "changed"):
+    INPUTS[f"rust_list_model_{name}", "m"] = "receiver: ListModel's own guarded RustListModel (dynamic_cast checked) inside one NativeCall"
+for name in ("painter_finish", "painter_is_active"):
+    INPUTS[name, "p"] = "closure-scoped painter created by painter_begin_image; finished exactly once"
+for name in ("persistent_index_from",):
+    INPUTS[name, "idx"] = "synchronous callback-scoped QModelIndex borrow; copied into a new persistent index"
+
 for name in ("qmessagebox_information", "qmessagebox_warning", "qmessagebox_critical", "qmessagebox_question", "qmessagebox_about"):
     INPUTS[name, "parent"] = "call-scoped parent borrow through modal native helper; transaction/DeferredDelete protection, no parent transfer"
 for name in ("relay_connect0", "relay_connect_i32", "relay_connect_bool", "relay_connect_i32_i32"):
@@ -62,16 +72,18 @@ INPUTS["shortcut_new", "parent"] = "borrow widget owner; new native shortcut sco
 RECEIVER_TYPES = {
     "QObject", "QWidget", "DApplication", "DMainWindow", "DTitlebar", "DLabel", "DPushButton",
     "QAction", "QMenu", "QMessageBox", "QLayout", "QAbstractItemModel", "QStandardItemModel",
-    "QTableWidget", "QTimer", "QSocketNotifier", "QStyledItemDelegate", "DSettings",
+    "QTableWidget", "QTimer", "QSocketNotifier", "QStyledItemDelegate", "DSettings", "QStyle",
 }
 VALUE_TYPES = {
     "QVariant", "QVariantList", "QFont", "QPalette", "DPalette", "QPixmap", "QImage",
     "QBrush", "QPainterPath", "QKeySequence", "DDciIcon", "QIcon", "QPersistentModelIndex",
+    "QStyleOption", "QStyleOptionViewItem",
 }
 UNIQUE_DELETERS = {
     "variant_delete", "variant_list_delete", "font_delete", "palette_delete",
     "dpalette_delete", "pixmap_delete", "image_delete", "painter_path_delete", "brush_delete",
     "key_sequence_delete", "ddci_icon_delete", "icon_delete", "persistent_index_delete",
+    "style_option_delete", "view_item_option_delete",
 }
 
 

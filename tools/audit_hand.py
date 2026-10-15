@@ -26,6 +26,7 @@ VALUE_ALLOCATIONS = {
     "brush_from_color", "key_sequence_from_string", "ddci_icon_new", "ddci_icon_from_file", "standard_icon_pixmap",
     "persistent_index_from", "persistent_index_clone", "persistent_index_data",
     "persistent_index_parent", "model_index",
+    "style_option_new", "style_option_clone", "view_item_option_new", "view_item_option_clone",
 }
 SPECIAL_RETURNS = {
     "application_runtime_application": ("scope borrow", "application_runtime.cpp: runtime.application(); no public owning/Clone token"),
@@ -35,6 +36,11 @@ SPECIAL_RETURNS = {
     "core_settings_from_json": ("unique Owned<DSettings>", "dtkcore/src/settings/dsettings.cpp fromJson: QPointer(new DSettings) without parent, documented as caller-released"),
     "core_settings_from_json_file": ("unique Owned<DSettings>", "dtkcore/src/settings/dsettings.cpp fromJsonFile -> fromJson: parentless new DSettings"),
     "core_file_watcher_new": ("constructor Owned; Qt adoption revokes original deletion", "dtkcore/src/filesystem/dfilewatcher.cpp: DFileWatcher(path, parent = 0) allocation"),
+    "widget_style": ("borrowed guarded view", "qt6-base qwidget.cpp style(): widget's own style or QApplication::style(); never transferred"),
+    "style_as_dstyle": ("borrowed guarded view", "qobject_cast of the same borrowed style object; no allocation"),
+    "view_item_option_base": ("borrowed base view", "static upcast into the same option allocation; deleted only through the owning QStyleOptionViewItem"),
+    "painter_begin_image": ("closure-scoped unique owner", "new QPainter(image); Painter::on_image ends and deletes it (painter_finish) before returning, image borrowed &mut"),
+    "rust_list_model_new": ("constructor Owned; parent adoption", "shim.cpp RustListModel(cb_id, editable, parent): new parent-owned QObject holding only a callback id"),
     "mainwindow_titlebar": ("borrowed guarded view", "DMainWindow owns titlebar; no deletion authority from getter"),
     "mainwindow_take_central_widget": ("unique transferred Owned<QWidget>", "qt6-base/src/widgets/widgets/qmainwindow.cpp takeCentralWidget: setParent(nullptr), caller ownership"),
     "qmessagebox_add_button_text": ("Qt-owned guarded view", "QMessageBox::addButton creates/owns the button, not a Rust constructor owner"),

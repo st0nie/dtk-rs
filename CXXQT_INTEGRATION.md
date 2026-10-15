@@ -198,7 +198,7 @@ Workaround strategy:
 | 2 (done) | `tools/signals.py` (run by `tools/gen.py`) emits the bridge, connectors, cast header and `dtk/src/signals_gen.rs` from `Q_SIGNALS:` of every class reachable from a wrapper; per-signal audit rows; `GEN_SIGNAL_REPORT.md` | generated files in check.sh reproducibility manifest |
 | 3 (done) | Value-type signal arguments; hand heap wrappers for trivially copyable values replaced by cxx-qt-lib by-value types (section 8) | per-type audit table in `OWNERSHIP_HAND_REPORT.md`; `signal_values_selfcheck` |
 | 4 (partly done) | QtCore/QtGui/QtWidgets QObjects imported for typed signals (`QTimer`, `QAction`, `QAbstractItemModel`, `QWidget`, `QAbstractButton`, ...). Pointer-valued signals via guarded-view conversion remain | per-type borrowed-pointer contract |
-| 5 | Rust-defined QObjects (`extern "RustQt"`) for models/delegates, owned by `Owned<T>` and dispatched under synchronous borrows | separate design: CXX-Qt invokables take `Pin<&mut T>` for Rust state, which must be reconciled with reentrant Qt callbacks before admission |
+| 5 (resolved differently) | Rust-defined models/delegates. `extern "RustQt"` is **not** used: its invokables take `Pin<&mut T>` for Rust state embedded in the QObject, which reentrant Qt queries would alias. Instead `ListModel<T>` (C++ `RustListModel` with only a callback id; Rust items in `Rc<RefCell<Vec<T>>>`; hooks under `SynchronousBorrow`) and `PaintDelegate::new_styled` | `paint_model_selfcheck`; ARCHITECTURE.md "Painting and model APIs" |
 
 Throughout: no public API exposes CXX-Qt types except `QString` re-exported from
 `dtk-cxxqt`; dtk-rs wrappers remain the stable surface.

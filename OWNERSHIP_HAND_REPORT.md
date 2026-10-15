@@ -61,6 +61,15 @@ Regenerate with `uv run --no-project python tools/audit_hand.py`. New pointer-re
 | `standard_icon_pixmap` | `QPixmap*` | unique heap value/copy; matching *_delete | shim.cpp `standard_icon_pixmap`: new allocation/copy; Qt storage never borrowed into Rust |
 | `socket_notifier_new` | `QSocketNotifier*` | constructor Owned; Qt adoption revokes original deletion | shim.cpp `socket_notifier_new`: verified new allocation; registered after guard construction |
 | `rust_delegate_new` | `QStyledItemDelegate*` | constructor Owned; Qt adoption revokes original deletion | shim.cpp `rust_delegate_new`: verified new allocation; registered after guard construction |
+| `widget_style` | `QStyle*` | borrowed guarded view | qt6-base qwidget.cpp style(): widget's own style or QApplication::style(); never transferred |
+| `style_as_dstyle` | `DStyle*` | borrowed guarded view | qobject_cast of the same borrowed style object; no allocation |
+| `style_option_new` | `QStyleOption*` | unique heap value/copy; matching *_delete | shim.cpp `style_option_new`: new allocation/copy; Qt storage never borrowed into Rust |
+| `style_option_clone` | `QStyleOption*` | unique heap value/copy; matching *_delete | shim.cpp `style_option_clone`: new allocation/copy; Qt storage never borrowed into Rust |
+| `view_item_option_new` | `QStyleOptionViewItem*` | unique heap value/copy; matching *_delete | shim.cpp `view_item_option_new`: new allocation/copy; Qt storage never borrowed into Rust |
+| `view_item_option_clone` | `QStyleOptionViewItem*` | unique heap value/copy; matching *_delete | shim.cpp `view_item_option_clone`: new allocation/copy; Qt storage never borrowed into Rust |
+| `view_item_option_base` | `QStyleOption*` | borrowed base view | static upcast into the same option allocation; deleted only through the owning QStyleOptionViewItem |
+| `painter_begin_image` | `QPainter*` | closure-scoped unique owner | new QPainter(image); Painter::on_image ends and deletes it (painter_finish) before returning, image borrowed &mut |
+| `rust_list_model_new` | `QAbstractItemModel*` | constructor Owned; parent adoption | shim.cpp RustListModel(cb_id, editable, parent): new parent-owned QObject holding only a callback id |
 | `persistent_index_from` | `QPersistentModelIndex*` | unique heap value/copy; matching *_delete | shim.cpp `persistent_index_from`: new allocation/copy; Qt storage never borrowed into Rust |
 | `persistent_index_clone` | `QPersistentModelIndex*` | unique heap value/copy; matching *_delete | shim.cpp `persistent_index_clone`: new allocation/copy; Qt storage never borrowed into Rust |
 | `persistent_index_data` | `QVariant*` | unique heap value/copy; matching *_delete | shim.cpp `persistent_index_data`: new allocation/copy; Qt storage never borrowed into Rust |
@@ -70,11 +79,12 @@ Regenerate with `uv run --no-project python tools/audit_hand.py`. New pointer-re
 | `menu_new` | `QMenu*` | constructor Owned; Qt adoption revokes original deletion | shim.cpp `menu_new`: verified new allocation; registered after guard construction |
 | `paint_widget_new` | `QWidget*` | constructor Owned; Qt adoption revokes original deletion | shim.cpp `paint_widget_new`: verified new allocation; registered after guard construction |
 
-Raw pointer-return declarations audited: **64**.
+Raw pointer-return declarations audited: **73**.
 
 ## CXX unique native state owners
 
 - `runtime_call_new` → `UniquePtr<NativeCallFrame>`: state-only transaction token; no Qt ownership or mutable pinned reference.
+- `runtime_paint_call_new` → `UniquePtr<NativeCallFrame>`: state-only transaction token; no Qt ownership or mutable pinned reference.
 - `guard_object` → `UniquePtr<QObjectGuard>`: owns only guard/event filter/QPointer, never the watched QObject.
 - `guard_widget` → `UniquePtr<QObjectGuard>`: owns only guard/event filter/QPointer, never the watched QObject.
 - `guard_current_application` → `UniquePtr<QObjectGuard>`: owns only guard/event filter/QPointer, never the watched QObject.
@@ -297,6 +307,27 @@ Each row identifies a receiver, retained/call borrow, unique destructor or outpu
 | `socket_notifier_new` | `parent` | `QObject*` | borrow existing parent; constructor creates a NEW parent-owned allocation, not ownership of the parent |
 | `socket_notifier_set_enabled` | `n` | `QSocketNotifier*` | receiver borrow, no ownership transfer; guarded owning-thread native transaction through result wrapping |
 | `rust_delegate_new` | `parent` | `QObject*` | borrow existing parent; constructor creates a NEW parent-owned allocation, not ownership of the parent |
+| `widget_style` | `w` | `QWidget*` | receiver borrow, no ownership transfer; guarded owning-thread native transaction through result wrapping |
+| `style_as_dstyle` | `style` | `QStyle*` | receiver borrow, no ownership transfer; guarded owning-thread native transaction through result wrapping |
+| `style_option_init_from` | `opt` | `QStyleOption*` | borrow of independently Rust-owned Qt value; native value/reference conversion, no allocation transfer |
+| `style_option_init_from` | `w` | `QWidget*` | call borrow; initFrom copies state, styleObject cleared (no retained QObject) |
+| `style_option_set_rect` | `opt` | `QStyleOption*` | borrow of independently Rust-owned Qt value; native value/reference conversion, no allocation transfer |
+| `style_option_set_state` | `opt` | `QStyleOption*` | borrow of independently Rust-owned Qt value; native value/reference conversion, no allocation transfer |
+| `style_option_delete` | `opt` | `QStyleOption*` | consumes unique Rust-owned heap value; matching Drop only, never a QObject borrow |
+| `view_item_option_base` | `opt` | `QStyleOptionViewItem*` | borrow of independently Rust-owned Qt value; native value/reference conversion, no allocation transfer |
+| `view_item_option_set_text` | `opt` | `QStyleOptionViewItem*` | borrow of independently Rust-owned Qt value; native value/reference conversion, no allocation transfer |
+| `view_item_option_delete` | `opt` | `QStyleOptionViewItem*` | consumes unique Rust-owned heap value; matching Drop only, never a QObject borrow |
+| `painter_begin_image` | `image` | `QImage*` | exclusive &mut QImage borrow for the closure; painter ended before return |
+| `painter_finish` | `p` | `QPainter*` | closure-scoped painter created by painter_begin_image; finished exactly once |
+| `painter_is_active` | `p` | `QPainter*` | closure-scoped painter created by painter_begin_image; finished exactly once |
+| `rust_list_model_new` | `parent` | `QObject*` | borrow existing parent; constructor creates a NEW parent-owned model |
+| `rust_list_model_begin_insert` | `m` | `QAbstractItemModel*` | receiver: ListModel's own guarded RustListModel (dynamic_cast checked) inside one NativeCall |
+| `rust_list_model_end_insert` | `m` | `QAbstractItemModel*` | receiver: ListModel's own guarded RustListModel (dynamic_cast checked) inside one NativeCall |
+| `rust_list_model_begin_remove` | `m` | `QAbstractItemModel*` | receiver: ListModel's own guarded RustListModel (dynamic_cast checked) inside one NativeCall |
+| `rust_list_model_end_remove` | `m` | `QAbstractItemModel*` | receiver: ListModel's own guarded RustListModel (dynamic_cast checked) inside one NativeCall |
+| `rust_list_model_begin_reset` | `m` | `QAbstractItemModel*` | receiver: ListModel's own guarded RustListModel (dynamic_cast checked) inside one NativeCall |
+| `rust_list_model_end_reset` | `m` | `QAbstractItemModel*` | receiver: ListModel's own guarded RustListModel (dynamic_cast checked) inside one NativeCall |
+| `rust_list_model_changed` | `m` | `QAbstractItemModel*` | receiver: ListModel's own guarded RustListModel (dynamic_cast checked) inside one NativeCall |
 | `painter_draw_text_at` | `p` | `QPainter*` | synchronous callback-scoped borrow; never owned/Clone/Copy; related native mutation rejected |
 | `painter_draw_line` | `p` | `QPainter*` | synchronous callback-scoped borrow; never owned/Clone/Copy; related native mutation rejected |
 | `painter_save` | `p` | `QPainter*` | synchronous callback-scoped borrow; never owned/Clone/Copy; related native mutation rejected |
@@ -317,7 +348,7 @@ Each row identifies a receiver, retained/call borrow, unique destructor or outpu
 | `index_data_string` | `idx` | `QModelIndex*` | synchronous callback-scoped borrow; never owned/Clone/Copy; related native mutation rejected |
 | `index_data_bool` | `idx` | `QModelIndex*` | synchronous callback-scoped borrow; never owned/Clone/Copy; related native mutation rejected |
 | `index_data_i64` | `idx` | `QModelIndex*` | synchronous callback-scoped borrow; never owned/Clone/Copy; related native mutation rejected |
-| `persistent_index_from` | `idx` | `QModelIndex*` | synchronous callback-scoped borrow; never owned/Clone/Copy; related native mutation rejected |
+| `persistent_index_from` | `idx` | `QModelIndex*` | synchronous callback-scoped QModelIndex borrow; copied into a new persistent index |
 | `persistent_index_clone` | `idx` | `QPersistentModelIndex*` | borrow of independently Rust-owned Qt value; native value/reference conversion, no allocation transfer |
 | `persistent_index_delete` | `idx` | `QPersistentModelIndex*` | consumes unique Rust-owned heap value; matching Drop only, never a QObject borrow |
 | `persistent_index_is_valid` | `idx` | `QPersistentModelIndex*` | borrow of independently Rust-owned Qt value; native value/reference conversion, no allocation transfer |
@@ -351,7 +382,7 @@ Each row identifies a receiver, retained/call borrow, unique destructor or outpu
 | `paint_widget_inject_key` | `w` | `QWidget*` | receiver borrow, no ownership transfer; guarded owning-thread native transaction through result wrapping |
 | `shortcut_new` | `parent` | `QWidget*` | borrow widget owner; new native shortcut scope/parent-owned; callback capture cancellation |
 
-Raw pointer input parameters audited: **263**.
+Raw pointer input parameters audited: **284**.
 
 ## Callback and retained borrows
 

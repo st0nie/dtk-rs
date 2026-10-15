@@ -21,6 +21,21 @@ impl NativeCall {
     pub fn control() -> Self {
         Self::enter(true)
     }
+    /// Audited painting operation on a borrowed `QPainter`: also admitted
+    /// inside the synchronous paint callback that lends that painter (which
+    /// rejects every ordinary QObject operation).
+    pub fn paint() -> Self {
+        crate::assert_not_closing();
+        let frame = unsafe { ffi::runtime_paint_call_new() };
+        assert!(
+            !frame.is_null(),
+            "Qt native state is borrowed by a suspended native call"
+        );
+        Self {
+            frame,
+            _not_send: PhantomData,
+        }
+    }
     fn enter(control: bool) -> Self {
         crate::assert_not_closing();
         let frame = unsafe { ffi::runtime_call_new(control) };

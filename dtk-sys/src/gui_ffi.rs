@@ -12,6 +12,11 @@ pub mod genffi {
         type QAction;
         type QBoxLayout;
         type QLayout;
+        type QPainter;
+        type QPersistentModelIndex;
+        type QStyle;
+        type QStyleOption;
+        type QStyleOptionViewItem;
         type QWidget;
         type QBrush;
         type QFont;
@@ -117,6 +122,11 @@ pub mod genffi {
         ) -> QColor;
         unsafe fn gen_d_gui_application_helper_standard_palette(type_: i32) -> *mut DPalette;
         unsafe fn gen_d_gui_application_helper_generate_palette_color(
+            base: *mut DPalette,
+            role: i32,
+            type_: i32,
+        );
+        unsafe fn gen_d_gui_application_helper_generate_palette_color_2(
             base: *mut DPalette,
             role: i32,
             type_: i32,

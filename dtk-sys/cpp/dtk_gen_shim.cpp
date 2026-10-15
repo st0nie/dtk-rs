@@ -189,6 +189,8 @@ QWidget *gen_d_background_group_as_widget(DBackgroundGroup *self) { return stati
 QMargins gen_d_background_group_item_margins(DBackgroundGroup *self) { return self->itemMargins(); }
 bool gen_d_background_group_use_widget_background(DBackgroundGroup *self) { return self->useWidgetBackground(); }
 void gen_d_background_group_set_layout(DBackgroundGroup *self, QLayout * layout) { if (!layout_can_install(self, layout)) return; self->setLayout(layout); }
+void gen_d_background_group_set_background_role(DBackgroundGroup *self, int32_t role) { self->setBackgroundRole(static_cast<QPalette::ColorRole>(role)); }
+int32_t gen_d_background_group_background_role(DBackgroundGroup *self) { return static_cast<int32_t>(self->backgroundRole()); }
 void gen_d_background_group_set_item_margins(DBackgroundGroup *self, const QMargins &itemMargins) { self->setItemMargins(itemMargins); }
 void gen_d_background_group_set_item_spacing(DBackgroundGroup *self, int32_t spacing) { self->setItemSpacing(spacing); }
 void gen_d_background_group_set_use_widget_background(DBackgroundGroup *self, bool useWidgetBackground) { self->setUseWidgetBackground(useWidgetBackground); }
@@ -232,6 +234,7 @@ void gen_d_blur_effect_group_delete(DBlurEffectGroup *self) { delete self; }
 void gen_d_blur_effect_group_set_source_image(DBlurEffectGroup *self, QImage * image, int32_t blurRadius) { self->setSourceImage(*image, blurRadius); }
 void gen_d_blur_effect_group_add_widget(DBlurEffectGroup *self, DBlurEffectWidget * widget, const QPoint &offset) { self->addWidget(widget, offset); }
 void gen_d_blur_effect_group_remove_widget(DBlurEffectGroup *self, DBlurEffectWidget * widget) { self->removeWidget(widget); }
+void gen_d_blur_effect_group_paint(DBlurEffectGroup *self, QPainter *pa, DBlurEffectWidget * widget) { self->paint(pa, widget); }
 DBlurEffectWithBorderWidget *gen_d_blur_effect_with_border_widget_new() { return new DBlurEffectWithBorderWidget; }
 QObject *gen_d_blur_effect_with_border_widget_as_qobject(DBlurEffectWithBorderWidget *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_blur_effect_with_border_widget_as_widget(DBlurEffectWithBorderWidget *self) { return static_cast<QWidget *>(self); }
@@ -255,8 +258,9 @@ DBoxWidget *gen_d_v_box_widget_as_d_box_widget(DVBoxWidget *self) { return stati
 QObject *gen_d_button_box_button_as_qobject(DButtonBoxButton *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_button_box_button_as_widget(DButtonBoxButton *self) { return static_cast<QWidget *>(self); }
 void gen_d_button_box_button_set_icon(DButtonBoxButton *self, QIcon * icon) { self->setIcon(*icon); }
-void gen_d_button_box_button_set_icon_2(DButtonBoxButton *self, int32_t iconType) { self->setIcon(static_cast<DStyle::StandardPixmap>(iconType)); }
-void gen_d_button_box_button_set_icon_3(DButtonBoxButton *self, DDciIcon * icon) { self->setIcon(*icon); }
+void gen_d_button_box_button_set_icon_2(DButtonBoxButton *self, int32_t iconType) { self->setIcon(static_cast<QStyle::StandardPixmap>(iconType)); }
+void gen_d_button_box_button_set_icon_3(DButtonBoxButton *self, int32_t iconType) { self->setIcon(static_cast<DStyle::StandardPixmap>(iconType)); }
+void gen_d_button_box_button_set_icon_4(DButtonBoxButton *self, DDciIcon * icon) { self->setIcon(*icon); }
 DDciIcon * gen_d_button_box_button_dci_icon(DButtonBoxButton *self) { return new DDciIcon(self->dciIcon()); }
 QSize gen_d_button_box_button_icon_size(DButtonBoxButton *self) { return self->iconSize(); }
 QSize gen_d_button_box_button_size_hint(DButtonBoxButton *self) { return self->sizeHint(); }
@@ -522,6 +526,7 @@ void gen_d_graphics_clip_effect_set_margins(DGraphicsClipEffect *self, const QMa
 void gen_d_graphics_clip_effect_set_clip_path(DGraphicsClipEffect *self, QPainterPath * clipPath) { self->setClipPath(*clipPath); }
 DGraphicsGlowEffect *gen_d_graphics_glow_effect_new() { return new DGraphicsGlowEffect; }
 QObject *gen_d_graphics_glow_effect_as_qobject(DGraphicsGlowEffect *self) { return static_cast<QObject *>(self); }
+void gen_d_graphics_glow_effect_draw(DGraphicsGlowEffect *self, QPainter *painter) { self->draw(painter); }
 QRectF gen_d_graphics_glow_effect_bounding_rect_for(DGraphicsGlowEffect *self, const QRectF &rect) { return self->boundingRectFor(rect); }
 void gen_d_graphics_glow_effect_set_offset(DGraphicsGlowEffect *self, double dx, double dy) { self->setOffset(dx, dy); }
 void gen_d_graphics_glow_effect_set_x_offset(DGraphicsGlowEffect *self, double dx) { self->setXOffset(dx); }
@@ -547,8 +552,9 @@ DIconButton *gen_d_icon_button_new() { return new DIconButton; }
 QObject *gen_d_icon_button_as_qobject(DIconButton *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_icon_button_as_widget(DIconButton *self) { return static_cast<QWidget *>(self); }
 void gen_d_icon_button_set_icon(DIconButton *self, QIcon * icon) { self->setIcon(*icon); }
-void gen_d_icon_button_set_icon_2(DIconButton *self, int32_t iconType) { self->setIcon(static_cast<DStyle::StandardPixmap>(iconType)); }
-void gen_d_icon_button_set_icon_3(DIconButton *self, DDciIcon * icon) { self->setIcon(*icon); }
+void gen_d_icon_button_set_icon_2(DIconButton *self, int32_t iconType) { self->setIcon(static_cast<QStyle::StandardPixmap>(iconType)); }
+void gen_d_icon_button_set_icon_3(DIconButton *self, int32_t iconType) { self->setIcon(static_cast<DStyle::StandardPixmap>(iconType)); }
+void gen_d_icon_button_set_icon_4(DIconButton *self, DDciIcon * icon) { self->setIcon(*icon); }
 DDciIcon * gen_d_icon_button_dci_icon(DIconButton *self) { return new DDciIcon(self->dciIcon()); }
 QSize gen_d_icon_button_size_hint(DIconButton *self) { return self->sizeHint(); }
 QSize gen_d_icon_button_minimum_size_hint(DIconButton *self) { return self->minimumSizeHint(); }
@@ -694,6 +700,11 @@ void gen_d_line_edit_set_paste_enabled(DLineEdit *self, bool enable) { self->set
 DVariantListModel *gen_d_variant_list_model_new() { return new DVariantListModel; }
 QObject *gen_d_variant_list_model_as_qobject(DVariantListModel *self) { return static_cast<QObject *>(self); }
 QAbstractItemModel *gen_d_variant_list_model_as_model(DVariantListModel *self) { return static_cast<QAbstractItemModel *>(self); }
+int32_t gen_d_variant_list_model_row_count(DVariantListModel *self, QPersistentModelIndex *parent) { return self->rowCount(QModelIndex(*parent)); }
+QVariant * gen_d_variant_list_model_data(DVariantListModel *self, QPersistentModelIndex *index, int32_t role) { return new QVariant(self->data(QModelIndex(*index), role)); }
+bool gen_d_variant_list_model_set_data(DVariantListModel *self, QPersistentModelIndex *index, QVariant * value, int32_t role) { return self->setData(QModelIndex(*index), *value, role); }
+bool gen_d_variant_list_model_insert_rows(DVariantListModel *self, int32_t row, int32_t count, QPersistentModelIndex *parent) { return self->insertRows(row, count, QModelIndex(*parent)); }
+bool gen_d_variant_list_model_remove_rows(DVariantListModel *self, int32_t row, int32_t count, QPersistentModelIndex *parent) { return self->removeRows(row, count, QModelIndex(*parent)); }
 DListView *gen_d_list_view_new() { return new DListView; }
 QObject *gen_d_list_view_as_qobject(DListView *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_list_view_as_widget(DListView *self) { return static_cast<QWidget *>(self); }
@@ -720,6 +731,7 @@ QWidget * gen_d_list_view_take_header_widget(DListView *self, int32_t index) { i
 int32_t gen_d_list_view_add_footer_widget(DListView *self, QWidget * widget) { if (!object_can_adopt(self, widget)) { return -1; } object_mark_native_adopted(self, widget); return self->addFooterWidget(widget); }
 void gen_d_list_view_remove_footer_widget(DListView *self, int32_t index) { if (!self->getFooterWidget(index)) return; self->removeFooterWidget(index); }
 QWidget * gen_d_list_view_take_footer_widget(DListView *self, int32_t index) { if (!self->getFooterWidget(index)) return nullptr; return self->takeFooterWidget(index); }
+void gen_d_list_view_edit(DListView *self, QPersistentModelIndex *index) { self->edit(QModelIndex(*index)); }
 void gen_d_list_view_set_background_type(DListView *self, int32_t backgroundType) { self->setBackgroundType(static_cast<DStyledItemDelegate::BackgroundType>(backgroundType)); }
 void gen_d_list_view_set_item_margins(DListView *self, const QMargins &itemMargins) { self->setItemMargins(itemMargins); }
 void gen_d_list_view_set_item_size(DListView *self, const QSize &itemSize) { self->setItemSize(itemSize); }
@@ -971,6 +983,8 @@ QWidget *gen_d_shortcut_edit_label_as_widget(DShortcutEditLabel *self) { return 
 void gen_d_shortcut_edit_label_set_echo_state(DShortcutEditLabel *self, int32_t state) { self->setEchoState(static_cast<DShortcutEditLabel::EchoState>(state)); }
 QObject *gen_d_simple_list_item_as_qobject(DSimpleListItem *self) { return static_cast<QObject *>(self); }
 bool gen_d_simple_list_item_same_as(DSimpleListItem *self, DSimpleListItem * item) { return self->sameAs(item); }
+void gen_d_simple_list_item_draw_background(DSimpleListItem *self, const QRect &rect, QPainter *painter, int32_t index, bool isSelect, bool isHover) { self->drawBackground(rect, painter, index, isSelect, isHover); }
+void gen_d_simple_list_item_draw_foreground(DSimpleListItem *self, const QRect &rect, QPainter *painter, int32_t column, int32_t index, bool isSelect, bool isHover) { self->drawForeground(rect, painter, column, index, isSelect, isHover); }
 QObject *gen_d_simple_list_view_as_qobject(DSimpleListView *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_simple_list_view_as_widget(DSimpleListView *self) { return static_cast<QWidget *>(self); }
 void gen_d_simple_list_view_set_row_height(DSimpleListView *self, int32_t height) { self->setRowHeight(height); }
@@ -1073,6 +1087,7 @@ DStyle *gen_d_style_new() { return new DStyle; }
 QObject *gen_d_style_as_qobject(DStyle *self) { return static_cast<QObject *>(self); }
 QColor gen_d_style_adjust_color(const QColor &base, int8_t hueFloat, int8_t saturationFloat, int8_t lightnessFloat, int8_t redFloat, int8_t greenFloat, int8_t blueFloat, int8_t alphaFloat) { return DStyle::adjustColor(base, hueFloat, saturationFloat, lightnessFloat, redFloat, greenFloat, blueFloat, alphaFloat); }
 QColor gen_d_style_blend_color(const QColor &substrate, const QColor &superstratum) { return DStyle::blendColor(substrate, superstratum); }
+int32_t gen_d_style_get_state(QStyleOption *option) { return static_cast<int32_t>(DStyle::getState(option)); }
 void gen_d_style_set_focus_rect_visible(QWidget * widget, bool visible) { DStyle::setFocusRectVisible(widget, visible); }
 void gen_d_style_set_frame_radius(QWidget * widget, int32_t radius) { DStyle::setFrameRadius(widget, radius); }
 void gen_d_style_set_unchecked_item_indicator_visible(QWidget * widget, bool visible) { DStyle::setUncheckedItemIndicatorVisible(widget, visible); }
@@ -1080,11 +1095,40 @@ void gen_d_style_set_shortcut_underline_visible(bool visible) { DStyle::setShort
 bool gen_d_style_shortcut_underline_visible() { return DStyle::shortcutUnderlineVisible(); }
 void gen_d_style_set_menu_keyboard_search_disabled(bool disabled) { DStyle::setMenuKeyboardSearchDisabled(disabled); }
 bool gen_d_style_is_menu_keyboard_search_disabled() { return DStyle::isMenuKeyboardSearchDisabled(); }
+void gen_d_style_draw_primitive(QStyle * style, int32_t pe, QStyleOption *opt, QPainter *p, QWidget * w) { DStyle::drawPrimitive(style, static_cast<DStyle::PrimitiveElement>(pe), opt, p, w); }
+void gen_d_style_draw_control(QStyle * style, int32_t ce, QStyleOption *opt, QPainter *p, QWidget * w) { DStyle::drawControl(style, static_cast<DStyle::ControlElement>(ce), opt, p, w); }
+int32_t gen_d_style_pixel_metric(QStyle * style, int32_t m, QStyleOption *opt, QWidget * widget) { return DStyle::pixelMetric(style, static_cast<DStyle::PixelMetric>(m), opt, widget); }
+QRect gen_d_style_sub_element_rect(QStyle * style, int32_t r, QStyleOption *opt, QWidget * widget) { return DStyle::subElementRect(style, static_cast<DStyle::SubElement>(r), opt, widget); }
+QSize gen_d_style_size_from_contents(QStyle * style, int32_t ct, QStyleOption *opt, const QSize &contentsSize, QWidget * widget) { return DStyle::sizeFromContents(style, static_cast<DStyle::ContentsType>(ct), opt, contentsSize, widget); }
+QIcon * gen_d_style_standard_icon(QStyle * style, int32_t st, QStyleOption *opt, QWidget * widget) { return new QIcon(DStyle::standardIcon(style, static_cast<DStyle::StandardPixmap>(st), opt, widget)); }
+void gen_d_style_draw_primitive_2(DStyle *self, int32_t pe, QStyleOption *opt, QPainter *p, QWidget * w) { self->drawPrimitive(static_cast<DStyle::PrimitiveElement>(pe), opt, p, w); }
+void gen_d_style_draw_control_2(DStyle *self, int32_t ce, QStyleOption *opt, QPainter *p, QWidget * w) { self->drawControl(static_cast<DStyle::ControlElement>(ce), opt, p, w); }
+int32_t gen_d_style_pixel_metric_2(DStyle *self, int32_t m, QStyleOption *opt, QWidget * widget) { return self->pixelMetric(static_cast<DStyle::PixelMetric>(m), opt, widget); }
+QRect gen_d_style_sub_element_rect_2(DStyle *self, int32_t r, QStyleOption *opt, QWidget * widget) { return self->subElementRect(static_cast<DStyle::SubElement>(r), opt, widget); }
+QSize gen_d_style_size_from_contents_2(DStyle *self, int32_t ct, QStyleOption *opt, const QSize &contentsSize, QWidget * widget) { return self->sizeFromContents(static_cast<DStyle::ContentsType>(ct), opt, contentsSize, widget); }
+QIcon * gen_d_style_standard_icon_2(DStyle *self, int32_t st, QStyleOption *opt, QWidget * widget) { return new QIcon(self->standardIcon(static_cast<DStyle::StandardPixmap>(st), opt, widget)); }
+void gen_d_style_draw_primitive_3(DStyle *self, int32_t pe, QStyleOption *opt, QPainter *p, QWidget * w) { self->drawPrimitive(static_cast<QStyle::PrimitiveElement>(pe), opt, p, w); }
+void gen_d_style_draw_control_3(DStyle *self, int32_t ce, QStyleOption *opt, QPainter *p, QWidget * w) { self->drawControl(static_cast<QStyle::ControlElement>(ce), opt, p, w); }
+int32_t gen_d_style_pixel_metric_3(DStyle *self, int32_t m, QStyleOption *opt, QWidget * widget) { return self->pixelMetric(static_cast<QStyle::PixelMetric>(m), opt, widget); }
+QRect gen_d_style_sub_element_rect_3(DStyle *self, int32_t r, QStyleOption *opt, QWidget * widget) { return self->subElementRect(static_cast<QStyle::SubElement>(r), opt, widget); }
+QSize gen_d_style_size_from_contents_3(DStyle *self, int32_t ct, QStyleOption *opt, const QSize &contentsSize, QWidget * widget) { return self->sizeFromContents(static_cast<QStyle::ContentsType>(ct), opt, contentsSize, widget); }
+QIcon * gen_d_style_standard_icon_3(DStyle *self, int32_t st, QStyleOption *opt, QWidget * widget) { return new QIcon(self->standardIcon(static_cast<QStyle::StandardPixmap>(st), opt, widget)); }
 QPalette * gen_d_style_standard_palette(DStyle *self) { return new QPalette(self->standardPalette()); }
+QPixmap * gen_d_style_generated_icon_pixmap(DStyle *self, int32_t iconMode, QPixmap * pixmap, QStyleOption *opt) { return new QPixmap(self->generatedIconPixmap(static_cast<QIcon::Mode>(iconMode), *pixmap, opt)); }
+QBrush * gen_d_style_generated_brush(DStyle *self, QStyleOption *option, QBrush * base, int32_t cg, int32_t role) { return new QBrush(self->generatedBrush(option, *base, static_cast<QPalette::ColorGroup>(cg), static_cast<QPalette::ColorRole>(role))); }
+QBrush * gen_d_style_generated_brush_2(DStyle *self, int32_t state, QStyleOption *option, QBrush * base, int32_t cg, int32_t role) { return new QBrush(self->generatedBrush(static_cast<DStyle::StyleState>(state), option, *base, static_cast<QPalette::ColorGroup>(cg), static_cast<QPalette::ColorRole>(role))); }
+QSize gen_d_style_view_item_size(QStyle * style, QStyleOptionViewItem *option, int32_t role) { return DStyle::viewItemSize(style, option, role); }
+QRect gen_d_style_view_item_draw_text(QStyle * style, QPainter *p, QStyleOptionViewItem *option, const QRect &rect) { return DStyle::viewItemDrawText(style, p, option, rect); }
+QRect gen_d_style_view_item_draw_text_2(DStyle *self, QPainter *p, QStyleOptionViewItem *option, const QRect &rect) { return self->viewItemDrawText(p, option, rect); }
 DStyle * gen_d_style_helper_dstyle(DStyleHelper *self) { return const_cast<DStyle *>(self->dstyle()); }
 bool gen_d_style_painter_begin(DStylePainter *self, QWidget * w) { return self->begin(w); }
+void gen_d_style_painter_draw_item_text(DStylePainter *self, const QRect &r, int32_t flags, QPalette * pal, bool enabled, rust::Str text, int32_t textRole) { self->drawItemText(r, flags, *pal, enabled, from_rust_str(text), static_cast<QPalette::ColorRole>(textRole)); }
 void gen_d_style_painter_draw_item_pixmap(DStylePainter *self, const QRect &r, int32_t flags, QPixmap * pixmap) { self->drawItemPixmap(r, flags, *pixmap); }
+void gen_d_styled_icon_engine_draw_icon(QIcon * icon, QPainter *pa, const QRectF &rect) { DStyledIconEngine::drawIcon(*icon, pa, rect); }
 void gen_d_styled_icon_engine_set_icon_name(DStyledIconEngine *self, rust::Str name) { self->setIconName(from_rust_str(name)); }
+QPixmap * gen_d_styled_icon_engine_pixmap(DStyledIconEngine *self, const QSize &size, int32_t mode, int32_t state) { return new QPixmap(self->pixmap(size, static_cast<QIcon::Mode>(mode), static_cast<QIcon::State>(state))); }
+void gen_d_styled_icon_engine_paint(DStyledIconEngine *self, QPainter *painter, QPalette * palette, const QRectF &rect) { self->paint(painter, *palette, rect); }
+void gen_d_styled_icon_engine_paint_2(DStyledIconEngine *self, QPainter *painter, const QRect &rect, int32_t mode, int32_t state) { self->paint(painter, rect, static_cast<QIcon::Mode>(mode), static_cast<QIcon::State>(state)); }
 DViewItemAction *gen_d_view_item_action_new() { return new DViewItemAction; }
 QObject *gen_d_view_item_action_as_qobject(DViewItemAction *self) { return static_cast<QObject *>(self); }
 int32_t gen_d_view_item_action_alignment(DViewItemAction *self) { return (self->alignment()).toInt(); }
@@ -1104,6 +1148,9 @@ QWidget * gen_d_view_item_action_widget(DViewItemAction *self) { return self->wi
 void gen_d_view_item_action_set_dci_icon(DViewItemAction *self, DDciIcon * dciIcon) { self->setDciIcon(*dciIcon); }
 DDciIcon * gen_d_view_item_action_dci_icon(DViewItemAction *self) { return new DDciIcon(self->dciIcon()); }
 QObject *gen_d_styled_item_delegate_as_qobject(DStyledItemDelegate *self) { return static_cast<QObject *>(self); }
+void gen_d_styled_item_delegate_paint(DStyledItemDelegate *self, QPainter *painter, QStyleOptionViewItem *option, QPersistentModelIndex *index) { self->paint(painter, *option, QModelIndex(*index)); }
+QSize gen_d_styled_item_delegate_size_hint(DStyledItemDelegate *self, QStyleOptionViewItem *option, QPersistentModelIndex *index) { return self->sizeHint(*option, QModelIndex(*index)); }
+void gen_d_styled_item_delegate_update_editor_geometry(DStyledItemDelegate *self, QWidget * editor, QStyleOptionViewItem *option, QPersistentModelIndex *index) { self->updateEditorGeometry(editor, *option, QModelIndex(*index)); }
 int32_t gen_d_styled_item_delegate_background_type(DStyledItemDelegate *self) { return static_cast<int32_t>(self->backgroundType()); }
 QMargins gen_d_styled_item_delegate_margins(DStyledItemDelegate *self) { return self->margins(); }
 QSize gen_d_styled_item_delegate_item_size(DStyledItemDelegate *self) { return self->itemSize(); }

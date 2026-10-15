@@ -6,7 +6,7 @@ Rust bindings for DTK6 (dtkwidget). Goal: write deepin apps with DTK UIs in pure
 
 - Rust-facing wrappers over a `cxx` FFI layer; QObject handles are guarded, but reentrant native calls and non-QObject borrowed lifetimes are **not yet fully memory-safe** (see Design).
 - **146 DTK Widget classes** bound by a header-scanning generator (`DComboBox`, `DSpinner`, `DDialog`, `DListView`, …), plus 16 selected DCore/DGui classes (settings, file watchers, logging, platform theme, window manager, desktop services, …). The core also has hand-written `DApplication`, `DMainWindow`, layouts, `QTableWidget`, timers and painting.
-- **Typed signals for every wrapper**: 300 Qt/DTK signals generated from header `Q_SIGNALS:` sections through CXX-Qt (`on_*` methods, including inherited Qt base-class signals and value-type arguments); any other signal can still be connected at runtime by name.
+- **Typed signals for every wrapper**: 348 Qt/DTK signals generated from header `Q_SIGNALS:` sections through CXX-Qt (`on_*` methods, including inherited Qt base-class signals and value-type arguments); any other signal can still be connected at runtime by name.
 - Trivially copyable Qt values (`QColor`, `QPoint(F)`, `QSize(F)`, `QRect(F)`, `QMargins(F)`, `QUrl`) are cxx-qt-lib types passed **by value**.
 - Linux + Qt6 + DTK6 only. Not cross-platform (DTK isn't either).
 
@@ -118,6 +118,12 @@ Arguments are converted to owned values inside the emission (`QString` →
 copies, `QModelIndex` → `PersistentModelIndex`) and the closure runs after the
 emitting native call returns. Pointer, QFlags and scoped-enum arguments are
 not generated yet (`GEN_SIGNAL_REPORT.md`). See [CXXQT_INTEGRATION.md](CXXQT_INTEGRATION.md).
+Painting and models avoid exclusive borrows of C++ state: `Painter` is only
+lent to paint callbacks or `Painter::on_image(&mut image, |p| …)`; style
+options are owned values; indexes are `PersistentModelIndex`; a Rust list
+becomes a Qt model with `ListModel::new(&parent, items, |item, role| …)`
+(see `paint_model_selfcheck`).
+
 Any other signal can be connected at runtime by name:
 
 ```rust
@@ -175,6 +181,7 @@ All examples live in [`dtk/examples/`](dtk/examples/) and build with `cargo buil
 | [`lifetime_selfcheck.rs`](dtk/examples/lifetime_selfcheck.rs) | Qt callback cleanup, table metadata, central widget ownership | `QT_QPA_PLATFORM=offscreen cargo run --example lifetime_selfcheck` |
 | [`cxxqt_signal_selfcheck.rs`](dtk/examples/cxxqt_signal_selfcheck.rs) | CXX-Qt typed DTK signals: RAII/release, deferred FIFO delivery, sender destruction, scope cleanup | `QT_QPA_PLATFORM=offscreen cargo run --example cxxqt_signal_selfcheck` |
 | [`signal_values_selfcheck.rs`](dtk/examples/signal_values_selfcheck.rs) | Generated signals: inherited Qt signals, by-value `QColor`, owned `QFont`/`QImage`/`QIcon` copies, `PersistentModelIndex` and `QList<int>` roles | `QT_QPA_PLATFORM=offscreen cargo run --example signal_values_selfcheck` |
+| [`paint_model_selfcheck.rs`](dtk/examples/paint_model_selfcheck.rs) | `ListModel<T>` with views/edits/signals, `PersistentModelIndex`, generated QModelIndex/QStyle/QPainter methods, painting on `QImage`, `PaintDelegate::new_styled` | `QT_QPA_PLATFORM=offscreen cargo run --example paint_model_selfcheck` |
 | [`threading_selfcheck.rs`](dtk/examples/threading_selfcheck.rs) | Typed worker → GUI delivery, ordering, destruction | `QT_QPA_PLATFORM=offscreen cargo run --example threading_selfcheck` |
 | [`opaque_lifetime_selfcheck.rs`](dtk/examples/opaque_lifetime_selfcheck.rs) | Owned non-QObject DTK allocations and generated C++ deleters | `QT_QPA_PLATFORM=offscreen cargo run --example opaque_lifetime_selfcheck` |
 | [`guard_selfcheck.rs`](dtk-sys/examples/guard_selfcheck.rs) | QPointer clears when Qt deletes an object | `QT_QPA_PLATFORM=offscreen cargo run -p dtk-sys --example guard_selfcheck` |

@@ -306,9 +306,44 @@ queued until the current Rust callback returns. A nested paint event cannot be
 queued: its stack-scoped `QPainter*` becomes invalid when that inner C++ event
 returns. Instead it requests another Qt repaint on the next event-loop turn.
 
-`dtk_cb_paint` hands Rust the raw `QPainter*`/`QModelIndex*`; the safe layer
-wraps them as `Painter` (draw_text/draw_pixmap/fill_rect/…) and `ModelIndex`
-(`data_string`/`data_i64`/…).
+`dtk_cb_paint` hands Rust the raw `QPainter*`/`QModelIndex*` and the item's
+initialized `QStyleOptionViewItem*`; the safe layer wraps them as `Painter`
+(draw_text/draw_pixmap/fill_rect/…), `ModelIndex` (`data_string`/`data_i64`/…,
+`to_persistent()`) and a borrowed `QStyleOptionViewItem`
+(`PaintDelegate::new_styled`).
+
+## Painting and model APIs
+
+The unresolved `Pin<&mut T>` question is avoided rather than answered: no
+API creates an exclusive Rust reference to C++ state, and no CXX-Qt
+`extern "RustQt"` object is used.
+
+| Native type | Rust form | Lifetime rule |
+|---|---|---|
+| `QPainter *` parameter | `&Painter` | only from a paint callback or `Painter::on_image(&mut QImage, \|p\| …)` (painter ended before return); never storable |
+| `const QStyleOption *` / `&`, `const QStyleOptionViewItem &` | `&QStyleOption` / `&QStyleOptionViewItem` | owned values (clone, `init_from`) never keep `widget`/`styleObject`/`index` pointers; delegate-lent options are borrows |
+| `QStyle *` | guarded `QStyle` view (`QWidget::style()`, `as_dstyle()`) | borrowed QObject, normal guard |
+| `QModelIndex` param/return | `PersistentModelIndex` | `QPersistentModelIndex` copy, updated/invalidated by Qt; foreign-model indexes rejected in C++ |
+| custom models | `ListModel<T>` | rows in `Rc<RefCell<Vec<T>>>`; C++ `RustListModel` holds only a callback id |
+
+`dtk_sys::NativeCall::paint()` admits audited drawing/style-query operations
+inside the `SynchronousBorrow` of the paint callback that lends the painter;
+ordinary QObject operations still reject there. Generated methods taking a
+`Painter` or style option use it (`tools/gen.py`).
+
+`ListModel<T>`: Qt's `rowCount`/`data`/`setData` call Rust hooks under a
+`SynchronousBorrow` (hooks cannot enter Qt; a hook that tries panics, the
+panic is contained and Qt gets "no data"). Rust-side `insert`/`remove`/
+`update`/`reset` run in one `NativeCall` and bracket the `Vec` mutation with
+`begin*/end*` without holding the `RefCell` borrow while views are notified.
+`RefCell::try_borrow` in the hooks turns any remaining overlap into an empty
+answer instead of a panic across FFI. The model is parent-owned like
+`QStandardItemModel`.
+
+Not emitted although their types now map (`GEN_REPORT.md`: "retained raw
+pointer"): `DStyleHelper` and `DStylePainter` keep raw `QStyle*`/`QWidget*`
+members without a scoped constructor; `DStyledIconEngine::setFrontRole`
+stores a raw `QWidget*` used by later paints (`dstyle.cpp`).
 
 ## Lifetime & memory
 
@@ -566,7 +601,7 @@ uv run --no-project python tools/gen.py && cargo build
 ```
 
 Adding a new DTK method requires its type mapping and explicit pointer/ownership
-contract, then regeneration. The current 203 skipped Widget signatures and
+contract, then regeneration. The current 155 skipped Widget signatures and
 pilot-only DCore/DGui coverage mean this is not an exhaustive Qt/DTK binding;
 they do not bypass the runtime borrowing rules of exposed safe methods.
 Foreign virtual factory ownership and raw sys FFI remain explicit unsafe

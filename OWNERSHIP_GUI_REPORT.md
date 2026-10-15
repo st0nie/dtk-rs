@@ -16,6 +16,8 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DGuiApplicationHelper::standardPalette` | `*mut DPalette` | owned heap copy | shim conversion; `dguiapplicationhelper.h` |
 | `DGuiApplicationHelper::generatePaletteColor` | `()` | copied scalar / no result | shim conversion; `dguiapplicationhelper.h` |
 | `DGuiApplicationHelper::generatePaletteColor` Qt value inputs | `DPalette * base` | exclusive mutable value borrow; no QObject ownership transfer | explicit value mapping; `dguiapplicationhelper.h` native value/reference signature |
+| `DGuiApplicationHelper::generatePaletteColor` | `()` | copied scalar / no result | shim conversion; `dguiapplicationhelper.h` |
+| `DGuiApplicationHelper::generatePaletteColor` Qt value inputs | `DPalette * base` | exclusive mutable value borrow; no QObject ownership transfer | explicit value mapping; `dguiapplicationhelper.h` native value/reference signature |
 | `DGuiApplicationHelper::generatePalette` | `()` | copied scalar / no result | shim conversion; `dguiapplicationhelper.h` |
 | `DGuiApplicationHelper::generatePalette` Qt value inputs | `DPalette * base` | exclusive mutable value borrow; no QObject ownership transfer | explicit value mapping; `dguiapplicationhelper.h` native value/reference signature |
 | `DGuiApplicationHelper::fetchPalette` | `*mut DPalette` | owned heap copy | shim conversion; `dguiapplicationhelper.h` |

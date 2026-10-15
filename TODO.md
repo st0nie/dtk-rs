@@ -101,8 +101,8 @@ Known gaps in dtk-rs, roughly in priority order.
       `&T` receivers only; `dtk::Connection` RAII; `cxxqt_signal_selfcheck`.
       See CXXQT_INTEGRATION.md.
 - [x] CXX-Qt phase 2/3: `tools/signals.py` generates the bridge from
-      `Q_SIGNALS:` of every wrapped class and its Qt/DTK bases (300 signals,
-      77 imported classes); value-type arguments (by-value cxx-qt-lib types,
+      `Q_SIGNALS:` of every wrapped class and its Qt/DTK bases (348 signals,
+      84 imported classes); value-type arguments (by-value cxx-qt-lib types,
       owned heap copies, `PersistentModelIndex`, `QList<int>`/`QList<QUrl>`);
       `signal_values_selfcheck`. QColor/QPoint(F)/QSize(F)/QRect(F)/
       QMargins(F)/QUrl are now cxx-qt-lib by-value types everywhere.
@@ -156,11 +156,15 @@ Known gaps in dtk-rs, roughly in priority order.
       `dtk::qt` constants; new DCore/DGui pilots extract selected enum member
       names and ask compiled C++ for native values. Extend typed enum coverage
       without accepting invalid/sentinel discriminants as safe Rust inputs.
-- [ ] Remaining painting/model APIs skipped: `QPainter*`/`QStyle*`/
-      `QStyleOption*` and `QModelIndex` params require scope-aware borrowing
-      or an appropriate Rust-defined model subclass. `QVariant` and
-      `QAbstractItemModel*` already have basic mappings; typed model events,
-      proxy models and complete view integration are not yet available.
+- [x] Painting/model APIs: `QPainter*` → `&Painter` (callback or
+      `Painter::on_image`), `QStyle*` guarded view, owned/borrowed
+      `QStyleOption(ViewItem)`, `QModelIndex` → `PersistentModelIndex`,
+      `ListModel<T>` (Rust rows, no `Pin<&mut T>`), `PaintDelegate::new_styled`;
+      `NativeCall::paint` admits drawing inside paint borrows. 47 previously
+      skipped Widget methods emitted (`paint_model_selfcheck`). DStyleHelper/
+      DStylePainter/`setFrontRole` stay out (raw retained pointers).
+- [ ] Tree models (`ListModel` is flat, one column), proxy models,
+      `QStyleOption` subclasses beyond `QStyleOptionViewItem`, `QPaintDevice*`.
 - [x] `QImage`, `QPainterPath`, `QBrush`, `QKeySequence`, `QUrl` now use
       owning value wrappers; `image_selfcheck` and `value_types_selfcheck`
       roundtrip through image viewer, watermark, clip, shortcut and chooser APIs.

@@ -1,17 +1,16 @@
 # DTK6 gui (selected classes) binding coverage report
 
-classes: 7, methods generated: 159, skipped: 26
+classes: 7, methods generated: 160, skipped: 25
 
 Qt ancestry: 0 widgets, 6 QObjects, 1 opaque types
 
 ## skip reasons
-- unsupported param type: 17
+- unsupported param type: 16
 - unsupported return type: 9
 
 > Selected-class scope: only the listed classes/headers were scanned; this is NOT library-wide coverage.
 
-## DGuiApplicationHelper — 33 methods generated, 5 skipped
-- `static void generatePaletteColor(DPalette &base, QPalette::ColorRole role, Color` ← unsupported param type: QPalette::ColorRole
+## DGuiApplicationHelper — 34 methods generated, 4 skipped
 - `static bool loadTranslator(const QString &fileName, const QString &appName, cons` ← unsupported param type: const QList<QLocale> &
 - `static bool loadTranslator(const QString &fileName, const QList<QString> &transl` ← unsupported param type: const QList<QString> &
 - `static bool loadTranslator(const QList<QLocale> &localeFallback = QList<QLocale>` ← unsupported param type: const QList<QLocale> &

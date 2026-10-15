@@ -174,6 +174,8 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DBackgroundGroup::useWidgetBackground` | `bool` | copied scalar / no result | shim conversion; `dbackgroundgroup.h` |
 | `DBackgroundGroup::setLayout` | `()` | copied scalar / no result | shim conversion; `dbackgroundgroup.h` |
 | `DBackgroundGroup::setLayout` parameters | `QLayout*` | Qt adoption | native `dbackgroundgroup.h` implementation: QWidget::setLayout; only valid layout handoff |
+| `DBackgroundGroup::setBackgroundRole` | `()` | copied scalar / no result | shim conversion; `dbackgroundgroup.h` |
+| `DBackgroundGroup::backgroundRole` | `i32` | copied scalar / no result | shim conversion; `dbackgroundgroup.h` |
 | `DBackgroundGroup::setItemMargins` | `()` | copied scalar / no result | shim conversion; `dbackgroundgroup.h` |
 | `DBackgroundGroup::setItemMargins` Qt value inputs | `const QMargins &itemMargins` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dbackgroundgroup.h` native value/reference signature |
 | `DBackgroundGroup::setItemSpacing` | `()` | copied scalar / no result | shim conversion; `dbackgroundgroup.h` |
@@ -222,6 +224,9 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DBlurEffectGroup::addWidget` Qt value inputs | `const QPoint &offset` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dblureffectwidget.h` native value/reference signature |
 | `DBlurEffectGroup::removeWidget` | `()` | copied scalar / no result | shim conversion; `dblureffectwidget.h` |
 | `DBlurEffectGroup::removeWidget` parameters | `DBlurEffectWidget*` | borrow; releases relation | native `dblureffectwidget.h` implementation: removes map entry and clears widget group pointer |
+| `DBlurEffectGroup::paint` | `()` | copied scalar / no result | shim conversion; `dblureffectwidget.h` |
+| `DBlurEffectGroup::paint` parameters | `DBlurEffectWidget*` | call borrow | native `dblureffectwidget.h` implementation: dblureffectwidget.cpp: drawPixmap(widget->rect(), blurPixmap, ...) on the borrowed painter; const map lookup, nothing retained |
+| `DBlurEffectGroup::paint` painting/model inputs | `QPainter` | call borrow: `&Painter` (callback/closure scoped), owned `QStyleOption*`/`PersistentModelIndex` values; none retained | `dblureffectwidget.h`; ARCHITECTURE.md painting and model APIs |
 | `DBlurEffectWithBorderWidget()` | `new DBlurEffectWithBorderWidget` | constructor `Owned` | constructor; `dblureffectwithborderwidget.h` |
 | `DBounceAnimation()` | `new DBounceAnimation` | constructor `Owned` | constructor; `dbounceanimation.h` |
 | `DBounceAnimation::setAniMationEnable` | `()` | copied scalar / no result | shim conversion; `dbounceanimation.h` |
@@ -233,6 +238,7 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DVBoxWidget()` | `new DVBoxWidget` | constructor `Owned` | constructor; `dboxwidget.h` |
 | `DButtonBoxButton::setIcon` | `()` | copied scalar / no result | shim conversion; `dbuttonbox.h` |
 | `DButtonBoxButton::setIcon` Qt value inputs | `QIcon * icon` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dbuttonbox.h` native value/reference signature |
+| `DButtonBoxButton::setIcon` | `()` | copied scalar / no result | shim conversion; `dbuttonbox.h` |
 | `DButtonBoxButton::setIcon` | `()` | copied scalar / no result | shim conversion; `dbuttonbox.h` |
 | `DButtonBoxButton::setIcon` | `()` | copied scalar / no result | shim conversion; `dbuttonbox.h` |
 | `DButtonBoxButton::setIcon` Qt value inputs | `DDciIcon * icon` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dbuttonbox.h` native value/reference signature |
@@ -486,6 +492,8 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DGraphicsClipEffect::setClipPath` | `()` | copied scalar / no result | shim conversion; `dgraphicsclipeffect.h` |
 | `DGraphicsClipEffect::setClipPath` Qt value inputs | `QPainterPath * clipPath` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dgraphicsclipeffect.h` native value/reference signature |
 | `DGraphicsGlowEffect()` | `new DGraphicsGlowEffect` | constructor `Owned` | constructor; `dgraphicsgloweffect.h` |
+| `DGraphicsGlowEffect::draw` | `()` | copied scalar / no result | shim conversion; `dgraphicsgloweffect.h` |
+| `DGraphicsGlowEffect::draw` painting/model inputs | `QPainter` | call borrow: `&Painter` (callback/closure scoped), owned `QStyleOption*`/`PersistentModelIndex` values; none retained | `dgraphicsgloweffect.h`; ARCHITECTURE.md painting and model APIs |
 | `DGraphicsGlowEffect::boundingRectFor` | `QRectF` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dgraphicsgloweffect.h` |
 | `DGraphicsGlowEffect::boundingRectFor` Qt value inputs | `const QRectF &rect` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dgraphicsgloweffect.h` native value/reference signature |
 | `DGraphicsGlowEffect::setOffset` | `()` | copied scalar / no result | shim conversion; `dgraphicsgloweffect.h` |
@@ -510,6 +518,7 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DIconButton()` | `new DIconButton` | constructor `Owned` | constructor; `diconbutton.h` |
 | `DIconButton::setIcon` | `()` | copied scalar / no result | shim conversion; `diconbutton.h` |
 | `DIconButton::setIcon` Qt value inputs | `QIcon * icon` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `diconbutton.h` native value/reference signature |
+| `DIconButton::setIcon` | `()` | copied scalar / no result | shim conversion; `diconbutton.h` |
 | `DIconButton::setIcon` | `()` | copied scalar / no result | shim conversion; `diconbutton.h` |
 | `DIconButton::setIcon` | `()` | copied scalar / no result | shim conversion; `diconbutton.h` |
 | `DIconButton::setIcon` Qt value inputs | `DDciIcon * icon` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `diconbutton.h` native value/reference signature |
@@ -645,6 +654,17 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DLineEdit::pasteEnabled` | `bool` | copied scalar / no result | shim conversion; `dlineedit.h` |
 | `DLineEdit::setPasteEnabled` | `()` | copied scalar / no result | shim conversion; `dlineedit.h` |
 | `DVariantListModel()` | `new DVariantListModel` | constructor `Owned` | constructor; `dlistview.h` |
+| `DVariantListModel::rowCount` | `i32` | copied scalar / no result | shim conversion; `dlistview.h` |
+| `DVariantListModel::rowCount` painting/model inputs | `QModelIndex` | call borrow: `&Painter` (callback/closure scoped), owned `QStyleOption*`/`PersistentModelIndex` values; none retained | `dlistview.h`; ARCHITECTURE.md painting and model APIs |
+| `DVariantListModel::data` | `*mut QVariant` | owned heap copy | shim conversion; `dlistview.h` |
+| `DVariantListModel::data` painting/model inputs | `QModelIndex` | call borrow: `&Painter` (callback/closure scoped), owned `QStyleOption*`/`PersistentModelIndex` values; none retained | `dlistview.h`; ARCHITECTURE.md painting and model APIs |
+| `DVariantListModel::setData` | `bool` | copied scalar / no result | shim conversion; `dlistview.h` |
+| `DVariantListModel::setData` painting/model inputs | `QModelIndex` | call borrow: `&Painter` (callback/closure scoped), owned `QStyleOption*`/`PersistentModelIndex` values; none retained | `dlistview.h`; ARCHITECTURE.md painting and model APIs |
+| `DVariantListModel::setData` Qt value inputs | `QVariant * value` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dlistview.h` native value/reference signature |
+| `DVariantListModel::insertRows` | `bool` | copied scalar / no result | shim conversion; `dlistview.h` |
+| `DVariantListModel::insertRows` painting/model inputs | `QModelIndex` | call borrow: `&Painter` (callback/closure scoped), owned `QStyleOption*`/`PersistentModelIndex` values; none retained | `dlistview.h`; ARCHITECTURE.md painting and model APIs |
+| `DVariantListModel::removeRows` | `bool` | copied scalar / no result | shim conversion; `dlistview.h` |
+| `DVariantListModel::removeRows` painting/model inputs | `QModelIndex` | call borrow: `&Painter` (callback/closure scoped), owned `QStyleOption*`/`PersistentModelIndex` values; none retained | `dlistview.h`; ARCHITECTURE.md painting and model APIs |
 | `DListView()` | `new DListView` | constructor `Owned` | constructor; `dlistview.h` |
 | `DListView::getHeaderWidget` | `QWidget*` | `object_borrow` | `dtkwidget/src/widgets/dlistview.cpp`: returns headerList entry; view/layout owns it |
 | `DListView::getFooterWidget` | `QWidget*` | `object_borrow` | `dtkwidget/src/widgets/dlistview.cpp`: returns footerList entry; view/layout owns it |
@@ -678,6 +698,8 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DListView::addFooterWidget` parameters | `QWidget*` | Qt adoption | native `dlistview.h` implementation: view footerList/layout; take leaves widget parented; empty footer container's deferred deletion destroys it |
 | `DListView::removeFooterWidget` | `()` | copied scalar / no result | shim conversion; `dlistview.h` |
 | `DListView::takeFooterWidget` | `QWidget*` | `object_borrow` | `dtkwidget/src/widgets/dlistview.cpp`: removes list/layout entry but leaves widget parented; an empty footer container's deleteLater destroys it; NOT a transfer |
+| `DListView::edit` | `()` | copied scalar / no result | shim conversion; `dlistview.h` |
+| `DListView::edit` painting/model inputs | `QModelIndex` | call borrow: `&Painter` (callback/closure scoped), owned `QStyleOption*`/`PersistentModelIndex` values; none retained | `dlistview.h`; ARCHITECTURE.md painting and model APIs |
 | `DListView::setBackgroundType` | `()` | copied scalar / no result | shim conversion; `dlistview.h` |
 | `DListView::setItemMargins` | `()` | copied scalar / no result | shim conversion; `dlistview.h` |
 | `DListView::setItemMargins` Qt value inputs | `const QMargins &itemMargins` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dlistview.h` native value/reference signature |
@@ -907,6 +929,12 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DShortcutEditLabel::setEchoState` | `()` | copied scalar / no result | shim conversion; `dshortcutedit.h` |
 | `DSimpleListItem::sameAs` | `bool` | copied scalar / no result | shim conversion; `dsimplelistitem.h` |
 | `DSimpleListItem::sameAs` parameters | `DSimpleListItem*` | foreign implementation borrow | native `dsimplelistitem.h` implementation: abstract QObject item with QPointer view; no safe constructor/getter exists |
+| `DSimpleListItem::drawBackground` | `()` | copied scalar / no result | shim conversion; `dsimplelistitem.h` |
+| `DSimpleListItem::drawBackground` painting/model inputs | `QPainter` | call borrow: `&Painter` (callback/closure scoped), owned `QStyleOption*`/`PersistentModelIndex` values; none retained | `dsimplelistitem.h`; ARCHITECTURE.md painting and model APIs |
+| `DSimpleListItem::drawBackground` Qt value inputs | `const QRect &rect` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dsimplelistitem.h` native value/reference signature |
+| `DSimpleListItem::drawForeground` | `()` | copied scalar / no result | shim conversion; `dsimplelistitem.h` |
+| `DSimpleListItem::drawForeground` painting/model inputs | `QPainter` | call borrow: `&Painter` (callback/closure scoped), owned `QStyleOption*`/`PersistentModelIndex` values; none retained | `dsimplelistitem.h`; ARCHITECTURE.md painting and model APIs |
+| `DSimpleListItem::drawForeground` Qt value inputs | `const QRect &rect` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dsimplelistitem.h` native value/reference signature |
 | `DSimpleListView::setRowHeight` | `()` | copied scalar / no result | shim conversion; `dsimplelistview.h` |
 | `DSimpleListView::setClipRadius` | `()` | copied scalar / no result | shim conversion; `dsimplelistview.h` |
 | `DSimpleListView::removeItem` | `()` | copied scalar / no result | shim conversion; `dsimplelistview.h` |
@@ -1005,6 +1033,8 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DStyle::adjustColor` Qt value inputs | `const QColor &base` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dstyle.h` native value/reference signature |
 | `DStyle::blendColor` | `QColor` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dstyle.h` |
 | `DStyle::blendColor` Qt value inputs | `const QColor &substrate, const QColor &superstratum` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dstyle.h` native value/reference signature |
+| `DStyle::getState` | `i32` | copied scalar / no result | shim conversion; `dstyle.h` |
+| `DStyle::getState` painting/model inputs | `QStyleOption` | call borrow: `&Painter` (callback/closure scoped), owned `QStyleOption*`/`PersistentModelIndex` values; none retained | `dstyle.h`; ARCHITECTURE.md painting and model APIs |
 | `DStyle::setFocusRectVisible` | `()` | copied scalar / no result | shim conversion; `dstyle.h` |
 | `DStyle::setFocusRectVisible` parameters | `QWidget*` | borrow | native `dstyle.h` implementation: widget style property |
 | `DStyle::setFrameRadius` | `()` | copied scalar / no result | shim conversion; `dstyle.h` |
@@ -1015,13 +1045,102 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DStyle::shortcutUnderlineVisible` | `bool` | copied scalar / no result | shim conversion; `dstyle.h` |
 | `DStyle::setMenuKeyboardSearchDisabled` | `()` | copied scalar / no result | shim conversion; `dstyle.h` |
 | `DStyle::isMenuKeyboardSearchDisabled` | `bool` | copied scalar / no result | shim conversion; `dstyle.h` |
+| `DStyle::drawPrimitive` | `()` | copied scalar / no result | shim conversion; `dstyle.h` |
+| `DStyle::drawPrimitive` parameters | `QStyle*, QWidget*` | call borrow | native `dstyle.h` implementation: dstyle.cpp: QStyle/QWidget only read during this call (style dispatch, widget palette/state); not retained |
+| `DStyle::drawPrimitive` painting/model inputs | `QStyleOption, QPainter` | call borrow: `&Painter` (callback/closure scoped), owned `QStyleOption*`/`PersistentModelIndex` values; none retained | `dstyle.h`; ARCHITECTURE.md painting and model APIs |
+| `DStyle::drawControl` | `()` | copied scalar / no result | shim conversion; `dstyle.h` |
+| `DStyle::drawControl` parameters | `QStyle*, QWidget*` | call borrow | native `dstyle.h` implementation: dstyle.cpp: QStyle/QWidget only read during this call (style dispatch, widget palette/state); not retained |
+| `DStyle::drawControl` painting/model inputs | `QStyleOption, QPainter` | call borrow: `&Painter` (callback/closure scoped), owned `QStyleOption*`/`PersistentModelIndex` values; none retained | `dstyle.h`; ARCHITECTURE.md painting and model APIs |
+| `DStyle::pixelMetric` | `i32` | copied scalar / no result | shim conversion; `dstyle.h` |
+| `DStyle::pixelMetric` parameters | `QStyle*, QWidget*` | call borrow | native `dstyle.h` implementation: dstyle.cpp: QStyle/QWidget only read during this call (style dispatch, widget palette/state); not retained |
+| `DStyle::pixelMetric` painting/model inputs | `QStyleOption` | call borrow: `&Painter` (callback/closure scoped), owned `QStyleOption*`/`PersistentModelIndex` values; none retained | `dstyle.h`; ARCHITECTURE.md painting and model APIs |
+| `DStyle::subElementRect` | `QRect` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dstyle.h` |
+| `DStyle::subElementRect` parameters | `QStyle*, QWidget*` | call borrow | native `dstyle.h` implementation: dstyle.cpp: QStyle/QWidget only read during this call (style dispatch, widget palette/state); not retained |
+| `DStyle::subElementRect` painting/model inputs | `QStyleOption` | call borrow: `&Painter` (callback/closure scoped), owned `QStyleOption*`/`PersistentModelIndex` values; none retained | `dstyle.h`; ARCHITECTURE.md painting and model APIs |
+| `DStyle::sizeFromContents` | `QSize` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dstyle.h` |
+| `DStyle::sizeFromContents` parameters | `QStyle*, QWidget*` | call borrow | native `dstyle.h` implementation: dstyle.cpp: QStyle/QWidget only read during this call (style dispatch, widget palette/state); not retained |
+| `DStyle::sizeFromContents` painting/model inputs | `QStyleOption` | call borrow: `&Painter` (callback/closure scoped), owned `QStyleOption*`/`PersistentModelIndex` values; none retained | `dstyle.h`; ARCHITECTURE.md painting and model APIs |
+| `DStyle::sizeFromContents` Qt value inputs | `const QSize &contentsSize` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dstyle.h` native value/reference signature |
+| `DStyle::standardIcon` | `*mut QIcon` | owned heap copy | shim conversion; `dstyle.h` |
+| `DStyle::standardIcon` parameters | `QStyle*, QWidget*` | call borrow | native `dstyle.h` implementation: dstyle.cpp: QStyle/QWidget only read during this call (style dispatch, widget palette/state); not retained |
+| `DStyle::standardIcon` painting/model inputs | `QStyleOption` | call borrow: `&Painter` (callback/closure scoped), owned `QStyleOption*`/`PersistentModelIndex` values; none retained | `dstyle.h`; ARCHITECTURE.md painting and model APIs |
+| `DStyle::drawPrimitive` | `()` | copied scalar / no result | shim conversion; `dstyle.h` |
+| `DStyle::drawPrimitive` parameters | `QWidget*` | call borrow | native `dstyle.h` implementation: dstyle.cpp: QStyle/QWidget only read during this call (style dispatch, widget palette/state); not retained |
+| `DStyle::drawPrimitive` painting/model inputs | `QStyleOption, QPainter` | call borrow: `&Painter` (callback/closure scoped), owned `QStyleOption*`/`PersistentModelIndex` values; none retained | `dstyle.h`; ARCHITECTURE.md painting and model APIs |
+| `DStyle::drawControl` | `()` | copied scalar / no result | shim conversion; `dstyle.h` |
+| `DStyle::drawControl` parameters | `QWidget*` | call borrow | native `dstyle.h` implementation: dstyle.cpp: QStyle/QWidget only read during this call (style dispatch, widget palette/state); not retained |
+| `DStyle::drawControl` painting/model inputs | `QStyleOption, QPainter` | call borrow: `&Painter` (callback/closure scoped), owned `QStyleOption*`/`PersistentModelIndex` values; none retained | `dstyle.h`; ARCHITECTURE.md painting and model APIs |
+| `DStyle::pixelMetric` | `i32` | copied scalar / no result | shim conversion; `dstyle.h` |
+| `DStyle::pixelMetric` parameters | `QWidget*` | call borrow | native `dstyle.h` implementation: dstyle.cpp: QStyle/QWidget only read during this call (style dispatch, widget palette/state); not retained |
+| `DStyle::pixelMetric` painting/model inputs | `QStyleOption` | call borrow: `&Painter` (callback/closure scoped), owned `QStyleOption*`/`PersistentModelIndex` values; none retained | `dstyle.h`; ARCHITECTURE.md painting and model APIs |
+| `DStyle::subElementRect` | `QRect` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dstyle.h` |
+| `DStyle::subElementRect` parameters | `QWidget*` | call borrow | native `dstyle.h` implementation: dstyle.cpp: QStyle/QWidget only read during this call (style dispatch, widget palette/state); not retained |
+| `DStyle::subElementRect` painting/model inputs | `QStyleOption` | call borrow: `&Painter` (callback/closure scoped), owned `QStyleOption*`/`PersistentModelIndex` values; none retained | `dstyle.h`; ARCHITECTURE.md painting and model APIs |
+| `DStyle::sizeFromContents` | `QSize` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dstyle.h` |
+| `DStyle::sizeFromContents` parameters | `QWidget*` | call borrow | native `dstyle.h` implementation: dstyle.cpp: QStyle/QWidget only read during this call (style dispatch, widget palette/state); not retained |
+| `DStyle::sizeFromContents` painting/model inputs | `QStyleOption` | call borrow: `&Painter` (callback/closure scoped), owned `QStyleOption*`/`PersistentModelIndex` values; none retained | `dstyle.h`; ARCHITECTURE.md painting and model APIs |
+| `DStyle::sizeFromContents` Qt value inputs | `const QSize &contentsSize` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dstyle.h` native value/reference signature |
+| `DStyle::standardIcon` | `*mut QIcon` | owned heap copy | shim conversion; `dstyle.h` |
+| `DStyle::standardIcon` parameters | `QWidget*` | call borrow | native `dstyle.h` implementation: dstyle.cpp: QStyle/QWidget only read during this call (style dispatch, widget palette/state); not retained |
+| `DStyle::standardIcon` painting/model inputs | `QStyleOption` | call borrow: `&Painter` (callback/closure scoped), owned `QStyleOption*`/`PersistentModelIndex` values; none retained | `dstyle.h`; ARCHITECTURE.md painting and model APIs |
+| `DStyle::drawPrimitive` | `()` | copied scalar / no result | shim conversion; `dstyle.h` |
+| `DStyle::drawPrimitive` parameters | `QWidget*` | call borrow | native `dstyle.h` implementation: dstyle.cpp: QStyle/QWidget only read during this call (style dispatch, widget palette/state); not retained |
+| `DStyle::drawPrimitive` painting/model inputs | `QStyleOption, QPainter` | call borrow: `&Painter` (callback/closure scoped), owned `QStyleOption*`/`PersistentModelIndex` values; none retained | `dstyle.h`; ARCHITECTURE.md painting and model APIs |
+| `DStyle::drawControl` | `()` | copied scalar / no result | shim conversion; `dstyle.h` |
+| `DStyle::drawControl` parameters | `QWidget*` | call borrow | native `dstyle.h` implementation: dstyle.cpp: QStyle/QWidget only read during this call (style dispatch, widget palette/state); not retained |
+| `DStyle::drawControl` painting/model inputs | `QStyleOption, QPainter` | call borrow: `&Painter` (callback/closure scoped), owned `QStyleOption*`/`PersistentModelIndex` values; none retained | `dstyle.h`; ARCHITECTURE.md painting and model APIs |
+| `DStyle::pixelMetric` | `i32` | copied scalar / no result | shim conversion; `dstyle.h` |
+| `DStyle::pixelMetric` parameters | `QWidget*` | call borrow | native `dstyle.h` implementation: dstyle.cpp: QStyle/QWidget only read during this call (style dispatch, widget palette/state); not retained |
+| `DStyle::pixelMetric` painting/model inputs | `QStyleOption` | call borrow: `&Painter` (callback/closure scoped), owned `QStyleOption*`/`PersistentModelIndex` values; none retained | `dstyle.h`; ARCHITECTURE.md painting and model APIs |
+| `DStyle::subElementRect` | `QRect` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dstyle.h` |
+| `DStyle::subElementRect` parameters | `QWidget*` | call borrow | native `dstyle.h` implementation: dstyle.cpp: QStyle/QWidget only read during this call (style dispatch, widget palette/state); not retained |
+| `DStyle::subElementRect` painting/model inputs | `QStyleOption` | call borrow: `&Painter` (callback/closure scoped), owned `QStyleOption*`/`PersistentModelIndex` values; none retained | `dstyle.h`; ARCHITECTURE.md painting and model APIs |
+| `DStyle::sizeFromContents` | `QSize` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dstyle.h` |
+| `DStyle::sizeFromContents` parameters | `QWidget*` | call borrow | native `dstyle.h` implementation: dstyle.cpp: QStyle/QWidget only read during this call (style dispatch, widget palette/state); not retained |
+| `DStyle::sizeFromContents` painting/model inputs | `QStyleOption` | call borrow: `&Painter` (callback/closure scoped), owned `QStyleOption*`/`PersistentModelIndex` values; none retained | `dstyle.h`; ARCHITECTURE.md painting and model APIs |
+| `DStyle::sizeFromContents` Qt value inputs | `const QSize &contentsSize` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dstyle.h` native value/reference signature |
+| `DStyle::standardIcon` | `*mut QIcon` | owned heap copy | shim conversion; `dstyle.h` |
+| `DStyle::standardIcon` parameters | `QWidget*` | call borrow | native `dstyle.h` implementation: dstyle.cpp: QStyle/QWidget only read during this call (style dispatch, widget palette/state); not retained |
+| `DStyle::standardIcon` painting/model inputs | `QStyleOption` | call borrow: `&Painter` (callback/closure scoped), owned `QStyleOption*`/`PersistentModelIndex` values; none retained | `dstyle.h`; ARCHITECTURE.md painting and model APIs |
 | `DStyle::standardPalette` | `*mut QPalette` | owned heap copy | shim conversion; `dstyle.h` |
+| `DStyle::generatedIconPixmap` | `*mut QPixmap` | owned heap copy | shim conversion; `dstyle.h` |
+| `DStyle::generatedIconPixmap` painting/model inputs | `QStyleOption` | call borrow: `&Painter` (callback/closure scoped), owned `QStyleOption*`/`PersistentModelIndex` values; none retained | `dstyle.h`; ARCHITECTURE.md painting and model APIs |
+| `DStyle::generatedIconPixmap` Qt value inputs | `QPixmap * pixmap` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dstyle.h` native value/reference signature |
+| `DStyle::generatedBrush` | `*mut QBrush` | owned heap copy | shim conversion; `dstyle.h` |
+| `DStyle::generatedBrush` painting/model inputs | `QStyleOption` | call borrow: `&Painter` (callback/closure scoped), owned `QStyleOption*`/`PersistentModelIndex` values; none retained | `dstyle.h`; ARCHITECTURE.md painting and model APIs |
+| `DStyle::generatedBrush` Qt value inputs | `QBrush * base` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dstyle.h` native value/reference signature |
+| `DStyle::generatedBrush` | `*mut QBrush` | owned heap copy | shim conversion; `dstyle.h` |
+| `DStyle::generatedBrush` painting/model inputs | `QStyleOption` | call borrow: `&Painter` (callback/closure scoped), owned `QStyleOption*`/`PersistentModelIndex` values; none retained | `dstyle.h`; ARCHITECTURE.md painting and model APIs |
+| `DStyle::generatedBrush` Qt value inputs | `QBrush * base` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dstyle.h` native value/reference signature |
+| `DStyle::viewItemSize` | `QSize` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dstyle.h` |
+| `DStyle::viewItemSize` parameters | `QStyle*` | call borrow | native `dstyle.h` implementation: dstyle.cpp: QStyle/QWidget only read during this call (style dispatch, widget palette/state); not retained |
+| `DStyle::viewItemSize` painting/model inputs | `QStyleOptionViewItem` | call borrow: `&Painter` (callback/closure scoped), owned `QStyleOption*`/`PersistentModelIndex` values; none retained | `dstyle.h`; ARCHITECTURE.md painting and model APIs |
+| `DStyle::viewItemDrawText` | `QRect` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dstyle.h` |
+| `DStyle::viewItemDrawText` parameters | `QStyle*` | call borrow | native `dstyle.h` implementation: dstyle.cpp: QStyle/QWidget only read during this call (style dispatch, widget palette/state); not retained |
+| `DStyle::viewItemDrawText` painting/model inputs | `QPainter, QStyleOptionViewItem` | call borrow: `&Painter` (callback/closure scoped), owned `QStyleOption*`/`PersistentModelIndex` values; none retained | `dstyle.h`; ARCHITECTURE.md painting and model APIs |
+| `DStyle::viewItemDrawText` Qt value inputs | `const QRect &rect` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dstyle.h` native value/reference signature |
+| `DStyle::viewItemDrawText` | `QRect` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dstyle.h` |
+| `DStyle::viewItemDrawText` painting/model inputs | `QPainter, QStyleOptionViewItem` | call borrow: `&Painter` (callback/closure scoped), owned `QStyleOption*`/`PersistentModelIndex` values; none retained | `dstyle.h`; ARCHITECTURE.md painting and model APIs |
+| `DStyle::viewItemDrawText` Qt value inputs | `const QRect &rect` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dstyle.h` native value/reference signature |
 | `DStyleHelper::dstyle` | `DStyle*` | `object_borrow` | `dtkwidget/include/widgets/dstyle.h`: inline dynamic_cast of wstyle; helper neither allocates nor owns it |
 | `DStylePainter::begin` | `bool` | copied scalar / no result | shim conversion; `dstyle.h` |
 | `DStylePainter::begin` parameters | `QWidget*` | callback-scoped device borrow | native `dstyle.h` implementation: QPainter paint device lifetime; this opaque class has no safe constructor/getter |
+| `DStylePainter::drawItemText` | `()` | copied scalar / no result | shim conversion; `dstyle.h` |
+| `DStylePainter::drawItemText` Qt value inputs | `const QRect &r, QPalette * pal` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dstyle.h` native value/reference signature |
 | `DStylePainter::drawItemPixmap` | `()` | copied scalar / no result | shim conversion; `dstyle.h` |
 | `DStylePainter::drawItemPixmap` Qt value inputs | `const QRect &r, QPixmap * pixmap` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dstyle.h` native value/reference signature |
+| `DStyledIconEngine::drawIcon` | `()` | copied scalar / no result | shim conversion; `dstyle.h` |
+| `DStyledIconEngine::drawIcon` painting/model inputs | `QPainter` | call borrow: `&Painter` (callback/closure scoped), owned `QStyleOption*`/`PersistentModelIndex` values; none retained | `dstyle.h`; ARCHITECTURE.md painting and model APIs |
+| `DStyledIconEngine::drawIcon` Qt value inputs | `QIcon * icon, const QRectF &rect` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dstyle.h` native value/reference signature |
 | `DStyledIconEngine::setIconName` | `()` | copied scalar / no result | shim conversion; `dstyle.h` |
+| `DStyledIconEngine::pixmap` | `*mut QPixmap` | owned heap copy | shim conversion; `dstyle.h` |
+| `DStyledIconEngine::pixmap` Qt value inputs | `const QSize &size` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dstyle.h` native value/reference signature |
+| `DStyledIconEngine::paint` | `()` | copied scalar / no result | shim conversion; `dstyle.h` |
+| `DStyledIconEngine::paint` painting/model inputs | `QPainter` | call borrow: `&Painter` (callback/closure scoped), owned `QStyleOption*`/`PersistentModelIndex` values; none retained | `dstyle.h`; ARCHITECTURE.md painting and model APIs |
+| `DStyledIconEngine::paint` Qt value inputs | `QPalette * palette, const QRectF &rect` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dstyle.h` native value/reference signature |
+| `DStyledIconEngine::paint` | `()` | copied scalar / no result | shim conversion; `dstyle.h` |
+| `DStyledIconEngine::paint` painting/model inputs | `QPainter` | call borrow: `&Painter` (callback/closure scoped), owned `QStyleOption*`/`PersistentModelIndex` values; none retained | `dstyle.h`; ARCHITECTURE.md painting and model APIs |
+| `DStyledIconEngine::paint` Qt value inputs | `const QRect &rect` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dstyle.h` native value/reference signature |
 | `DViewItemAction()` | `new DViewItemAction` | constructor `Owned` | constructor; `dstyleditemdelegate.h` |
 | `DViewItemAction::alignment` | `i32` | copied scalar / no result | shim conversion; `dstyleditemdelegate.h` |
 | `DViewItemAction::iconSize` | `QSize` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dstyleditemdelegate.h` |
@@ -1042,6 +1161,13 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DViewItemAction::setDciIcon` | `()` | copied scalar / no result | shim conversion; `dstyleditemdelegate.h` |
 | `DViewItemAction::setDciIcon` Qt value inputs | `DDciIcon * dciIcon` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dstyleditemdelegate.h` native value/reference signature |
 | `DViewItemAction::dciIcon` | `*mut DDciIcon` | owned heap copy | shim conversion; `dstyleditemdelegate.h` |
+| `DStyledItemDelegate::paint` | `()` | copied scalar / no result | shim conversion; `dstyleditemdelegate.h` |
+| `DStyledItemDelegate::paint` painting/model inputs | `QPainter, QStyleOptionViewItem, QModelIndex` | call borrow: `&Painter` (callback/closure scoped), owned `QStyleOption*`/`PersistentModelIndex` values; none retained | `dstyleditemdelegate.h`; ARCHITECTURE.md painting and model APIs |
+| `DStyledItemDelegate::sizeHint` | `QSize` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dstyleditemdelegate.h` |
+| `DStyledItemDelegate::sizeHint` painting/model inputs | `QStyleOptionViewItem, QModelIndex` | call borrow: `&Painter` (callback/closure scoped), owned `QStyleOption*`/`PersistentModelIndex` values; none retained | `dstyleditemdelegate.h`; ARCHITECTURE.md painting and model APIs |
+| `DStyledItemDelegate::updateEditorGeometry` | `()` | copied scalar / no result | shim conversion; `dstyleditemdelegate.h` |
+| `DStyledItemDelegate::updateEditorGeometry` parameters | `QWidget*` | call borrow | native `dstyleditemdelegate.h` implementation: dstyleditemdelegate.cpp: sets editor geometry from option/index; editor not retained or adopted |
+| `DStyledItemDelegate::updateEditorGeometry` painting/model inputs | `QStyleOptionViewItem, QModelIndex` | call borrow: `&Painter` (callback/closure scoped), owned `QStyleOption*`/`PersistentModelIndex` values; none retained | `dstyleditemdelegate.h`; ARCHITECTURE.md painting and model APIs |
 | `DStyledItemDelegate::backgroundType` | `i32` | copied scalar / no result | shim conversion; `dstyleditemdelegate.h` |
 | `DStyledItemDelegate::margins` | `QMargins` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dstyleditemdelegate.h` |
 | `DStyledItemDelegate::itemSize` | `QSize` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dstyleditemdelegate.h` |
