@@ -116,6 +116,17 @@ pub(crate) fn retire_callback(id: usize, cb: Cb) {
     unsafe { ffi::runtime_schedule_callbacks() };
 }
 
+/// Always defer a value's Drop (e.g. a Qt connection guard released from a
+/// functor destructor) to the next Rust cleanup boundary, never inline.
+pub(crate) fn retire_value(value: Box<dyn std::any::Any>) {
+    if !unsafe { ffi::application_is_core() } {
+        drop(value);
+        return;
+    }
+    CLEANUP.with(|cleanup| cleanup.borrow_mut().push(Box::new(move || drop(value))));
+    unsafe { ffi::runtime_schedule_callbacks() };
+}
+
 /// Defer a unique allocation's destructor while native code may hold pointers.
 /// The allocation remains owned in this queue; no deleter or owner is duplicated.
 pub fn defer_cleanup(f: impl FnOnce() + 'static) {

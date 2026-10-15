@@ -51,7 +51,9 @@ fn main() {
         // DSwitchButton::checkedChanged(bool) — the bool relay delivers the arg
         {
             let spinner = spinner.clone();
-            switch.on_checked_changed(move |on| if on { spinner.start() } else { spinner.stop() });
+            switch
+                .on_checked_changed(move |on| if on { spinner.start() } else { spinner.stop() })
+                .release();
         }
 
         // --- floating message (DDE-style toast) ---

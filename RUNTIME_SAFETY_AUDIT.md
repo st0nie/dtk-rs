@@ -192,7 +192,11 @@ Important primary implementation locations, relative to matching source packages
 A `Clone` view shares liveness/parent history and a serialized native transaction;
 it is **not** an exclusive reference to the native C++ object. No safe `&self`
 method creates `&mut QObject`, `Pin<&mut NativeQObject>` or a mutable CXX-Qt
-reference. `Owned<T>` deliberately has no `DerefMut`.
+reference. `Owned<T>` deliberately has no `DerefMut`. The CXX-Qt bridge
+(`dtk-cxxqt`) declares only `self: &T` receivers (cxx opaque types are
+`UnsafeCell`-based, so `&T` asserts no exclusivity) and `tools/audit_hand.py`
+rejects `Pin<&mut T>`/`&mut T`; its signal functors queue owned values and
+never hand the sender reference to user code.
 
 Neither does `OwnedOpaque<T>` expose `DerefMut<Target=T>`. A mutable *pointer
 view* could be replaced with a borrowed singleton, detaching the old view beyond

@@ -13,6 +13,7 @@ Three layers plus a header-scanning generator:
 │   src/lib.rs      hand-written: core classes, macros, signals  │
 │   src/widgets.rs  GENERATED: 146 DTK Widget classes             │
 │   src/core.rs/gui.rs GENERATED: DCore/DGui pilot classes      │
+│   src/signals.rs  typed on_* signals via dtk-cxxqt (CXX-Qt)    │
 │   ↑ guarded QObject views, non-owning, !Send                   │
 ├────────────────────────────────────────────────────────────────┤
 │ cxx::bridge #1   dtk-sys/src/lib.rs      hand-written core     │
@@ -512,7 +513,8 @@ older manual fd pattern for other external event sources.
 
 1. locates Qt6 **moc** (`/usr/lib/qt6/libexec/moc` → fallbacks), runs it on
    `include/relay.h` (the only header with `Q_OBJECT`);
-2. `cxx_build::bridges` for the hand, Widget, DCore and DGui bridges;
+2. `cxx_build::bridges` for the hand, Widget, DCore and DGui bridges
+   (`dtk-cxxqt/build.rs` separately runs `CxxQtBuilder` for the CXX-Qt bridge);
 3. compiles `shim.cpp` + `application_runtime.cpp` + `runtime_borrow.cpp` +
    `object_relations.cpp` + `anchor_relations.cpp` + native worker regression
    fixture + `relay.cpp` + the three generated shim .cpp files + moc output with
@@ -534,6 +536,7 @@ older manual fd pattern for other external event sources.
 | `OWNERSHIP_{WIDGET,CORE,GUI,HAND}_REPORT.md` | generated exhaustive emitted-API inventories |
 | `dtk-sys/cpp/runtime_worker_probe.cpp`, `include/runtime_worker_probe.h` | native-only regression fixture, no DTK API coverage |
 | `dtk/src/application.rs` (scoped GUI/headless runtimes) | hand |
+| `dtk-cxxqt/src/{bridge,lib}.rs`, `dtk-sys/src/native_signal.rs`, `dtk/src/signals.rs` | hand: CXX-Qt imports, typed connection runtime, safe `on_*` API |
 | `dtk-sys/cpp/relay.cpp`, `include/relay.h` | hand |
 | `dtk-sys/build.rs` | hand |
 | `dtk/src/lib.rs` (core classes, macros, signals, qt constants) | hand |
@@ -553,17 +556,23 @@ contract, then regeneration. The current 203 skipped Widget signatures and
 pilot-only DCore/DGui coverage mean this is not an exhaustive Qt/DTK binding;
 they do not bypass the runtime borrowing rules of exposed safe methods.
 Foreign virtual factory ownership and raw sys FFI remain explicit unsafe
-boundaries. CXX-Qt's
-`extern "C++Qt"` can import C++ QObject methods and typed signals; integration
-for existing DTK object types is a candidate for the next API layer. A local
-DSwitchButton probe confirms CXX-Qt's typed `checkedChanged(bool)` connection
-is disconnected on guard drop and its callback is released when Qt destroys the
-widget. But the generated API requires `Pin<&mut DSwitchButton>`: converting
-these clonable guarded handles to mutable pinned references from safe `&self` would
-create unsound aliasing during reentrant Qt callbacks. Fix handle ownership and
-borrowing first. CXX-Qt 0.10.0 also needs an edition-2021 bridge crate on this
-Rust 1.97 setup; its macro currently fails in edition 2024. Its `CxxQtThread`
-helper targets CXX-Qt-generated QObjects, so imported DTK objects still need a
-verified cross-thread delivery strategy. Hand-written additions
-(new Qt base-class methods, new value types, new event overrides) go in
-shim.cpp + bridge #1.
+boundaries. Hand-written additions (new Qt base-class methods, new value
+types, new event overrides) go in shim.cpp + bridge #1.
+
+## CXX-Qt layer (dtk-cxxqt)
+
+`dtk-cxxqt/src/bridge.rs` is an edition-2024 `#[cxx_qt::bridge]` importing
+existing DTK classes (`extern "C++Qt"`): typed signals declared `pub(self)`
+(connect code only) and `const` getters, all with `self: &T` receivers. It
+never constructs, owns or deletes objects, and `Pin<&mut T>`/`&mut T` are
+rejected by `tools/audit_hand.py`. `dtk/src/signals.rs` exposes
+`on_*` methods returning an RAII `dtk::Connection`; each connects inside a
+`NativeCall` from a guarded live pointer. The CXX-Qt functor owns a
+thread-checked `dtk_sys::native_signal::SignalToken`, converts arguments to
+owned values (`QString` → `String`) in the emission, and queues them as
+`SignalEvent::Owned` into the shared callback runtime. Sender destruction
+cancels the id and retires the connection guard and capture; scope exit
+disconnects remaining ids. cxx, cxx-build and cxx-gen are pinned to one
+release because CXX embeds it in C++ symbol names. Worker delivery remains
+`GuiSender` (CxxQtThread does not cover imported QObjects, KDAB/cxx-qt#1155).
+Evidence, API rules and the migration plan: [CXXQT_INTEGRATION.md](CXXQT_INTEGRATION.md).

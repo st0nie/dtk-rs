@@ -29,6 +29,7 @@ public:
 #include <QScrollBar>
 #include <QStyleOptionTab>
 #include <QToolButton>
+#include <QAbstractButton>
 #include <QTextOption>
 #include <QShortcut>
 #include <QKeySequence>
@@ -569,6 +570,9 @@ void progressbar_set_range(QWidget *w, int32_t minimum, int32_t maximum) {
     static_cast<QProgressBar *>(w)->setRange(minimum, maximum);
 }
 int32_t progressbar_value(QWidget *w) { return static_cast<QProgressBar *>(w)->value(); }
+void abstract_button_set_checked(QWidget *w, bool checked) {
+    if (auto *button = qobject_cast<QAbstractButton *>(w)) button->setChecked(checked);
+}
 
 // ---- DMainWindow ----
 DMainWindow *mainwindow_new() { return new DMainWindow; }

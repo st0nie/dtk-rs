@@ -237,6 +237,7 @@ void progressbar_set_value(QWidget *w, int32_t value);
 rust::String line_edit_text(QWidget *w);
 void progressbar_set_range(QWidget *w, int32_t minimum, int32_t maximum);
 int32_t progressbar_value(QWidget *w);
+void abstract_button_set_checked(QWidget *w, bool checked);
 void widget_set_font(QWidget *w, QFont *font);
 QPalette *widget_palette(QWidget *w); // heap copy, owned by the caller
 void widget_set_palette(QWidget *w, QPalette *pal);

@@ -22,6 +22,7 @@ cargo build
 ```
 dtk-sys/   FFI layer: C++ shim (cpp/) + cxx::bridge + build.rs (locates Qt6/DTK6 via pkg-config, moc for the signal relay)
 dtk/       Rust wrappers: hand-written core + generated widgets.rs/core.rs/gui.rs
+dtk-cxxqt/ CXX-Qt imports of DTK QObjects (typed signals, const getters); no ownership
 tools/gen.py  scans DWidget headers and selected DCore/DGui pilot headers; regenerates all bridges
 GEN_REPORT.md / GEN_CORE_REPORT.md / GEN_GUI_REPORT.md: coverage (DCore/DGui reports are pilots only)
 TODO.md      known gaps and follow-ups
@@ -98,7 +99,17 @@ Callback panics are caught at the FFI boundary; ordinary scope panics propagate
 and forced termination bypass destructors: call `exit` only **after** `with`
 returns. User-created `Rc` cycles are not broken automatically.
 
-Any signal can be connected (runtime connect by name):
+Imported DTK signals are statically typed through CXX-Qt and return an RAII
+`dtk::Connection` (drop disconnects; `release()` keeps it and returns an id):
+
+```rust
+let _c = line_edit.on_text_changed(|text: String| { ... });
+switch.on_checked_changed(|on| { ... }).release();
+```
+
+Arguments are converted to owned values inside the emission and the closure
+runs after the emitting native call returns. See [CXXQT_INTEGRATION.md](CXXQT_INTEGRATION.md).
+Any other signal can be connected at runtime by name:
 
 ```rust
 widget.connect_signal("windowRadiusChanged()", || { ... });
@@ -153,6 +164,7 @@ All examples live in [`dtk/examples/`](dtk/examples/) and build with `cargo buil
 | [`demo.rs`](dtk/examples/demo.rs) | Binding self-checks: real argv, palette round-trip, `PaintDelegate` custom cell painting, `QSocketNotifier` on a pipe | `cargo run --example demo` |
 | [`dialog_selfcheck.rs`](dtk/examples/dialog_selfcheck.rs) | `DDialog` checks | `cargo run --example dialog_selfcheck` |
 | [`lifetime_selfcheck.rs`](dtk/examples/lifetime_selfcheck.rs) | Qt callback cleanup, table metadata, central widget ownership | `QT_QPA_PLATFORM=offscreen cargo run --example lifetime_selfcheck` |
+| [`cxxqt_signal_selfcheck.rs`](dtk/examples/cxxqt_signal_selfcheck.rs) | CXX-Qt typed DTK signals: RAII/release, deferred FIFO delivery, sender destruction, scope cleanup | `QT_QPA_PLATFORM=offscreen cargo run --example cxxqt_signal_selfcheck` |
 | [`threading_selfcheck.rs`](dtk/examples/threading_selfcheck.rs) | Typed worker → GUI delivery, ordering, destruction | `QT_QPA_PLATFORM=offscreen cargo run --example threading_selfcheck` |
 | [`opaque_lifetime_selfcheck.rs`](dtk/examples/opaque_lifetime_selfcheck.rs) | Owned non-QObject DTK allocations and generated C++ deleters | `QT_QPA_PLATFORM=offscreen cargo run --example opaque_lifetime_selfcheck` |
 | [`guard_selfcheck.rs`](dtk-sys/examples/guard_selfcheck.rs) | QPointer clears when Qt deletes an object | `QT_QPA_PLATFORM=offscreen cargo run -p dtk-sys --example guard_selfcheck` |

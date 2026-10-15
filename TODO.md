@@ -96,17 +96,17 @@ Known gaps in dtk-rs, roughly in priority order.
 
 ## Qt/DTK feature coverage (see GEN_REPORT.md for per-method detail)
 
-- [ ] Integrate CXX-Qt where it adds verified value: imported QObject methods,
-      typed signals/properties and Rust-defined QObject subclasses, while keeping
-      DTK-specific API in this crate. A local DTK `DSwitchButton` probe verified
-      `checkedChanged(bool)`, RAII disconnect, and callback cleanup on Qt deletion
-      with CXX-Qt 0.10.0 + Qt 6.8. On Rust 1.97 the bridge macro fails in edition
-      2024 but compiles in edition 2021. **Do not** convert a current guarded
-      `Clone` handle into `Pin<&mut DSwitchButton>` from safe `&self`: that
-      fabricates an exclusive borrow and can alias reentrant callbacks even
-      though QPointer now detects destruction. Migrate only after a verified
-      ownership/borrowing redesign;
-      CXX-Qt's Threading helper still does not cover imported QObject types.
+- [x] CXX-Qt first layer: `dtk-cxxqt` (edition 2024) imports DSwitchButton,
+      DLineEdit, DSearchEdit, DSlider, DTabBar and DDialog typed signals with
+      `&T` receivers only; `dtk::Connection` RAII; `cxxqt_signal_selfcheck`.
+      See CXXQT_INTEGRATION.md.
+- [ ] CXX-Qt phase 2: generate the bridge from header `Q_SIGNALS:` sections
+      and `const` getters in tools/gen.py; then cxx-qt-lib value-type signal
+      arguments, pointer-valued signals via guarded views, QtCore/QtGui
+      QObject imports, and a separate design for `extern "RustQt"` objects
+      (their `Pin<&mut T>` invokables vs reentrant callbacks).
+- [ ] Re-evaluate CxxQtThread for imported QObjects when KDAB/cxx-qt#1155
+      lands; `GuiSender` stays the worker→GUI path until then.
 - [ ] Build a coherent QObject/QtWidgets API (action, menu, model/view, layout,
       event filters, rendering, properties) rather than only isolated shim calls;
       support the use cases required by arbitrary DTK applications.

@@ -100,6 +100,42 @@ def render():
                 "- QWidget/layout adoption: cycle/duplicate-parent checks, permanent adoption history (including QObject ChildAdded and parentless native transfers); old constructor owners cannot reclaim transferred allocations.\n"
                 "- Model/delegate setters: Qt retains borrowed QObject pointers; Qt ownership is not inferred from setter spelling. Callback-time mutation cannot invalidate a currently borrowed paint/index/model frame.\n"
                 "- Relays, timers, shortcuts and actions: native owner destruction cancels pending events immediately; capture destructors are retired to a safe Rust boundary, with scope cleanup outside registry borrows.\n")
+    return "".join(rows) + render_cxxqt()
+
+
+def render_cxxqt():
+    """Fail closed unless every CXX-Qt import keeps the shared-borrow model."""
+    bridge = (ROOT / "dtk-cxxqt/src/bridge.rs").read_text()
+    glue = (ROOT / "dtk-cxxqt/src/lib.rs").read_text()
+    code = "\n".join(line.split("//")[0] for line in bridge.splitlines())
+    for banned in ("Pin<", "&mut", '"RustQt"', "Threading", "#[qinvokable]", "#[qproperty"):
+        if banned in code:
+            raise ValueError(f"dtk-cxxqt bridge declares forbidden `{banned}`")
+    rows = ["\n## CXX-Qt imported QObjects (dtk-cxxqt)\n\n",
+            "Imports only: no construction, ownership, deletion or `Pin<&mut T>`/`&mut T` receiver. "
+            "Senders are guarded live pointers inside a `NativeCall`; functors own a thread-checked "
+            "`SignalToken` that queues owned values and cancels/retires the callback when Qt destroys it.\n\n",
+            "| C++ type | Item | Receiver | Kind | Rust-facing glue |\n|---|---|---|---|---|\n"]
+    current = None
+    count = 0
+    items = re.finditer(
+        r"type (\w+);|(#\[qsignal\][^;]*?)?(pub\(self\) )?fn (\w+)\(self: (&\w+)[^;]*;", code, re.S)
+    for item in items:
+        if item.group(1):
+            current = item.group(1)
+            continue
+        signal, private, name, receiver = item.group(2), item.group(3), item.group(4), item.group(5)
+        if receiver != f"&{current}":
+            raise ValueError(f"{current}::{name}: receiver {receiver} is not a shared borrow")
+        if signal and not private:
+            raise ValueError(f"{current}::{name}: signals must be pub(self) (no Rust emitter)")
+        glue_name = f"{current}::on_{name}(" if signal else f".{name}()"
+        if glue_name not in glue:
+            raise ValueError(f"{current}::{name}: imported but no audited dtk-cxxqt glue")
+        kind = "typed signal connection" if signal else "const method"
+        rows.append(f"| `{current}` | `{name}` | `{receiver}` | {kind} | `{glue_name.rstrip('(')}` |\n")
+        count += 1
+    rows.append(f"\nCXX-Qt imported items audited: **{count}**.\n")
     return "".join(rows)
 
 

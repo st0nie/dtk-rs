@@ -20,7 +20,9 @@ use std::rc::Rc;
 
 mod application;
 pub use application::{DApplication, QCoreApplication};
+mod signals;
 pub mod threading;
+pub use signals::Connection;
 pub use threading::GuiSender;
 
 /// null for None (Qt parent pointer)
@@ -2535,20 +2537,6 @@ impl_default!(QFont, QPalette, DPalette, QPainterPath, DDciIcon);
 impl_default_owned!(DMainWindow, DMessageBox);
 
 // ---- typed signal helpers + base-class getters for generated widgets ----
-
-impl widgets::DLineEdit {
-    /// Returns the callback id for [`unregister_callback`]; 0 = connect failed.
-    pub fn on_return_pressed(&self, f: impl FnMut() + 'static) -> usize {
-        self.connect_signal("returnPressed()", f)
-    }
-}
-
-impl widgets::DSwitchButton {
-    /// checkedChanged(bool) with the bool delivered. Returns id; 0 = connect failed.
-    pub fn on_checked_changed(&self, f: impl FnMut(bool) + 'static) -> usize {
-        self.connect_signal_bool("checkedChanged(bool)", f)
-    }
-}
 
 impl widgets::DSearchEdit {
     /// Text of DLineEdit's contained native QLineEdit (not a base-class cast).

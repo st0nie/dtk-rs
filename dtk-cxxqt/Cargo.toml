@@ -1,0 +1,19 @@
+[package]
+name = "dtk-cxxqt"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+description = "CXX-Qt imports of DTK QObjects: typed signal connections and const methods"
+
+[dependencies]
+cxx = "=1.0.205"
+cxx-qt = "=0.10.0"
+# QtCore value types only (QString). QtGui/QML features are not needed yet.
+cxx-qt-lib = { version = "=0.10.0", default-features = false }
+dtk-sys = { path = "../dtk-sys" }
+
+[build-dependencies]
+# Same release as cxx/cxx-build (see dtk-sys/Cargo.toml); cxx-qt-build uses it.
+cxx-gen = "=0.7.205"
+cxx-qt-build = "=0.10.0"
+pkg-config = "0.3"

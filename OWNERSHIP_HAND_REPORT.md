@@ -141,6 +141,7 @@ Each row identifies a receiver, retained/call borrow, unique destructor or outpu
 | `line_edit_text` | `w` | `QWidget*` | receiver borrow, no ownership transfer; guarded owning-thread native transaction through result wrapping |
 | `progressbar_set_range` | `w` | `QWidget*` | receiver borrow, no ownership transfer; guarded owning-thread native transaction through result wrapping |
 | `progressbar_value` | `w` | `QWidget*` | receiver borrow, no ownership transfer; guarded owning-thread native transaction through result wrapping |
+| `abstract_button_set_checked` | `w` | `QWidget*` | receiver borrow, no ownership transfer; guarded owning-thread native transaction through result wrapping |
 | `widget_set_font` | `w` | `QWidget*` | receiver borrow, no ownership transfer; guarded owning-thread native transaction through result wrapping |
 | `widget_set_font` | `font` | `QFont*` | borrow of independently Rust-owned Qt value; native value/reference conversion, no allocation transfer |
 | `widget_set_cursor` | `w` | `QWidget*` | receiver borrow, no ownership transfer; guarded owning-thread native transaction through result wrapping |
@@ -356,7 +357,7 @@ Each row identifies a receiver, retained/call borrow, unique destructor or outpu
 | `paint_widget_inject_key` | `w` | `QWidget*` | receiver borrow, no ownership transfer; guarded owning-thread native transaction through result wrapping |
 | `shortcut_new` | `parent` | `QWidget*` | borrow widget owner; new native shortcut scope/parent-owned; callback capture cancellation |
 
-Raw pointer input parameters audited: **267**.
+Raw pointer input parameters audited: **268**.
 
 ## Callback and retained borrows
 
@@ -365,3 +366,35 @@ Raw pointer input parameters audited: **267**.
 - QWidget/layout adoption: cycle/duplicate-parent checks, permanent adoption history (including QObject ChildAdded and parentless native transfers); old constructor owners cannot reclaim transferred allocations.
 - Model/delegate setters: Qt retains borrowed QObject pointers; Qt ownership is not inferred from setter spelling. Callback-time mutation cannot invalidate a currently borrowed paint/index/model frame.
 - Relays, timers, shortcuts and actions: native owner destruction cancels pending events immediately; capture destructors are retired to a safe Rust boundary, with scope cleanup outside registry borrows.
+
+## CXX-Qt imported QObjects (dtk-cxxqt)
+
+Imports only: no construction, ownership, deletion or `Pin<&mut T>`/`&mut T` receiver. Senders are guarded live pointers inside a `NativeCall`; functors own a thread-checked `SignalToken` that queues owned values and cancels/retires the callback when Qt destroys it.
+
+| C++ type | Item | Receiver | Kind | Rust-facing glue |
+|---|---|---|---|---|
+| `DSwitchButton` | `checked_changed` | `&DSwitchButton` | typed signal connection | `DSwitchButton::on_checked_changed` |
+| `DSwitchButton` | `is_checked` | `&DSwitchButton` | const method | `.is_checked()` |
+| `DLineEdit` | `text_changed` | `&DLineEdit` | typed signal connection | `DLineEdit::on_text_changed` |
+| `DLineEdit` | `text_edited` | `&DLineEdit` | typed signal connection | `DLineEdit::on_text_edited` |
+| `DLineEdit` | `return_pressed` | `&DLineEdit` | typed signal connection | `DLineEdit::on_return_pressed` |
+| `DLineEdit` | `editing_finished` | `&DLineEdit` | typed signal connection | `DLineEdit::on_editing_finished` |
+| `DLineEdit` | `alert_changed` | `&DLineEdit` | typed signal connection | `DLineEdit::on_alert_changed` |
+| `DLineEdit` | `focus_changed` | `&DLineEdit` | typed signal connection | `DLineEdit::on_focus_changed` |
+| `DSearchEdit` | `text_changed` | `&DSearchEdit` | typed signal connection | `DSearchEdit::on_text_changed` |
+| `DSearchEdit` | `return_pressed` | `&DSearchEdit` | typed signal connection | `DSearchEdit::on_return_pressed` |
+| `DSearchEdit` | `search_aborted` | `&DSearchEdit` | typed signal connection | `DSearchEdit::on_search_aborted` |
+| `DSlider` | `value_changed` | `&DSlider` | typed signal connection | `DSlider::on_value_changed` |
+| `DSlider` | `slider_pressed` | `&DSlider` | typed signal connection | `DSlider::on_slider_pressed` |
+| `DSlider` | `slider_released` | `&DSlider` | typed signal connection | `DSlider::on_slider_released` |
+| `DSlider` | `range_changed` | `&DSlider` | typed signal connection | `DSlider::on_range_changed` |
+| `DTabBar` | `current_changed` | `&DTabBar` | typed signal connection | `DTabBar::on_current_changed` |
+| `DTabBar` | `tab_close_requested` | `&DTabBar` | typed signal connection | `DTabBar::on_tab_close_requested` |
+| `DTabBar` | `tab_moved` | `&DTabBar` | typed signal connection | `DTabBar::on_tab_moved` |
+| `DTabBar` | `tab_add_requested` | `&DTabBar` | typed signal connection | `DTabBar::on_tab_add_requested` |
+| `DDialog` | `button_clicked` | `&DDialog` | typed signal connection | `DDialog::on_button_clicked` |
+| `DDialog` | `about_to_close` | `&DDialog` | typed signal connection | `DDialog::on_about_to_close` |
+| `DDialog` | `closed` | `&DDialog` | typed signal connection | `DDialog::on_closed` |
+| `DDialog` | `visible_changed` | `&DDialog` | typed signal connection | `DDialog::on_visible_changed` |
+
+CXX-Qt imported items audited: **23**.

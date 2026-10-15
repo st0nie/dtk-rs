@@ -6,8 +6,10 @@ license = "MIT"
 links = "dtk6widget"
 
 [dependencies]
-cxx = "1"
+# cxx, cxx-build and dtk-cxxqt's cxx-gen must be the same release: CXX
+# embeds its version in every C++ symbol (cxxbridge1$<patch>$...).
+cxx = "=1.0.205"
 
 [build-dependencies]
-cxx-build = "1"
+cxx-build = "=1.0.205"
 pkg-config = "0.3"

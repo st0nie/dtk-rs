@@ -7,6 +7,7 @@ use std::marker::PhantomData;
 pub mod core_ffi;
 pub mod gen_ffi;
 pub mod gui_ffi;
+pub mod native_signal;
 mod runtime;
 pub use runtime::{NativeCall, defer_cleanup};
 
@@ -183,6 +184,8 @@ pub mod ffi {
         unsafe fn line_edit_text(w: *mut QWidget) -> String;
         unsafe fn progressbar_set_range(w: *mut QWidget, minimum: i32, maximum: i32);
         unsafe fn progressbar_value(w: *mut QWidget) -> i32;
+        /// QAbstractButton::setChecked; native dynamic type verified (no-op otherwise)
+        unsafe fn abstract_button_set_checked(w: *mut QWidget, checked: bool);
         unsafe fn widget_set_font(w: *mut QWidget, font: *mut QFont);
         /// Qt::CursorShape (qt::cursor::*)
         unsafe fn widget_set_cursor(w: *mut QWidget, shape: i32);
@@ -741,6 +744,8 @@ enum Cb {
     I32(Box<dyn FnMut(i32)>),
     I32I32(Box<dyn FnMut(i32, i32)>),
     Bool(Box<dyn FnMut(bool)>),
+    // Typed native signals (CXX-Qt imports): owned, already-converted values.
+    Owned(Box<dyn FnMut(Box<dyn std::any::Any>)>),
     Guard(Box<dyn FnMut() -> bool>),
     Paint(Box<dyn FnMut(PaintData)>),
     Pw(Box<dyn FnMut(PwEvent)>),
@@ -848,6 +853,7 @@ pub fn callback_registry_is_empty() -> bool {
         && CALLBACKS.with(|c| c.borrow().is_empty())
         && IN_FLIGHT.with(|c| c.borrow().is_empty())
         && RELAY_IDS.with(|c| c.borrow().is_empty())
+        && native_signal::is_empty()
         && SIGNAL_QUEUED.with(|c| c.borrow().is_empty())
         && PW_QUEUED.with(|c| c.borrow().is_empty())
         && CALLBACK_SCOPE.with(|scope| match &*scope.borrow() {
@@ -955,6 +961,8 @@ pub fn unregister_cb(id: usize) -> bool {
         // we touch DtkRelay's GUI-thread-only global QHash.
         unsafe { ffi::relay_disconnect(id) };
     }
+    // Typed native connections are likewise thread-local to their Qt owner.
+    native_signal::disconnect(id);
     removed
 }
 
@@ -992,12 +1000,14 @@ fn finish_dispatch(id: usize, cb: Option<Cb>) {
 // the stack. Qt can synchronously emit the same signal inside a Rust callback;
 // queue its copied arguments and deliver them when the outer callback returns.
 // Paint-widget events have their own queue because Paint holds stack pointers.
-#[derive(Clone, Copy)]
 enum SignalEvent {
     Zero,
     I32(i32),
     Bool(bool),
     I32I32(i32, i32),
+    /// Owned Rust value converted inside the native emission frame; it never
+    /// borrows Qt argument storage that ends when the emission returns.
+    Owned(Box<dyn std::any::Any>),
 }
 thread_local! {
     static SIGNAL_QUEUED: RefCell<HashMap<usize, std::collections::VecDeque<SignalEvent>>> =
@@ -1010,10 +1020,11 @@ fn dispatch_signal(id: usize, event: SignalEvent) {
     if callbacks_closing() {
         return;
     }
+    let mut event = Some(event);
     let nested = SIGNAL_QUEUED.with(|pending| {
         let mut pending = pending.borrow_mut();
         if let Some(queue) = pending.get_mut(&id) {
-            queue.push_back(event);
+            queue.extend(event.take());
             true
         } else {
             pending.insert(id, Default::default());
@@ -1024,7 +1035,7 @@ fn dispatch_signal(id: usize, event: SignalEvent) {
         return;
     }
     let mut cb = begin_dispatch(id);
-    let mut next = Some(event);
+    let mut next = event;
     while let Some(event) = next
         .take()
         .or_else(|| SIGNAL_QUEUED.with(|pending| pending.borrow_mut().get_mut(&id)?.pop_front()))
@@ -1061,6 +1072,12 @@ fn dispatch_signal(id: usize, event: SignalEvent) {
                 Some(Cb::I32I32(f)) => Some(std::panic::catch_unwind(
                     std::panic::AssertUnwindSafe(|| f(a, b)),
                 )),
+                _ => None,
+            },
+            SignalEvent::Owned(value) => match &mut cb {
+                Some(Cb::Owned(f)) => Some(std::panic::catch_unwind(std::panic::AssertUnwindSafe(
+                    || f(value),
+                ))),
                 _ => None,
             },
         };
