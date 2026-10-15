@@ -122,6 +122,7 @@ POINTER_INPUTS = {
         "setData": ("value copy", "copies WaterMarkData; does not retain pointer to Rust-owned copy"),
     },
     "DWaterMarkWidget": {"setData": ("value copy", "copies WaterMarkData into native value state")},
+    "DGuiApplicationHelper": {"fetchPalette": ("borrow", "dtkgui dguiapplicationhelper.cpp: reads theme->themeName()/fetchPalette during the call; not retained")},
 }
 
 

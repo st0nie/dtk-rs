@@ -66,6 +66,10 @@ def method_body(name, method, args, body, ret_rs):
             return f"if (self->transition() == {p} || !object_can_adopt(self, {p})) return; self->transition()->animation()->stop(); object_mark_native_adopted(self, {p}); {body}"
         if method == "clear":
             return "self->transition()->animation()->stop(); " + body
+    if name == "DSettings" and method == "setOption":
+        # dtkcore/src/settings/dsettings.cpp: `option(key)->setValue(value)`
+        # dereferences a null QPointer for an undeclared key.
+        return f"if (!self->option(from_rust_str({p}))) return; {body}"
     if name == "DBackgroundGroup" and method == "setLayout":
         return f"if (!layout_can_install(self, {p})) return; {body}"
     if name == "DFlowLayout" and method == "insertLayout":

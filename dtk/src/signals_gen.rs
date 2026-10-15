@@ -1514,6 +1514,63 @@ impl crate::QWidget {
     }
 }
 
+impl crate::core::DBaseFileWatcher {
+    /// `void fileDeleted(const QUrl &url)` (declared in `DBaseFileWatcher`).
+    pub fn on_file_deleted(&self, mut f: impl FnMut(crate::QUrl) + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (cxx_qt_lib::QUrl,)| f(a0),
+            dtk_cxxqt::connectors::d_base_file_watcher_file_deleted,
+        )
+    }
+    /// `void fileAttributeChanged(const QUrl &url)` (declared in `DBaseFileWatcher`).
+    pub fn on_file_attribute_changed(
+        &self,
+        mut f: impl FnMut(crate::QUrl) + 'static,
+    ) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (cxx_qt_lib::QUrl,)| f(a0),
+            dtk_cxxqt::connectors::d_base_file_watcher_file_attribute_changed,
+        )
+    }
+    /// `void fileMoved(const QUrl &fromUrl, const QUrl &toUrl)` (declared in `DBaseFileWatcher`).
+    pub fn on_file_moved(
+        &self,
+        mut f: impl FnMut(crate::QUrl, crate::QUrl) + 'static,
+    ) -> Connection {
+        connect_typed(
+            self,
+            move |(a0, a1): (cxx_qt_lib::QUrl, cxx_qt_lib::QUrl)| f(a0, a1),
+            dtk_cxxqt::connectors::d_base_file_watcher_file_moved,
+        )
+    }
+    /// `void subfileCreated(const QUrl &url)` (declared in `DBaseFileWatcher`).
+    pub fn on_subfile_created(&self, mut f: impl FnMut(crate::QUrl) + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (cxx_qt_lib::QUrl,)| f(a0),
+            dtk_cxxqt::connectors::d_base_file_watcher_subfile_created,
+        )
+    }
+    /// `void fileModified(const QUrl &url)` (declared in `DBaseFileWatcher`).
+    pub fn on_file_modified(&self, mut f: impl FnMut(crate::QUrl) + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (cxx_qt_lib::QUrl,)| f(a0),
+            dtk_cxxqt::connectors::d_base_file_watcher_file_modified,
+        )
+    }
+    /// `void fileClosed(const QUrl &url)` (declared in `DBaseFileWatcher`).
+    pub fn on_file_closed(&self, mut f: impl FnMut(crate::QUrl) + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (cxx_qt_lib::QUrl,)| f(a0),
+            dtk_cxxqt::connectors::d_base_file_watcher_file_closed,
+        )
+    }
+}
+
 impl crate::core::DConfig {
     /// `void valueChanged(const QString &key)` (declared in `DConfig`).
     pub fn on_value_changed(&self, mut f: impl FnMut(String) + 'static) -> Connection {
@@ -1521,6 +1578,187 @@ impl crate::core::DConfig {
             self,
             move |(a0,): (String,)| f(a0),
             dtk_cxxqt::connectors::d_config_value_changed,
+        )
+    }
+}
+
+impl crate::core::DFileSystemWatcher {
+    /// `void fileDeleted(const QString &path, const QString &name, QPrivateSignal)` (declared in `DFileSystemWatcher`).
+    pub fn on_file_deleted(&self, mut f: impl FnMut(String, String) + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(a0, a1): (String, String)| f(a0, a1),
+            dtk_cxxqt::connectors::d_file_system_watcher_file_deleted,
+        )
+    }
+    /// `void fileAttributeChanged(const QString &path, const QString &name, QPrivateSignal)` (declared in `DFileSystemWatcher`).
+    pub fn on_file_attribute_changed(
+        &self,
+        mut f: impl FnMut(String, String) + 'static,
+    ) -> Connection {
+        connect_typed(
+            self,
+            move |(a0, a1): (String, String)| f(a0, a1),
+            dtk_cxxqt::connectors::d_file_system_watcher_file_attribute_changed,
+        )
+    }
+    /// `void fileClosed(const QString &path, const QString &name, QPrivateSignal)` (declared in `DFileSystemWatcher`).
+    pub fn on_file_closed(&self, mut f: impl FnMut(String, String) + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(a0, a1): (String, String)| f(a0, a1),
+            dtk_cxxqt::connectors::d_file_system_watcher_file_closed,
+        )
+    }
+    /// `void fileMoved(const QString &fromPath, const QString &fromName, const QString &toPath, const QString &toName, QPrivateSignal)` (declared in `DFileSystemWatcher`).
+    pub fn on_file_moved(
+        &self,
+        mut f: impl FnMut(String, String, String, String) + 'static,
+    ) -> Connection {
+        connect_typed(
+            self,
+            move |(a0, a1, a2, a3): (String, String, String, String)| f(a0, a1, a2, a3),
+            dtk_cxxqt::connectors::d_file_system_watcher_file_moved,
+        )
+    }
+    /// `void fileCreated(const QString &path, const QString &name, QPrivateSignal)` (declared in `DFileSystemWatcher`).
+    pub fn on_file_created(&self, mut f: impl FnMut(String, String) + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(a0, a1): (String, String)| f(a0, a1),
+            dtk_cxxqt::connectors::d_file_system_watcher_file_created,
+        )
+    }
+    /// `void fileModified(const QString &path, const QString &name, QPrivateSignal)` (declared in `DFileSystemWatcher`).
+    pub fn on_file_modified(&self, mut f: impl FnMut(String, String) + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(a0, a1): (String, String)| f(a0, a1),
+            dtk_cxxqt::connectors::d_file_system_watcher_file_modified,
+        )
+    }
+}
+
+impl crate::core::DFileWatcher {
+    /// `void fileDeleted(const QUrl &url)` (declared in `DBaseFileWatcher`).
+    pub fn on_file_deleted(&self, mut f: impl FnMut(crate::QUrl) + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (cxx_qt_lib::QUrl,)| f(a0),
+            dtk_cxxqt::connectors::d_base_file_watcher_file_deleted,
+        )
+    }
+    /// `void fileAttributeChanged(const QUrl &url)` (declared in `DBaseFileWatcher`).
+    pub fn on_file_attribute_changed(
+        &self,
+        mut f: impl FnMut(crate::QUrl) + 'static,
+    ) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (cxx_qt_lib::QUrl,)| f(a0),
+            dtk_cxxqt::connectors::d_base_file_watcher_file_attribute_changed,
+        )
+    }
+    /// `void fileMoved(const QUrl &fromUrl, const QUrl &toUrl)` (declared in `DBaseFileWatcher`).
+    pub fn on_file_moved(
+        &self,
+        mut f: impl FnMut(crate::QUrl, crate::QUrl) + 'static,
+    ) -> Connection {
+        connect_typed(
+            self,
+            move |(a0, a1): (cxx_qt_lib::QUrl, cxx_qt_lib::QUrl)| f(a0, a1),
+            dtk_cxxqt::connectors::d_base_file_watcher_file_moved,
+        )
+    }
+    /// `void subfileCreated(const QUrl &url)` (declared in `DBaseFileWatcher`).
+    pub fn on_subfile_created(&self, mut f: impl FnMut(crate::QUrl) + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (cxx_qt_lib::QUrl,)| f(a0),
+            dtk_cxxqt::connectors::d_base_file_watcher_subfile_created,
+        )
+    }
+    /// `void fileModified(const QUrl &url)` (declared in `DBaseFileWatcher`).
+    pub fn on_file_modified(&self, mut f: impl FnMut(crate::QUrl) + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (cxx_qt_lib::QUrl,)| f(a0),
+            dtk_cxxqt::connectors::d_base_file_watcher_file_modified,
+        )
+    }
+    /// `void fileClosed(const QUrl &url)` (declared in `DBaseFileWatcher`).
+    pub fn on_file_closed(&self, mut f: impl FnMut(crate::QUrl) + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (cxx_qt_lib::QUrl,)| f(a0),
+            dtk_cxxqt::connectors::d_base_file_watcher_file_closed,
+        )
+    }
+}
+
+impl crate::core::DFileWatcherManager {
+    /// `void fileDeleted(const QString &filePath)` (declared in `DFileWatcherManager`).
+    pub fn on_file_deleted(&self, mut f: impl FnMut(String) + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (String,)| f(a0),
+            dtk_cxxqt::connectors::d_file_watcher_manager_file_deleted,
+        )
+    }
+    /// `void fileAttributeChanged(const QString &filePath)` (declared in `DFileWatcherManager`).
+    pub fn on_file_attribute_changed(&self, mut f: impl FnMut(String) + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (String,)| f(a0),
+            dtk_cxxqt::connectors::d_file_watcher_manager_file_attribute_changed,
+        )
+    }
+    /// `void fileMoved(const QString &fromFilePath, const QString &toFilePath)` (declared in `DFileWatcherManager`).
+    pub fn on_file_moved(&self, mut f: impl FnMut(String, String) + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(a0, a1): (String, String)| f(a0, a1),
+            dtk_cxxqt::connectors::d_file_watcher_manager_file_moved,
+        )
+    }
+    /// `void subfileCreated(const QString &filePath)` (declared in `DFileWatcherManager`).
+    pub fn on_subfile_created(&self, mut f: impl FnMut(String) + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (String,)| f(a0),
+            dtk_cxxqt::connectors::d_file_watcher_manager_subfile_created,
+        )
+    }
+    /// `void fileModified(const QString &filePath)` (declared in `DFileWatcherManager`).
+    pub fn on_file_modified(&self, mut f: impl FnMut(String) + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (String,)| f(a0),
+            dtk_cxxqt::connectors::d_file_watcher_manager_file_modified,
+        )
+    }
+    /// `void fileClosed(const QString &filePath)` (declared in `DFileWatcherManager`).
+    pub fn on_file_closed(&self, mut f: impl FnMut(String) + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (String,)| f(a0),
+            dtk_cxxqt::connectors::d_file_watcher_manager_file_closed,
+        )
+    }
+}
+
+impl crate::core::DSettings {
+    /// `void valueChanged(const QString &key, const QVariant &value)` (declared in `DSettings`).
+    pub fn on_value_changed(
+        &self,
+        mut f: impl FnMut(String, crate::QVariant) + 'static,
+    ) -> Connection {
+        connect_typed(
+            self,
+            move |(a0, a1): (String, OwnedValue<dtk_sys::ffi::QVariant>)| {
+                f(a0, crate::QVariant::from_raw(a1.into_raw()))
+            },
+            dtk_cxxqt::connectors::d_settings_value_changed,
         )
     }
 }
@@ -1588,6 +1826,284 @@ impl crate::gui::DGuiApplicationHelper {
             self,
             move |(a0,): (i32,)| f(a0),
             dtk_cxxqt::connectors::d_gui_application_helper_size_mode_changed,
+        )
+    }
+}
+
+impl crate::gui::DNativeSettings {
+    /// `void allKeysChanged()` (declared in `DNativeSettings`).
+    pub fn on_all_keys_changed(&self, mut f: impl FnMut() + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(): ()| f(),
+            dtk_cxxqt::connectors::d_native_settings_all_keys_changed,
+        )
+    }
+    /// `void propertyChanged(const QByteArray &name, const QVariant &value)` (declared in `DNativeSettings`).
+    pub fn on_property_changed(
+        &self,
+        mut f: impl FnMut(Vec<u8>, crate::QVariant) + 'static,
+    ) -> Connection {
+        connect_typed(
+            self,
+            move |(a0, a1): (Vec<u8>, OwnedValue<dtk_sys::ffi::QVariant>)| {
+                f(a0, crate::QVariant::from_raw(a1.into_raw()))
+            },
+            dtk_cxxqt::connectors::d_native_settings_property_changed,
+        )
+    }
+}
+
+impl crate::gui::DPlatformTheme {
+    /// `void cursorBlinkTimeChanged(int cursorBlinkTime)` (declared in `DPlatformTheme`).
+    pub fn on_cursor_blink_time_changed(&self, mut f: impl FnMut(i32) + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (i32,)| f(a0),
+            dtk_cxxqt::connectors::d_platform_theme_cursor_blink_time_changed,
+        )
+    }
+    /// `void cursorBlinkTimeoutChanged(int cursorBlinkTimeout)` (declared in `DPlatformTheme`).
+    pub fn on_cursor_blink_timeout_changed(&self, mut f: impl FnMut(i32) + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (i32,)| f(a0),
+            dtk_cxxqt::connectors::d_platform_theme_cursor_blink_timeout_changed,
+        )
+    }
+    /// `void cursorBlinkChanged(bool cursorBlink)` (declared in `DPlatformTheme`).
+    pub fn on_cursor_blink_changed(&self, mut f: impl FnMut(bool) + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (bool,)| f(a0),
+            dtk_cxxqt::connectors::d_platform_theme_cursor_blink_changed,
+        )
+    }
+    /// `void doubleClickDistanceChanged(int doubleClickDistance)` (declared in `DPlatformTheme`).
+    pub fn on_double_click_distance_changed(&self, mut f: impl FnMut(i32) + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (i32,)| f(a0),
+            dtk_cxxqt::connectors::d_platform_theme_double_click_distance_changed,
+        )
+    }
+    /// `void doubleClickTimeChanged(int doubleClickTime)` (declared in `DPlatformTheme`).
+    pub fn on_double_click_time_changed(&self, mut f: impl FnMut(i32) + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (i32,)| f(a0),
+            dtk_cxxqt::connectors::d_platform_theme_double_click_time_changed,
+        )
+    }
+    /// `void dndDragThresholdChanged(int dndDragThreshold)` (declared in `DPlatformTheme`).
+    pub fn on_dnd_drag_threshold_changed(&self, mut f: impl FnMut(i32) + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (i32,)| f(a0),
+            dtk_cxxqt::connectors::d_platform_theme_dnd_drag_threshold_changed,
+        )
+    }
+    /// `void themeNameChanged(QByteArray themeName)` (declared in `DPlatformTheme`).
+    pub fn on_theme_name_changed(&self, mut f: impl FnMut(Vec<u8>) + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (Vec<u8>,)| f(a0),
+            dtk_cxxqt::connectors::d_platform_theme_theme_name_changed,
+        )
+    }
+    /// `void iconThemeNameChanged(QByteArray iconThemeName)` (declared in `DPlatformTheme`).
+    pub fn on_icon_theme_name_changed(&self, mut f: impl FnMut(Vec<u8>) + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (Vec<u8>,)| f(a0),
+            dtk_cxxqt::connectors::d_platform_theme_icon_theme_name_changed,
+        )
+    }
+    /// `void soundThemeNameChanged(QByteArray soundThemeName)` (declared in `DPlatformTheme`).
+    pub fn on_sound_theme_name_changed(&self, mut f: impl FnMut(Vec<u8>) + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (Vec<u8>,)| f(a0),
+            dtk_cxxqt::connectors::d_platform_theme_sound_theme_name_changed,
+        )
+    }
+    /// `void fontNameChanged(QByteArray fontName)` (declared in `DPlatformTheme`).
+    pub fn on_font_name_changed(&self, mut f: impl FnMut(Vec<u8>) + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (Vec<u8>,)| f(a0),
+            dtk_cxxqt::connectors::d_platform_theme_font_name_changed,
+        )
+    }
+    /// `void monoFontNameChanged(QByteArray monoFontName)` (declared in `DPlatformTheme`).
+    pub fn on_mono_font_name_changed(&self, mut f: impl FnMut(Vec<u8>) + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (Vec<u8>,)| f(a0),
+            dtk_cxxqt::connectors::d_platform_theme_mono_font_name_changed,
+        )
+    }
+    /// `void fontPointSizeChanged(qreal fontPointSize)` (declared in `DPlatformTheme`).
+    pub fn on_font_point_size_changed(&self, mut f: impl FnMut(f64) + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (f64,)| f(a0),
+            dtk_cxxqt::connectors::d_platform_theme_font_point_size_changed,
+        )
+    }
+    /// `void gtkFontNameChanged(QByteArray fontName)` (declared in `DPlatformTheme`).
+    pub fn on_gtk_font_name_changed(&self, mut f: impl FnMut(Vec<u8>) + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (Vec<u8>,)| f(a0),
+            dtk_cxxqt::connectors::d_platform_theme_gtk_font_name_changed,
+        )
+    }
+    /// `void activeColorChanged(QColor activeColor)` (declared in `DPlatformTheme`).
+    pub fn on_active_color_changed(
+        &self,
+        mut f: impl FnMut(crate::QColor) + 'static,
+    ) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (cxx_qt_lib::QColor,)| f(a0),
+            dtk_cxxqt::connectors::d_platform_theme_active_color_changed,
+        )
+    }
+    /// `void darkActiveColorChanged(QColor activeColor)` (declared in `DPlatformTheme`).
+    pub fn on_dark_active_color_changed(
+        &self,
+        mut f: impl FnMut(crate::QColor) + 'static,
+    ) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (cxx_qt_lib::QColor,)| f(a0),
+            dtk_cxxqt::connectors::d_platform_theme_dark_active_color_changed,
+        )
+    }
+    /// `void paletteChanged(DPalette palette)` (declared in `DPlatformTheme`).
+    pub fn on_palette_changed(&self, mut f: impl FnMut(crate::DPalette) + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (OwnedValue<dtk_sys::ffi::DPalette>,)| {
+                f(crate::DPalette::from_raw(a0.into_raw()))
+            },
+            dtk_cxxqt::connectors::d_platform_theme_palette_changed,
+        )
+    }
+    /// `void dotsPerInchChanged(const QString &screen, int dpi)` (declared in `DPlatformTheme`).
+    pub fn on_dots_per_inch_changed(&self, mut f: impl FnMut(String, i32) + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(a0, a1): (String, i32)| f(a0, a1),
+            dtk_cxxqt::connectors::d_platform_theme_dots_per_inch_changed,
+        )
+    }
+    /// `void windowRadiusChanged(int r)` (declared in `DPlatformTheme`).
+    pub fn on_window_radius_changed(&self, mut f: impl FnMut(i32) + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (i32,)| f(a0),
+            dtk_cxxqt::connectors::d_platform_theme_window_radius_changed,
+        )
+    }
+    /// `void sizeModeChanged(int sizeMode)` (declared in `DPlatformTheme`).
+    pub fn on_size_mode_changed(&self, mut f: impl FnMut(i32) + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (i32,)| f(a0),
+            dtk_cxxqt::connectors::d_platform_theme_size_mode_changed,
+        )
+    }
+    /// `void scrollBarPolicyChanged(int scrollBarPolicy)` (declared in `DPlatformTheme`).
+    pub fn on_scroll_bar_policy_changed(&self, mut f: impl FnMut(i32) + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (i32,)| f(a0),
+            dtk_cxxqt::connectors::d_platform_theme_scroll_bar_policy_changed,
+        )
+    }
+    /// `void allKeysChanged()` (declared in `DNativeSettings`).
+    pub fn on_all_keys_changed(&self, mut f: impl FnMut() + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(): ()| f(),
+            dtk_cxxqt::connectors::d_native_settings_all_keys_changed,
+        )
+    }
+    /// `void propertyChanged(const QByteArray &name, const QVariant &value)` (declared in `DNativeSettings`).
+    pub fn on_property_changed(
+        &self,
+        mut f: impl FnMut(Vec<u8>, crate::QVariant) + 'static,
+    ) -> Connection {
+        connect_typed(
+            self,
+            move |(a0, a1): (Vec<u8>, OwnedValue<dtk_sys::ffi::QVariant>)| {
+                f(a0, crate::QVariant::from_raw(a1.into_raw()))
+            },
+            dtk_cxxqt::connectors::d_native_settings_property_changed,
+        )
+    }
+}
+
+impl crate::gui::DWindowManagerHelper {
+    /// `void windowManagerChanged()` (declared in `DWindowManagerHelper`).
+    pub fn on_window_manager_changed(&self, mut f: impl FnMut() + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(): ()| f(),
+            dtk_cxxqt::connectors::d_window_manager_helper_window_manager_changed,
+        )
+    }
+    /// `void hasBlurWindowChanged()` (declared in `DWindowManagerHelper`).
+    pub fn on_has_blur_window_changed(&self, mut f: impl FnMut() + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(): ()| f(),
+            dtk_cxxqt::connectors::d_window_manager_helper_has_blur_window_changed,
+        )
+    }
+    /// `void hasCompositeChanged()` (declared in `DWindowManagerHelper`).
+    pub fn on_has_composite_changed(&self, mut f: impl FnMut() + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(): ()| f(),
+            dtk_cxxqt::connectors::d_window_manager_helper_has_composite_changed,
+        )
+    }
+    /// `void hasNoTitlebarChanged()` (declared in `DWindowManagerHelper`).
+    pub fn on_has_no_titlebar_changed(&self, mut f: impl FnMut() + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(): ()| f(),
+            dtk_cxxqt::connectors::d_window_manager_helper_has_no_titlebar_changed,
+        )
+    }
+    /// `void hasWallpaperEffectChanged()` (declared in `DWindowManagerHelper`).
+    pub fn on_has_wallpaper_effect_changed(&self, mut f: impl FnMut() + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(): ()| f(),
+            dtk_cxxqt::connectors::d_window_manager_helper_has_wallpaper_effect_changed,
+        )
+    }
+    /// `void windowListChanged()` (declared in `DWindowManagerHelper`).
+    pub fn on_window_list_changed(&self, mut f: impl FnMut() + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(): ()| f(),
+            dtk_cxxqt::connectors::d_window_manager_helper_window_list_changed,
+        )
+    }
+    /// `void windowMotifWMHintsChanged(quint32 winId)` (declared in `DWindowManagerHelper`).
+    pub fn on_window_motif_w_m_hints_changed(
+        &self,
+        mut f: impl FnMut(u32) + 'static,
+    ) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (u32,)| f(a0),
+            dtk_cxxqt::connectors::d_window_manager_helper_window_motif_w_m_hints_changed,
         )
     }
 }

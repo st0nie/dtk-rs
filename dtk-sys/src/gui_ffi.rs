@@ -48,6 +48,10 @@ pub mod genffi {
         type DGuiApplicationHelper;
         type DImageHandler;
         type DFontManager;
+        type DNativeSettings;
+        type DPlatformTheme;
+        type DWindowManagerHelper;
+        type DDesktopServices;
         fn gen_enum_d_gui_application_helper_color_type_unknown_type() -> i32;
         fn gen_enum_d_gui_application_helper_color_type_light_type() -> i32;
         fn gen_enum_d_gui_application_helper_color_type_dark_type() -> i32;
@@ -67,6 +71,21 @@ pub mod genffi {
         fn gen_enum_d_font_manager_size_type_t9() -> i32;
         fn gen_enum_d_font_manager_size_type_t10() -> i32;
         fn gen_enum_d_font_manager_size_type_t11() -> i32;
+        fn gen_enum_d_desktop_services_system_sound_effect_s_s_e_notifications() -> i32;
+        fn gen_enum_d_desktop_services_system_sound_effect_s_e_e_screenshot() -> i32;
+        fn gen_enum_d_desktop_services_system_sound_effect_s_s_e_empty_trash() -> i32;
+        fn gen_enum_d_desktop_services_system_sound_effect_s_s_e_send_file_complete() -> i32;
+        fn gen_enum_d_desktop_services_system_sound_effect_s_s_e_boot_up() -> i32;
+        fn gen_enum_d_desktop_services_system_sound_effect_s_s_e_shutdown() -> i32;
+        fn gen_enum_d_desktop_services_system_sound_effect_s_s_e_logout() -> i32;
+        fn gen_enum_d_desktop_services_system_sound_effect_s_s_e_wake_up() -> i32;
+        fn gen_enum_d_desktop_services_system_sound_effect_s_s_e_volume_change() -> i32;
+        fn gen_enum_d_desktop_services_system_sound_effect_s_s_e_low_battery() -> i32;
+        fn gen_enum_d_desktop_services_system_sound_effect_s_s_e_plug_in() -> i32;
+        fn gen_enum_d_desktop_services_system_sound_effect_s_s_e_plug_out() -> i32;
+        fn gen_enum_d_desktop_services_system_sound_effect_s_s_e_device_added() -> i32;
+        fn gen_enum_d_desktop_services_system_sound_effect_s_s_e_device_removed() -> i32;
+        fn gen_enum_d_desktop_services_system_sound_effect_s_s_e_error() -> i32;
 
         unsafe fn gen_d_gui_application_helper_as_qobject(
             self_: *mut DGuiApplicationHelper,
@@ -103,11 +122,20 @@ pub mod genffi {
             type_: i32,
         );
         unsafe fn gen_d_gui_application_helper_generate_palette(base: *mut DPalette, type_: i32);
+        unsafe fn gen_d_gui_application_helper_fetch_palette(
+            theme: *mut DPlatformTheme,
+        ) -> *mut DPalette;
         unsafe fn gen_d_gui_application_helper_is_x_window_platform() -> bool;
         unsafe fn gen_d_gui_application_helper_is_tablet_environment() -> bool;
         unsafe fn gen_d_gui_application_helper_is_special_effects_environment() -> bool;
         unsafe fn gen_d_gui_application_helper_set_attribute(attribute: i32, enable: bool);
         unsafe fn gen_d_gui_application_helper_test_attribute(attribute: i32) -> bool;
+        unsafe fn gen_d_gui_application_helper_system_theme(
+            self_: *mut DGuiApplicationHelper,
+        ) -> *mut DPlatformTheme;
+        unsafe fn gen_d_gui_application_helper_application_theme(
+            self_: *mut DGuiApplicationHelper,
+        ) -> *mut DPlatformTheme;
         unsafe fn gen_d_gui_application_helper_application_palette(
             self_: *mut DGuiApplicationHelper,
         ) -> *mut DPalette;
@@ -269,5 +297,173 @@ pub mod genffi {
         unsafe fn gen_d_font_manager_t9(self_: *mut DFontManager) -> *mut QFont;
         unsafe fn gen_d_font_manager_t10(self_: *mut DFontManager) -> *mut QFont;
         unsafe fn gen_d_font_manager_t11(self_: *mut DFontManager) -> *mut QFont;
+        unsafe fn gen_d_native_settings_as_qobject(self_: *mut DNativeSettings) -> *mut QObject;
+        unsafe fn gen_d_native_settings_is_valid(self_: *mut DNativeSettings) -> bool;
+        unsafe fn gen_d_native_settings_get_setting(
+            self_: *mut DNativeSettings,
+            name: &str,
+        ) -> *mut QVariant;
+        unsafe fn gen_d_native_settings_set_setting(
+            self_: *mut DNativeSettings,
+            name: &str,
+            value: *mut QVariant,
+        );
+        unsafe fn gen_d_platform_theme_as_qobject(self_: *mut DPlatformTheme) -> *mut QObject;
+        unsafe fn gen_d_platform_theme_as_d_native_settings(
+            self_: *mut DPlatformTheme,
+        ) -> *mut DNativeSettings;
+        unsafe fn gen_d_platform_theme_is_valid(self_: *mut DPlatformTheme) -> bool;
+        unsafe fn gen_d_platform_theme_parent_theme(
+            self_: *mut DPlatformTheme,
+        ) -> *mut DPlatformTheme;
+        unsafe fn gen_d_platform_theme_set_fallback_property(
+            self_: *mut DPlatformTheme,
+            fallback: bool,
+        );
+        unsafe fn gen_d_platform_theme_palette(self_: *mut DPlatformTheme) -> *mut DPalette;
+        unsafe fn gen_d_platform_theme_set_palette(
+            self_: *mut DPlatformTheme,
+            palette: *mut DPalette,
+        );
+        unsafe fn gen_d_platform_theme_cursor_blink_time(self_: *mut DPlatformTheme) -> i32;
+        unsafe fn gen_d_platform_theme_cursor_blink_timeout(self_: *mut DPlatformTheme) -> i32;
+        unsafe fn gen_d_platform_theme_cursor_blink(self_: *mut DPlatformTheme) -> bool;
+        unsafe fn gen_d_platform_theme_double_click_distance(self_: *mut DPlatformTheme) -> i32;
+        unsafe fn gen_d_platform_theme_double_click_time(self_: *mut DPlatformTheme) -> i32;
+        unsafe fn gen_d_platform_theme_dnd_drag_threshold(self_: *mut DPlatformTheme) -> i32;
+        unsafe fn gen_d_platform_theme_window_radius(self_: *mut DPlatformTheme) -> i32;
+        unsafe fn gen_d_platform_theme_window_radius_2(
+            self_: *mut DPlatformTheme,
+            defaultValue: i32,
+        ) -> i32;
+        unsafe fn gen_d_platform_theme_theme_name(self_: *mut DPlatformTheme) -> String;
+        unsafe fn gen_d_platform_theme_icon_theme_name(self_: *mut DPlatformTheme) -> String;
+        unsafe fn gen_d_platform_theme_sound_theme_name(self_: *mut DPlatformTheme) -> String;
+        unsafe fn gen_d_platform_theme_font_name(self_: *mut DPlatformTheme) -> String;
+        unsafe fn gen_d_platform_theme_mono_font_name(self_: *mut DPlatformTheme) -> String;
+        unsafe fn gen_d_platform_theme_font_point_size(self_: *mut DPlatformTheme) -> f64;
+        unsafe fn gen_d_platform_theme_gtk_font_name(self_: *mut DPlatformTheme) -> String;
+        unsafe fn gen_d_platform_theme_active_color(self_: *mut DPlatformTheme) -> QColor;
+        unsafe fn gen_d_platform_theme_dark_active_color(self_: *mut DPlatformTheme) -> QColor;
+        unsafe fn gen_d_platform_theme_is_valid_palette(self_: *mut DPlatformTheme) -> bool;
+        unsafe fn gen_d_platform_theme_size_mode(self_: *mut DPlatformTheme) -> i32;
+        unsafe fn gen_d_platform_theme_scroll_bar_policy(self_: *mut DPlatformTheme) -> i32;
+        unsafe fn gen_d_platform_theme_set_cursor_blink_time(
+            self_: *mut DPlatformTheme,
+            cursorBlinkTime: i32,
+        );
+        unsafe fn gen_d_platform_theme_set_cursor_blink_timeout(
+            self_: *mut DPlatformTheme,
+            cursorBlinkTimeout: i32,
+        );
+        unsafe fn gen_d_platform_theme_set_cursor_blink(
+            self_: *mut DPlatformTheme,
+            cursorBlink: bool,
+        );
+        unsafe fn gen_d_platform_theme_set_double_click_distance(
+            self_: *mut DPlatformTheme,
+            doubleClickDistance: i32,
+        );
+        unsafe fn gen_d_platform_theme_set_double_click_time(
+            self_: *mut DPlatformTheme,
+            doubleClickTime: i32,
+        );
+        unsafe fn gen_d_platform_theme_set_dnd_drag_threshold(
+            self_: *mut DPlatformTheme,
+            dndDragThreshold: i32,
+        );
+        unsafe fn gen_d_platform_theme_set_theme_name(self_: *mut DPlatformTheme, themeName: &str);
+        unsafe fn gen_d_platform_theme_set_icon_theme_name(
+            self_: *mut DPlatformTheme,
+            iconThemeName: &str,
+        );
+        unsafe fn gen_d_platform_theme_set_sound_theme_name(
+            self_: *mut DPlatformTheme,
+            soundThemeName: &str,
+        );
+        unsafe fn gen_d_platform_theme_set_font_name(self_: *mut DPlatformTheme, fontName: &str);
+        unsafe fn gen_d_platform_theme_set_mono_font_name(
+            self_: *mut DPlatformTheme,
+            monoFontName: &str,
+        );
+        unsafe fn gen_d_platform_theme_set_font_point_size(
+            self_: *mut DPlatformTheme,
+            fontPointSize: f64,
+        );
+        unsafe fn gen_d_platform_theme_set_gtk_font_name(
+            self_: *mut DPlatformTheme,
+            fontName: &str,
+        );
+        unsafe fn gen_d_platform_theme_set_active_color(
+            self_: *mut DPlatformTheme,
+            activeColor: &QColor,
+        );
+        unsafe fn gen_d_platform_theme_set_dark_active_color(
+            self_: *mut DPlatformTheme,
+            activeColor: &QColor,
+        );
+        unsafe fn gen_d_platform_theme_dots_per_inch(
+            self_: *mut DPlatformTheme,
+            screenName: &str,
+        ) -> i32;
+        unsafe fn gen_d_platform_theme_set_dots_per_inch(
+            self_: *mut DPlatformTheme,
+            screenName: &str,
+            dpi: i32,
+        );
+        unsafe fn gen_d_platform_theme_set_window_radius(
+            self_: *mut DPlatformTheme,
+            windowRadius: i32,
+        );
+        unsafe fn gen_d_window_manager_helper_as_qobject(
+            self_: *mut DWindowManagerHelper,
+        ) -> *mut QObject;
+        unsafe fn gen_d_window_manager_helper_instance() -> *mut DWindowManagerHelper;
+        unsafe fn gen_d_window_manager_helper_set_wm_class_name(name: &str);
+        unsafe fn gen_d_window_manager_helper_has_blur_window(
+            self_: *mut DWindowManagerHelper,
+        ) -> bool;
+        unsafe fn gen_d_window_manager_helper_has_composite(
+            self_: *mut DWindowManagerHelper,
+        ) -> bool;
+        unsafe fn gen_d_window_manager_helper_has_no_titlebar(
+            self_: *mut DWindowManagerHelper,
+        ) -> bool;
+        unsafe fn gen_d_window_manager_helper_has_wallpaper_effect(
+            self_: *mut DWindowManagerHelper,
+        ) -> bool;
+        unsafe fn gen_d_window_manager_helper_window_manager_name_string(
+            self_: *mut DWindowManagerHelper,
+        ) -> String;
+        unsafe fn gen_d_window_manager_helper_window_manager_name(
+            self_: *mut DWindowManagerHelper,
+        ) -> i32;
+        unsafe fn gen_d_window_manager_helper_window_from_point(
+            self_: *mut DWindowManagerHelper,
+            p: &QPoint,
+        ) -> u32;
+        unsafe fn gen_d_desktop_services_show_folder(localFilePath: &str, startupId: &str) -> bool;
+        unsafe fn gen_d_desktop_services_show_folder_2(url: &QUrl, startupId: &str) -> bool;
+        unsafe fn gen_d_desktop_services_show_file_item_property(
+            localFilePath: &str,
+            startupId: &str,
+        ) -> bool;
+        unsafe fn gen_d_desktop_services_show_file_item_property_2(
+            url: &QUrl,
+            startupId: &str,
+        ) -> bool;
+        unsafe fn gen_d_desktop_services_show_file_item(
+            localFilePath: &str,
+            startupId: &str,
+        ) -> bool;
+        unsafe fn gen_d_desktop_services_show_file_item_2(url: &QUrl, startupId: &str) -> bool;
+        unsafe fn gen_d_desktop_services_trash(localFilePath: &str) -> bool;
+        unsafe fn gen_d_desktop_services_trash_2(url: &QUrl) -> bool;
+        unsafe fn gen_d_desktop_services_play_system_sound_effect(effect: i32) -> bool;
+        unsafe fn gen_d_desktop_services_play_system_sound_effect_2(name: &str) -> bool;
+        unsafe fn gen_d_desktop_services_preview_system_sound_effect(effect: i32) -> bool;
+        unsafe fn gen_d_desktop_services_preview_system_sound_effect_2(name: &str) -> bool;
+        unsafe fn gen_d_desktop_services_get_name_by_effect_type(effect: i32) -> String;
+        unsafe fn gen_d_desktop_services_error_message() -> String;
     }
 }

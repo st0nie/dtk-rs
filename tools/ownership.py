@@ -57,6 +57,11 @@ POINTER_RETURNS = {
     ("DWaterMarkHelper", "instance"): ("object_borrow", "dtkwidget/src/widgets/dwatermarkhelper.cpp", "returns Q_GLOBAL_STATIC helper; native post routine owns cleanup"),
     ("DGuiApplicationHelper", "instance"): ("object_borrow", "dtkgui/src/kernel/dguiapplicationhelper.cpp", "returns native global helper; staticCleanApplication post routine resets it"),
     ("DGuiApplicationHelper", "fontManager"): ("object_borrow", "dtkgui/src/kernel/dguiapplicationhelper.cpp", "returns Q_GLOBAL_STATIC(DFontManager, _globalFM); no transfer"),
+    ("DGuiApplicationHelper", "systemTheme"): ("object_borrow", "dtkgui/src/kernel/dguiapplicationhelper.cpp", "returns d->systemTheme = new DPlatformTheme(0, q): child of the helper"),
+    ("DGuiApplicationHelper", "applicationTheme"): ("object_borrow", "dtkgui/src/kernel/dguiapplicationhelper.cpp", "returns d->appTheme (systemTheme, or a lazily created child DPlatformTheme(windowLeader, systemTheme))"),
+    ("DPlatformTheme", "parentTheme"): ("object_borrow", "dtkgui/src/kernel/dplatformtheme.cpp", "returns d->parent, the QObject parent theme; nullptr for the system theme"),
+    ("DWindowManagerHelper", "instance"): ("object_borrow", "dtkgui/src/kernel/dwindowmanagerhelper.cpp", "returns Q_GLOBAL_STATIC wmhGlobal (treelandWMHGlobal on Wayland); never deleted by callers"),
+    ("DFileWatcherManager", "add"): ("object_borrow", "dtkcore/src/filesystem/dfilewatchermanager.cpp", "new DFileWatcher(filePath, this) child kept in watchersMap; remove()/removeAll() deleteLater it"),
 }
 
 # Audited implicit public value constructor needed by an exclusive output API.

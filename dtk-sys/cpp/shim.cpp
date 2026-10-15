@@ -379,6 +379,27 @@ DConfig *core_config_create(rust::Str app_id, rust::Str name, rust::Str subpath)
     return DConfig::create(from_rust_str(app_id), from_rust_str(name),
                            from_rust_str(subpath), nullptr);
 }
+DSettings *core_settings_from_json(rust::Str json) {
+    return DSettings::fromJson(QByteArray(json.data(), static_cast<qsizetype>(json.size()))).data();
+}
+DSettings *core_settings_from_json_file(rust::Str path) {
+    return DSettings::fromJsonFile(from_rust_str(path)).data();
+}
+bool core_settings_set_file_backend(DSettings *settings, rust::Str path) {
+    static const char *const key = "_dtkrs_settings_backend";
+    if (settings->property(key).toBool())
+        return false;
+    // setBackend loads values, moves the backend to a new QThread and joins
+    // that thread on DSettings::destroyed, but never deletes the backend.
+    // Delete it on its own thread when that thread finishes (Qt's documented
+    // worker pattern), i.e. before ~DSettings returns.
+    auto *backend = new Dtk::Core::QSettingBackend(from_rust_str(path));
+    settings->setBackend(backend);
+    QObject::connect(backend->thread(), &QThread::finished, backend, &QObject::deleteLater);
+    settings->setProperty(key, true);
+    return true;
+}
+DFileWatcher *core_file_watcher_new(rust::Str path) { return new DFileWatcher(from_rust_str(path)); }
 
 // ---- QAction / QMenu ----
 QAction *action_new(rust::Str text, QObject *parent) {

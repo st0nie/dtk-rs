@@ -28,7 +28,7 @@ fn log<T: 'static>() -> (Log<T>, Log<T>) {
 }
 
 /// QAbstractButton::toggled and QWidget::windowTitleChanged on a DTK subclass:
-/// the connector casts with qobject_cast to the declaring Qt class.
+/// the connector casts with dynamic_cast to the declaring Qt class.
 fn inherited_signals() {
     let button = DSwitchButton::new();
     let (sink, seen) = log();

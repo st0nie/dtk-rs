@@ -92,6 +92,73 @@ impl FontSizeType {
         }
     }
 }
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SystemSoundEffect {
+    SseNotifications,
+    SeeScreenshot,
+    SseEmptyTrash,
+    SseSendFileComplete,
+    SseBootUp,
+    SseShutdown,
+    SseLogout,
+    SseWakeUp,
+    SseVolumeChange,
+    SseLowBattery,
+    SsePlugIn,
+    SsePlugOut,
+    SseDeviceAdded,
+    SseDeviceRemoved,
+    SseError,
+}
+impl SystemSoundEffect {
+    fn native_value(self) -> i32 {
+        match self {
+            Self::SseNotifications => {
+                genffi::gen_enum_d_desktop_services_system_sound_effect_s_s_e_notifications()
+            }
+            Self::SeeScreenshot => {
+                genffi::gen_enum_d_desktop_services_system_sound_effect_s_e_e_screenshot()
+            }
+            Self::SseEmptyTrash => {
+                genffi::gen_enum_d_desktop_services_system_sound_effect_s_s_e_empty_trash()
+            }
+            Self::SseSendFileComplete => {
+                genffi::gen_enum_d_desktop_services_system_sound_effect_s_s_e_send_file_complete()
+            }
+            Self::SseBootUp => {
+                genffi::gen_enum_d_desktop_services_system_sound_effect_s_s_e_boot_up()
+            }
+            Self::SseShutdown => {
+                genffi::gen_enum_d_desktop_services_system_sound_effect_s_s_e_shutdown()
+            }
+            Self::SseLogout => {
+                genffi::gen_enum_d_desktop_services_system_sound_effect_s_s_e_logout()
+            }
+            Self::SseWakeUp => {
+                genffi::gen_enum_d_desktop_services_system_sound_effect_s_s_e_wake_up()
+            }
+            Self::SseVolumeChange => {
+                genffi::gen_enum_d_desktop_services_system_sound_effect_s_s_e_volume_change()
+            }
+            Self::SseLowBattery => {
+                genffi::gen_enum_d_desktop_services_system_sound_effect_s_s_e_low_battery()
+            }
+            Self::SsePlugIn => {
+                genffi::gen_enum_d_desktop_services_system_sound_effect_s_s_e_plug_in()
+            }
+            Self::SsePlugOut => {
+                genffi::gen_enum_d_desktop_services_system_sound_effect_s_s_e_plug_out()
+            }
+            Self::SseDeviceAdded => {
+                genffi::gen_enum_d_desktop_services_system_sound_effect_s_s_e_device_added()
+            }
+            Self::SseDeviceRemoved => {
+                genffi::gen_enum_d_desktop_services_system_sound_effect_s_s_e_device_removed()
+            }
+            Self::SseError => genffi::gen_enum_d_desktop_services_system_sound_effect_s_s_e_error(),
+        }
+    }
+}
 object_wrapper!(
     DGuiApplicationHelper,
     genffi::DGuiApplicationHelper,
@@ -194,6 +261,13 @@ impl DGuiApplicationHelper {
             )
         }
     }
+    pub fn fetch_palette(theme: &DPlatformTheme) -> DPalette {
+        crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
+        DPalette::from_raw(unsafe {
+            genffi::gen_d_gui_application_helper_fetch_palette(theme.live_ptr())
+        } as _)
+    }
     pub fn is_x_window_platform() -> bool {
         crate::require_application();
         let _call = dtk_sys::NativeCall::new();
@@ -224,6 +298,25 @@ impl DGuiApplicationHelper {
         crate::require_application();
         let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_gui_application_helper_test_attribute(attribute) }
+    }
+    /// Native ownership: `object_borrow`.
+    /// Evidence: `dtkgui/src/kernel/dguiapplicationhelper.cpp`: returns d->systemTheme = new DPlatformTheme(0, q): child of the helper.
+    pub fn system_theme(&self) -> Option<DPlatformTheme> {
+        let _call = dtk_sys::NativeCall::new();
+        {
+            let ptr = unsafe { genffi::gen_d_gui_application_helper_system_theme(self.live_ptr()) };
+            (!ptr.is_null()).then(|| DPlatformTheme::from_raw(ptr))
+        }
+    }
+    /// Native ownership: `object_borrow`.
+    /// Evidence: `dtkgui/src/kernel/dguiapplicationhelper.cpp`: returns d->appTheme (systemTheme, or a lazily created child DPlatformTheme(windowLeader, systemTheme)).
+    pub fn application_theme(&self) -> Option<DPlatformTheme> {
+        let _call = dtk_sys::NativeCall::new();
+        {
+            let ptr =
+                unsafe { genffi::gen_d_gui_application_helper_application_theme(self.live_ptr()) };
+            (!ptr.is_null()).then(|| DPlatformTheme::from_raw(ptr))
+        }
     }
     pub fn application_palette(&self) -> DPalette {
         let _call = dtk_sys::NativeCall::new();
@@ -666,6 +759,364 @@ impl DFontManager {
     pub fn t11(&self) -> QFont {
         let _call = dtk_sys::NativeCall::new();
         QFont::from_raw(unsafe { genffi::gen_d_font_manager_t11(self.live_ptr()) } as _)
+    }
+}
+
+object_wrapper!(
+    DNativeSettings,
+    genffi::DNativeSettings,
+    genffi::gen_d_native_settings_as_qobject
+);
+impl DNativeSettings {
+    pub fn is_valid(&self) -> bool {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_native_settings_is_valid(self.live_ptr()) }
+    }
+    pub fn get_setting(&self, name: &str) -> QVariant {
+        let _call = dtk_sys::NativeCall::new();
+        QVariant::from_raw(unsafe {
+            genffi::gen_d_native_settings_get_setting(self.live_ptr(), name)
+        } as _)
+    }
+    pub fn set_setting(&self, name: &str, value: &QVariant) {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_native_settings_set_setting(self.live_ptr(), name, value.ptr as _) }
+    }
+}
+
+object_wrapper!(
+    DPlatformTheme,
+    genffi::DPlatformTheme,
+    genffi::gen_d_platform_theme_as_qobject
+);
+impl DPlatformTheme {
+    /// Base-class view of the same native object: a separately guarded,
+    /// borrowed `DNativeSettings` (C++ `static_cast`); never an owner.
+    pub fn as_d_native_settings(&self) -> DNativeSettings {
+        let _call = dtk_sys::NativeCall::new();
+        DNativeSettings::from_raw(unsafe {
+            genffi::gen_d_platform_theme_as_d_native_settings(self.live_ptr())
+        })
+    }
+    pub fn is_valid(&self) -> bool {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_platform_theme_is_valid(self.live_ptr()) }
+    }
+    /// Native ownership: `object_borrow`.
+    /// Evidence: `dtkgui/src/kernel/dplatformtheme.cpp`: returns d->parent, the QObject parent theme; nullptr for the system theme.
+    pub fn parent_theme(&self) -> Option<DPlatformTheme> {
+        let _call = dtk_sys::NativeCall::new();
+        {
+            let ptr = unsafe { genffi::gen_d_platform_theme_parent_theme(self.live_ptr()) };
+            (!ptr.is_null()).then(|| DPlatformTheme::from_raw(ptr))
+        }
+    }
+    pub fn set_fallback_property(&self, fallback: bool) {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_platform_theme_set_fallback_property(self.live_ptr(), fallback) }
+    }
+    pub fn palette(&self) -> DPalette {
+        let _call = dtk_sys::NativeCall::new();
+        DPalette::from_raw(unsafe { genffi::gen_d_platform_theme_palette(self.live_ptr()) } as _)
+    }
+    pub fn set_palette(&self, palette: &DPalette) {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_platform_theme_set_palette(self.live_ptr(), palette.ptr as _) }
+    }
+    pub fn cursor_blink_time(&self) -> i32 {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_platform_theme_cursor_blink_time(self.live_ptr()) }
+    }
+    pub fn cursor_blink_timeout(&self) -> i32 {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_platform_theme_cursor_blink_timeout(self.live_ptr()) }
+    }
+    pub fn cursor_blink(&self) -> bool {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_platform_theme_cursor_blink(self.live_ptr()) }
+    }
+    pub fn double_click_distance(&self) -> i32 {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_platform_theme_double_click_distance(self.live_ptr()) }
+    }
+    pub fn double_click_time(&self) -> i32 {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_platform_theme_double_click_time(self.live_ptr()) }
+    }
+    pub fn dnd_drag_threshold(&self) -> i32 {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_platform_theme_dnd_drag_threshold(self.live_ptr()) }
+    }
+    pub fn window_radius(&self) -> i32 {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_platform_theme_window_radius(self.live_ptr()) }
+    }
+    pub fn window_radius_2(&self, defaultValue: i32) -> i32 {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_platform_theme_window_radius_2(self.live_ptr(), defaultValue) }
+    }
+    pub fn theme_name(&self) -> String {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_platform_theme_theme_name(self.live_ptr()) }
+    }
+    pub fn icon_theme_name(&self) -> String {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_platform_theme_icon_theme_name(self.live_ptr()) }
+    }
+    pub fn sound_theme_name(&self) -> String {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_platform_theme_sound_theme_name(self.live_ptr()) }
+    }
+    pub fn font_name(&self) -> String {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_platform_theme_font_name(self.live_ptr()) }
+    }
+    pub fn mono_font_name(&self) -> String {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_platform_theme_mono_font_name(self.live_ptr()) }
+    }
+    pub fn font_point_size(&self) -> f64 {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_platform_theme_font_point_size(self.live_ptr()) }
+    }
+    pub fn gtk_font_name(&self) -> String {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_platform_theme_gtk_font_name(self.live_ptr()) }
+    }
+    pub fn active_color(&self) -> QColor {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_platform_theme_active_color(self.live_ptr()) }
+    }
+    pub fn dark_active_color(&self) -> QColor {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_platform_theme_dark_active_color(self.live_ptr()) }
+    }
+    pub fn is_valid_palette(&self) -> bool {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_platform_theme_is_valid_palette(self.live_ptr()) }
+    }
+    pub fn size_mode(&self) -> i32 {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_platform_theme_size_mode(self.live_ptr()) }
+    }
+    pub fn scroll_bar_policy(&self) -> i32 {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_platform_theme_scroll_bar_policy(self.live_ptr()) }
+    }
+    pub fn set_cursor_blink_time(&self, cursorBlinkTime: i32) {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe {
+            genffi::gen_d_platform_theme_set_cursor_blink_time(self.live_ptr(), cursorBlinkTime)
+        }
+    }
+    pub fn set_cursor_blink_timeout(&self, cursorBlinkTimeout: i32) {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe {
+            genffi::gen_d_platform_theme_set_cursor_blink_timeout(
+                self.live_ptr(),
+                cursorBlinkTimeout,
+            )
+        }
+    }
+    pub fn set_cursor_blink(&self, cursorBlink: bool) {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_platform_theme_set_cursor_blink(self.live_ptr(), cursorBlink) }
+    }
+    pub fn set_double_click_distance(&self, doubleClickDistance: i32) {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe {
+            genffi::gen_d_platform_theme_set_double_click_distance(
+                self.live_ptr(),
+                doubleClickDistance,
+            )
+        }
+    }
+    pub fn set_double_click_time(&self, doubleClickTime: i32) {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe {
+            genffi::gen_d_platform_theme_set_double_click_time(self.live_ptr(), doubleClickTime)
+        }
+    }
+    pub fn set_dnd_drag_threshold(&self, dndDragThreshold: i32) {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe {
+            genffi::gen_d_platform_theme_set_dnd_drag_threshold(self.live_ptr(), dndDragThreshold)
+        }
+    }
+    pub fn set_theme_name(&self, themeName: &str) {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_platform_theme_set_theme_name(self.live_ptr(), themeName) }
+    }
+    pub fn set_icon_theme_name(&self, iconThemeName: &str) {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_platform_theme_set_icon_theme_name(self.live_ptr(), iconThemeName) }
+    }
+    pub fn set_sound_theme_name(&self, soundThemeName: &str) {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe {
+            genffi::gen_d_platform_theme_set_sound_theme_name(self.live_ptr(), soundThemeName)
+        }
+    }
+    pub fn set_font_name(&self, fontName: &str) {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_platform_theme_set_font_name(self.live_ptr(), fontName) }
+    }
+    pub fn set_mono_font_name(&self, monoFontName: &str) {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_platform_theme_set_mono_font_name(self.live_ptr(), monoFontName) }
+    }
+    pub fn set_font_point_size(&self, fontPointSize: f64) {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_platform_theme_set_font_point_size(self.live_ptr(), fontPointSize) }
+    }
+    pub fn set_gtk_font_name(&self, fontName: &str) {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_platform_theme_set_gtk_font_name(self.live_ptr(), fontName) }
+    }
+    pub fn set_active_color(&self, activeColor: &QColor) {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_platform_theme_set_active_color(self.live_ptr(), activeColor) }
+    }
+    pub fn set_dark_active_color(&self, activeColor: &QColor) {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_platform_theme_set_dark_active_color(self.live_ptr(), activeColor) }
+    }
+    pub fn dots_per_inch(&self, screenName: &str) -> i32 {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_platform_theme_dots_per_inch(self.live_ptr(), screenName) }
+    }
+    pub fn set_dots_per_inch(&self, screenName: &str, dpi: i32) {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_platform_theme_set_dots_per_inch(self.live_ptr(), screenName, dpi) }
+    }
+    pub fn set_window_radius(&self, windowRadius: i32) {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_platform_theme_set_window_radius(self.live_ptr(), windowRadius) }
+    }
+}
+
+object_wrapper!(
+    DWindowManagerHelper,
+    genffi::DWindowManagerHelper,
+    genffi::gen_d_window_manager_helper_as_qobject
+);
+impl DWindowManagerHelper {
+    /// Native ownership: `object_borrow`.
+    /// Evidence: `dtkgui/src/kernel/dwindowmanagerhelper.cpp`: returns Q_GLOBAL_STATIC wmhGlobal (treelandWMHGlobal on Wayland); never deleted by callers.
+    pub fn instance() -> Option<DWindowManagerHelper> {
+        crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
+        {
+            let ptr = unsafe { genffi::gen_d_window_manager_helper_instance() };
+            (!ptr.is_null()).then(|| DWindowManagerHelper::from_raw(ptr))
+        }
+    }
+    pub fn set_wm_class_name(name: &str) {
+        crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_window_manager_helper_set_wm_class_name(name) }
+    }
+    pub fn has_blur_window(&self) -> bool {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_window_manager_helper_has_blur_window(self.live_ptr()) }
+    }
+    pub fn has_composite(&self) -> bool {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_window_manager_helper_has_composite(self.live_ptr()) }
+    }
+    pub fn has_no_titlebar(&self) -> bool {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_window_manager_helper_has_no_titlebar(self.live_ptr()) }
+    }
+    pub fn has_wallpaper_effect(&self) -> bool {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_window_manager_helper_has_wallpaper_effect(self.live_ptr()) }
+    }
+    pub fn window_manager_name_string(&self) -> String {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_window_manager_helper_window_manager_name_string(self.live_ptr()) }
+    }
+    pub fn window_manager_name(&self) -> i32 {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_window_manager_helper_window_manager_name(self.live_ptr()) }
+    }
+    pub fn window_from_point(&self, p: &QPoint) -> u32 {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_window_manager_helper_window_from_point(self.live_ptr(), p) }
+    }
+}
+
+opaque_wrapper!(DDesktopServices, genffi::DDesktopServices);
+impl DDesktopServices {
+    pub fn show_folder(localFilePath: &str, startupId: &str) -> bool {
+        crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_desktop_services_show_folder(localFilePath, startupId) }
+    }
+    pub fn show_folder_2(url: &QUrl, startupId: &str) -> bool {
+        crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_desktop_services_show_folder_2(url, startupId) }
+    }
+    pub fn show_file_item_property(localFilePath: &str, startupId: &str) -> bool {
+        crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_desktop_services_show_file_item_property(localFilePath, startupId) }
+    }
+    pub fn show_file_item_property_2(url: &QUrl, startupId: &str) -> bool {
+        crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_desktop_services_show_file_item_property_2(url, startupId) }
+    }
+    pub fn show_file_item(localFilePath: &str, startupId: &str) -> bool {
+        crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_desktop_services_show_file_item(localFilePath, startupId) }
+    }
+    pub fn show_file_item_2(url: &QUrl, startupId: &str) -> bool {
+        crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_desktop_services_show_file_item_2(url, startupId) }
+    }
+    pub fn trash(localFilePath: &str) -> bool {
+        crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_desktop_services_trash(localFilePath) }
+    }
+    pub fn trash_2(url: &QUrl) -> bool {
+        crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_desktop_services_trash_2(url) }
+    }
+    pub fn play_system_sound_effect(effect: SystemSoundEffect) -> bool {
+        crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_desktop_services_play_system_sound_effect(effect.native_value()) }
+    }
+    pub fn play_system_sound_effect_2(name: &str) -> bool {
+        crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_desktop_services_play_system_sound_effect_2(name) }
+    }
+    pub fn preview_system_sound_effect(effect: SystemSoundEffect) -> bool {
+        crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_desktop_services_preview_system_sound_effect(effect.native_value()) }
+    }
+    pub fn preview_system_sound_effect_2(name: &str) -> bool {
+        crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_desktop_services_preview_system_sound_effect_2(name) }
+    }
+    pub fn get_name_by_effect_type(effect: SystemSoundEffect) -> String {
+        crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_desktop_services_get_name_by_effect_type(effect.native_value()) }
+    }
+    pub fn error_message() -> String {
+        crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_desktop_services_error_message() }
     }
 }
 

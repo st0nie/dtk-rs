@@ -90,5 +90,42 @@ void gen_d_config_reset(DConfig *self, rust::Str key) { self->reset(from_rust_st
 bool gen_d_config_is_read_only(DConfig *self, rust::Str key) { return self->isReadOnly(from_rust_str(key)); }
 rust::String gen_d_config_name(DConfig *self) { return to_rust_string(self->name()); }
 rust::String gen_d_config_subpath(DConfig *self) { return to_rust_string(self->subpath()); }
+DSettings *gen_d_settings_new() { return new DSettings; }
+QObject *gen_d_settings_as_qobject(DSettings *self) { return static_cast<QObject *>(self); }
+rust::Vec<rust::String> gen_d_settings_keys(DSettings *self) { return to_rust_string_vec(self->keys()); }
+QVariant * gen_d_settings_value(DSettings *self, rust::Str key) { return new QVariant(self->value(from_rust_str(key))); }
+rust::Vec<rust::String> gen_d_settings_group_keys(DSettings *self) { return to_rust_string_vec(self->groupKeys()); }
+QVariant * gen_d_settings_get_option(DSettings *self, rust::Str key) { return new QVariant(self->getOption(from_rust_str(key))); }
+void gen_d_settings_sync(DSettings *self) { self->sync(); }
+void gen_d_settings_set_option(DSettings *self, rust::Str key, QVariant * value) { if (!self->option(from_rust_str(key))) return; self->setOption(from_rust_str(key), *value); }
+void gen_d_settings_reset(DSettings *self) { self->reset(); }
+void gen_d_log_manager_register_console_appender() { DLogManager::registerConsoleAppender(); }
+void gen_d_log_manager_register_file_appender() { DLogManager::registerFileAppender(); }
+void gen_d_log_manager_register_journal_appender() { DLogManager::registerJournalAppender(); }
+rust::String gen_d_log_manager_getlog_file_path() { return to_rust_string(DLogManager::getlogFilePath()); }
+void gen_d_log_manager_setlog_file_path(rust::Str logFilePath) { DLogManager::setlogFilePath(from_rust_str(logFilePath)); }
+void gen_d_log_manager_set_log_format(rust::Str format) { DLogManager::setLogFormat(from_rust_str(format)); }
+DFileSystemWatcher *gen_d_file_system_watcher_new() { return new DFileSystemWatcher; }
+QObject *gen_d_file_system_watcher_as_qobject(DFileSystemWatcher *self) { return static_cast<QObject *>(self); }
+bool gen_d_file_system_watcher_add_path(DFileSystemWatcher *self, rust::Str file) { return self->addPath(from_rust_str(file)); }
+rust::Vec<rust::String> gen_d_file_system_watcher_add_paths(DFileSystemWatcher *self, rust::Vec<rust::String> files) { return to_rust_string_vec(self->addPaths(to_qstringlist(std::move(files)))); }
+bool gen_d_file_system_watcher_remove_path(DFileSystemWatcher *self, rust::Str file) { return self->removePath(from_rust_str(file)); }
+rust::Vec<rust::String> gen_d_file_system_watcher_remove_paths(DFileSystemWatcher *self, rust::Vec<rust::String> files) { return to_rust_string_vec(self->removePaths(to_qstringlist(std::move(files)))); }
+rust::Vec<rust::String> gen_d_file_system_watcher_files(DFileSystemWatcher *self) { return to_rust_string_vec(self->files()); }
+rust::Vec<rust::String> gen_d_file_system_watcher_directories(DFileSystemWatcher *self) { return to_rust_string_vec(self->directories()); }
+QObject *gen_d_base_file_watcher_as_qobject(DBaseFileWatcher *self) { return static_cast<QObject *>(self); }
+QUrl gen_d_base_file_watcher_file_url(DBaseFileWatcher *self) { return self->fileUrl(); }
+bool gen_d_base_file_watcher_start_watcher(DBaseFileWatcher *self) { return self->startWatcher(); }
+bool gen_d_base_file_watcher_stop_watcher(DBaseFileWatcher *self) { return self->stopWatcher(); }
+bool gen_d_base_file_watcher_restart_watcher(DBaseFileWatcher *self) { return self->restartWatcher(); }
+void gen_d_base_file_watcher_set_enabled_subfile_watcher(DBaseFileWatcher *self, const QUrl &subfileUrl, bool enabled) { self->setEnabledSubfileWatcher(subfileUrl, enabled); }
+QObject *gen_d_file_watcher_as_qobject(DFileWatcher *self) { return static_cast<QObject *>(self); }
+DBaseFileWatcher *gen_d_file_watcher_as_d_base_file_watcher(DFileWatcher *self) { return static_cast<DBaseFileWatcher *>(self); }
+DFileWatcherManager *gen_d_file_watcher_manager_new() { return new DFileWatcherManager; }
+QObject *gen_d_file_watcher_manager_as_qobject(DFileWatcherManager *self) { return static_cast<QObject *>(self); }
+DFileWatcher * gen_d_file_watcher_manager_add(DFileWatcherManager *self, rust::Str filePath) { return const_cast<DFileWatcher *>(self->add(from_rust_str(filePath))); }
+void gen_d_file_watcher_manager_remove(DFileWatcherManager *self, rust::Str filePath) { self->remove(from_rust_str(filePath)); }
+void gen_d_file_watcher_manager_remove_all(DFileWatcherManager *self) { self->removeAll(); }
+rust::Vec<rust::String> gen_d_file_watcher_manager_watched_files(DFileWatcherManager *self) { return to_rust_string_vec(self->watchedFiles()); }
 
 } // namespace dtkrs

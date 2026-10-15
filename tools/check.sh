@@ -51,7 +51,7 @@ for profile in debug release; do
         esac
         printf '\n-- %s: %s --\n' "$profile" "$example"
         case "$example" in
-            core_application_selfcheck|core_paths_selfcheck)
+            core_application_selfcheck|core_paths_selfcheck|core_extras_selfcheck)
                 env -u DISPLAY -u WAYLAND_DISPLAY -u QT_QPA_PLATFORM \
                     timeout 90 "$binary" "${args[@]}" ;;
             *)

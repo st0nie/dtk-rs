@@ -24,6 +24,21 @@ int32_t gen_enum_d_font_manager_size_type_t8() { return static_cast<int32_t>(DFo
 int32_t gen_enum_d_font_manager_size_type_t9() { return static_cast<int32_t>(DFontManager::SizeType::T9); }
 int32_t gen_enum_d_font_manager_size_type_t10() { return static_cast<int32_t>(DFontManager::SizeType::T10); }
 int32_t gen_enum_d_font_manager_size_type_t11() { return static_cast<int32_t>(DFontManager::SizeType::T11); }
+int32_t gen_enum_d_desktop_services_system_sound_effect_s_s_e_notifications() { return static_cast<int32_t>(DDesktopServices::SystemSoundEffect::SSE_Notifications); }
+int32_t gen_enum_d_desktop_services_system_sound_effect_s_e_e_screenshot() { return static_cast<int32_t>(DDesktopServices::SystemSoundEffect::SEE_Screenshot); }
+int32_t gen_enum_d_desktop_services_system_sound_effect_s_s_e_empty_trash() { return static_cast<int32_t>(DDesktopServices::SystemSoundEffect::SSE_EmptyTrash); }
+int32_t gen_enum_d_desktop_services_system_sound_effect_s_s_e_send_file_complete() { return static_cast<int32_t>(DDesktopServices::SystemSoundEffect::SSE_SendFileComplete); }
+int32_t gen_enum_d_desktop_services_system_sound_effect_s_s_e_boot_up() { return static_cast<int32_t>(DDesktopServices::SystemSoundEffect::SSE_BootUp); }
+int32_t gen_enum_d_desktop_services_system_sound_effect_s_s_e_shutdown() { return static_cast<int32_t>(DDesktopServices::SystemSoundEffect::SSE_Shutdown); }
+int32_t gen_enum_d_desktop_services_system_sound_effect_s_s_e_logout() { return static_cast<int32_t>(DDesktopServices::SystemSoundEffect::SSE_Logout); }
+int32_t gen_enum_d_desktop_services_system_sound_effect_s_s_e_wake_up() { return static_cast<int32_t>(DDesktopServices::SystemSoundEffect::SSE_WakeUp); }
+int32_t gen_enum_d_desktop_services_system_sound_effect_s_s_e_volume_change() { return static_cast<int32_t>(DDesktopServices::SystemSoundEffect::SSE_VolumeChange); }
+int32_t gen_enum_d_desktop_services_system_sound_effect_s_s_e_low_battery() { return static_cast<int32_t>(DDesktopServices::SystemSoundEffect::SSE_LowBattery); }
+int32_t gen_enum_d_desktop_services_system_sound_effect_s_s_e_plug_in() { return static_cast<int32_t>(DDesktopServices::SystemSoundEffect::SSE_PlugIn); }
+int32_t gen_enum_d_desktop_services_system_sound_effect_s_s_e_plug_out() { return static_cast<int32_t>(DDesktopServices::SystemSoundEffect::SSE_PlugOut); }
+int32_t gen_enum_d_desktop_services_system_sound_effect_s_s_e_device_added() { return static_cast<int32_t>(DDesktopServices::SystemSoundEffect::SSE_DeviceAdded); }
+int32_t gen_enum_d_desktop_services_system_sound_effect_s_s_e_device_removed() { return static_cast<int32_t>(DDesktopServices::SystemSoundEffect::SSE_DeviceRemoved); }
+int32_t gen_enum_d_desktop_services_system_sound_effect_s_s_e_error() { return static_cast<int32_t>(DDesktopServices::SystemSoundEffect::SSE_Error); }
 QObject *gen_d_gui_application_helper_as_qobject(DGuiApplicationHelper *self) { return static_cast<QObject *>(self); }
 DGuiApplicationHelper * gen_d_gui_application_helper_instance() { return const_cast<DGuiApplicationHelper *>(DGuiApplicationHelper::instance()); }
 QColor gen_d_gui_application_helper_adjust_color(const QColor &base, int8_t hueFloat, int8_t saturationFloat, int8_t lightnessFloat, int8_t redFloat, int8_t greenFloat, int8_t blueFloat, int8_t alphaFloat) { return DGuiApplicationHelper::adjustColor(base, hueFloat, saturationFloat, lightnessFloat, redFloat, greenFloat, blueFloat, alphaFloat); }
@@ -32,11 +47,14 @@ QColor gen_d_gui_application_helper_blend_color(const QColor &substrate, const Q
 DPalette * gen_d_gui_application_helper_standard_palette(int32_t type_) { return new DPalette(DGuiApplicationHelper::standardPalette(static_cast<DGuiApplicationHelper::ColorType>(type_))); }
 void gen_d_gui_application_helper_generate_palette_color(DPalette * base, int32_t role, int32_t type_) { DGuiApplicationHelper::generatePaletteColor(*base, static_cast<DPalette::ColorType>(role), static_cast<DGuiApplicationHelper::ColorType>(type_)); }
 void gen_d_gui_application_helper_generate_palette(DPalette * base, int32_t type_) { DGuiApplicationHelper::generatePalette(*base, static_cast<DGuiApplicationHelper::ColorType>(type_)); }
+DPalette * gen_d_gui_application_helper_fetch_palette(DPlatformTheme * theme) { return new DPalette(DGuiApplicationHelper::fetchPalette(theme)); }
 bool gen_d_gui_application_helper_is_x_window_platform() { return DGuiApplicationHelper::isXWindowPlatform(); }
 bool gen_d_gui_application_helper_is_tablet_environment() { return DGuiApplicationHelper::isTabletEnvironment(); }
 bool gen_d_gui_application_helper_is_special_effects_environment() { return DGuiApplicationHelper::isSpecialEffectsEnvironment(); }
 void gen_d_gui_application_helper_set_attribute(int32_t attribute, bool enable) { DGuiApplicationHelper::setAttribute(static_cast<DGuiApplicationHelper::Attribute>(attribute), enable); }
 bool gen_d_gui_application_helper_test_attribute(int32_t attribute) { return DGuiApplicationHelper::testAttribute(static_cast<DGuiApplicationHelper::Attribute>(attribute)); }
+DPlatformTheme * gen_d_gui_application_helper_system_theme(DGuiApplicationHelper *self) { return const_cast<DPlatformTheme *>(self->systemTheme()); }
+DPlatformTheme * gen_d_gui_application_helper_application_theme(DGuiApplicationHelper *self) { return const_cast<DPlatformTheme *>(self->applicationTheme()); }
 DPalette * gen_d_gui_application_helper_application_palette(DGuiApplicationHelper *self) { return new DPalette(self->applicationPalette()); }
 DPalette * gen_d_gui_application_helper_application_palette_2(DGuiApplicationHelper *self, int32_t paletteType) { return new DPalette(self->applicationPalette(static_cast<DGuiApplicationHelper::ColorType>(paletteType))); }
 void gen_d_gui_application_helper_set_application_palette(DGuiApplicationHelper *self, DPalette * palette) { self->setApplicationPalette(*palette); }
@@ -116,5 +134,78 @@ QFont * gen_d_font_manager_t8(DFontManager *self) { return new QFont(self->t8())
 QFont * gen_d_font_manager_t9(DFontManager *self) { return new QFont(self->t9()); }
 QFont * gen_d_font_manager_t10(DFontManager *self) { return new QFont(self->t10()); }
 QFont * gen_d_font_manager_t11(DFontManager *self) { return new QFont(self->t11()); }
+QObject *gen_d_native_settings_as_qobject(DNativeSettings *self) { return static_cast<QObject *>(self); }
+bool gen_d_native_settings_is_valid(DNativeSettings *self) { return self->isValid(); }
+QVariant * gen_d_native_settings_get_setting(DNativeSettings *self, rust::Str name) { return new QVariant(self->getSetting(QByteArray(from_rust_str(name).toUtf8()))); }
+void gen_d_native_settings_set_setting(DNativeSettings *self, rust::Str name, QVariant * value) { self->setSetting(QByteArray(from_rust_str(name).toUtf8()), *value); }
+QObject *gen_d_platform_theme_as_qobject(DPlatformTheme *self) { return static_cast<QObject *>(self); }
+DNativeSettings *gen_d_platform_theme_as_d_native_settings(DPlatformTheme *self) { return static_cast<DNativeSettings *>(self); }
+bool gen_d_platform_theme_is_valid(DPlatformTheme *self) { return self->isValid(); }
+DPlatformTheme * gen_d_platform_theme_parent_theme(DPlatformTheme *self) { return const_cast<DPlatformTheme *>(self->parentTheme()); }
+void gen_d_platform_theme_set_fallback_property(DPlatformTheme *self, bool fallback) { self->setFallbackProperty(fallback); }
+DPalette * gen_d_platform_theme_palette(DPlatformTheme *self) { return new DPalette(self->palette()); }
+void gen_d_platform_theme_set_palette(DPlatformTheme *self, DPalette * palette) { self->setPalette(*palette); }
+int32_t gen_d_platform_theme_cursor_blink_time(DPlatformTheme *self) { return self->cursorBlinkTime(); }
+int32_t gen_d_platform_theme_cursor_blink_timeout(DPlatformTheme *self) { return self->cursorBlinkTimeout(); }
+bool gen_d_platform_theme_cursor_blink(DPlatformTheme *self) { return self->cursorBlink(); }
+int32_t gen_d_platform_theme_double_click_distance(DPlatformTheme *self) { return self->doubleClickDistance(); }
+int32_t gen_d_platform_theme_double_click_time(DPlatformTheme *self) { return self->doubleClickTime(); }
+int32_t gen_d_platform_theme_dnd_drag_threshold(DPlatformTheme *self) { return self->dndDragThreshold(); }
+int32_t gen_d_platform_theme_window_radius(DPlatformTheme *self) { return self->windowRadius(); }
+int32_t gen_d_platform_theme_window_radius_2(DPlatformTheme *self, int32_t defaultValue) { return self->windowRadius(defaultValue); }
+rust::String gen_d_platform_theme_theme_name(DPlatformTheme *self) { return to_rust_string(QString(self->themeName())); }
+rust::String gen_d_platform_theme_icon_theme_name(DPlatformTheme *self) { return to_rust_string(QString(self->iconThemeName())); }
+rust::String gen_d_platform_theme_sound_theme_name(DPlatformTheme *self) { return to_rust_string(QString(self->soundThemeName())); }
+rust::String gen_d_platform_theme_font_name(DPlatformTheme *self) { return to_rust_string(QString(self->fontName())); }
+rust::String gen_d_platform_theme_mono_font_name(DPlatformTheme *self) { return to_rust_string(QString(self->monoFontName())); }
+double gen_d_platform_theme_font_point_size(DPlatformTheme *self) { return self->fontPointSize(); }
+rust::String gen_d_platform_theme_gtk_font_name(DPlatformTheme *self) { return to_rust_string(QString(self->gtkFontName())); }
+QColor gen_d_platform_theme_active_color(DPlatformTheme *self) { return self->activeColor(); }
+QColor gen_d_platform_theme_dark_active_color(DPlatformTheme *self) { return self->darkActiveColor(); }
+bool gen_d_platform_theme_is_valid_palette(DPlatformTheme *self) { return self->isValidPalette(); }
+int32_t gen_d_platform_theme_size_mode(DPlatformTheme *self) { return self->sizeMode(); }
+int32_t gen_d_platform_theme_scroll_bar_policy(DPlatformTheme *self) { return self->scrollBarPolicy(); }
+void gen_d_platform_theme_set_cursor_blink_time(DPlatformTheme *self, int32_t cursorBlinkTime) { self->setCursorBlinkTime(cursorBlinkTime); }
+void gen_d_platform_theme_set_cursor_blink_timeout(DPlatformTheme *self, int32_t cursorBlinkTimeout) { self->setCursorBlinkTimeout(cursorBlinkTimeout); }
+void gen_d_platform_theme_set_cursor_blink(DPlatformTheme *self, bool cursorBlink) { self->setCursorBlink(cursorBlink); }
+void gen_d_platform_theme_set_double_click_distance(DPlatformTheme *self, int32_t doubleClickDistance) { self->setDoubleClickDistance(doubleClickDistance); }
+void gen_d_platform_theme_set_double_click_time(DPlatformTheme *self, int32_t doubleClickTime) { self->setDoubleClickTime(doubleClickTime); }
+void gen_d_platform_theme_set_dnd_drag_threshold(DPlatformTheme *self, int32_t dndDragThreshold) { self->setDndDragThreshold(dndDragThreshold); }
+void gen_d_platform_theme_set_theme_name(DPlatformTheme *self, rust::Str themeName) { self->setThemeName(QByteArray(from_rust_str(themeName).toUtf8())); }
+void gen_d_platform_theme_set_icon_theme_name(DPlatformTheme *self, rust::Str iconThemeName) { self->setIconThemeName(QByteArray(from_rust_str(iconThemeName).toUtf8())); }
+void gen_d_platform_theme_set_sound_theme_name(DPlatformTheme *self, rust::Str soundThemeName) { self->setSoundThemeName(QByteArray(from_rust_str(soundThemeName).toUtf8())); }
+void gen_d_platform_theme_set_font_name(DPlatformTheme *self, rust::Str fontName) { self->setFontName(QByteArray(from_rust_str(fontName).toUtf8())); }
+void gen_d_platform_theme_set_mono_font_name(DPlatformTheme *self, rust::Str monoFontName) { self->setMonoFontName(QByteArray(from_rust_str(monoFontName).toUtf8())); }
+void gen_d_platform_theme_set_font_point_size(DPlatformTheme *self, double fontPointSize) { self->setFontPointSize(fontPointSize); }
+void gen_d_platform_theme_set_gtk_font_name(DPlatformTheme *self, rust::Str fontName) { self->setGtkFontName(QByteArray(from_rust_str(fontName).toUtf8())); }
+void gen_d_platform_theme_set_active_color(DPlatformTheme *self, const QColor &activeColor) { self->setActiveColor(activeColor); }
+void gen_d_platform_theme_set_dark_active_color(DPlatformTheme *self, const QColor &activeColor) { self->setDarkActiveColor(activeColor); }
+int32_t gen_d_platform_theme_dots_per_inch(DPlatformTheme *self, rust::Str screenName) { return self->dotsPerInch(from_rust_str(screenName)); }
+void gen_d_platform_theme_set_dots_per_inch(DPlatformTheme *self, rust::Str screenName, int32_t dpi) { self->setDotsPerInch(from_rust_str(screenName), dpi); }
+void gen_d_platform_theme_set_window_radius(DPlatformTheme *self, int32_t windowRadius) { self->setWindowRadius(windowRadius); }
+QObject *gen_d_window_manager_helper_as_qobject(DWindowManagerHelper *self) { return static_cast<QObject *>(self); }
+DWindowManagerHelper * gen_d_window_manager_helper_instance() { return const_cast<DWindowManagerHelper *>(DWindowManagerHelper::instance()); }
+void gen_d_window_manager_helper_set_wm_class_name(rust::Str name) { DWindowManagerHelper::setWmClassName(QByteArray(from_rust_str(name).toUtf8())); }
+bool gen_d_window_manager_helper_has_blur_window(DWindowManagerHelper *self) { return self->hasBlurWindow(); }
+bool gen_d_window_manager_helper_has_composite(DWindowManagerHelper *self) { return self->hasComposite(); }
+bool gen_d_window_manager_helper_has_no_titlebar(DWindowManagerHelper *self) { return self->hasNoTitlebar(); }
+bool gen_d_window_manager_helper_has_wallpaper_effect(DWindowManagerHelper *self) { return self->hasWallpaperEffect(); }
+rust::String gen_d_window_manager_helper_window_manager_name_string(DWindowManagerHelper *self) { return to_rust_string(self->windowManagerNameString()); }
+int32_t gen_d_window_manager_helper_window_manager_name(DWindowManagerHelper *self) { return static_cast<int32_t>(self->windowManagerName()); }
+uint32_t gen_d_window_manager_helper_window_from_point(DWindowManagerHelper *self, const QPoint &p) { return self->windowFromPoint(p); }
+bool gen_d_desktop_services_show_folder(rust::Str localFilePath, rust::Str startupId) { return DDesktopServices::showFolder(from_rust_str(localFilePath), from_rust_str(startupId)); }
+bool gen_d_desktop_services_show_folder_2(const QUrl &url, rust::Str startupId) { return DDesktopServices::showFolder(url, from_rust_str(startupId)); }
+bool gen_d_desktop_services_show_file_item_property(rust::Str localFilePath, rust::Str startupId) { return DDesktopServices::showFileItemProperty(from_rust_str(localFilePath), from_rust_str(startupId)); }
+bool gen_d_desktop_services_show_file_item_property_2(const QUrl &url, rust::Str startupId) { return DDesktopServices::showFileItemProperty(url, from_rust_str(startupId)); }
+bool gen_d_desktop_services_show_file_item(rust::Str localFilePath, rust::Str startupId) { return DDesktopServices::showFileItem(from_rust_str(localFilePath), from_rust_str(startupId)); }
+bool gen_d_desktop_services_show_file_item_2(const QUrl &url, rust::Str startupId) { return DDesktopServices::showFileItem(url, from_rust_str(startupId)); }
+bool gen_d_desktop_services_trash(rust::Str localFilePath) { return DDesktopServices::trash(from_rust_str(localFilePath)); }
+bool gen_d_desktop_services_trash_2(const QUrl &url) { return DDesktopServices::trash(url); }
+bool gen_d_desktop_services_play_system_sound_effect(int32_t effect) { return DDesktopServices::playSystemSoundEffect(static_cast<DDesktopServices::SystemSoundEffect>(effect)); }
+bool gen_d_desktop_services_play_system_sound_effect_2(rust::Str name) { return DDesktopServices::playSystemSoundEffect(from_rust_str(name)); }
+bool gen_d_desktop_services_preview_system_sound_effect(int32_t effect) { return DDesktopServices::previewSystemSoundEffect(static_cast<DDesktopServices::SystemSoundEffect>(effect)); }
+bool gen_d_desktop_services_preview_system_sound_effect_2(rust::Str name) { return DDesktopServices::previewSystemSoundEffect(from_rust_str(name)); }
+rust::String gen_d_desktop_services_get_name_by_effect_type(int32_t effect) { return to_rust_string(DDesktopServices::getNameByEffectType(static_cast<DDesktopServices::SystemSoundEffect>(effect))); }
+rust::String gen_d_desktop_services_error_message() { return to_rust_string(DDesktopServices::errorMessage()); }
 
 } // namespace dtkrs

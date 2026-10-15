@@ -62,7 +62,7 @@ INPUTS["shortcut_new", "parent"] = "borrow widget owner; new native shortcut sco
 RECEIVER_TYPES = {
     "QObject", "QWidget", "DApplication", "DMainWindow", "DTitlebar", "DLabel", "DPushButton",
     "QAction", "QMenu", "QMessageBox", "QLayout", "QAbstractItemModel", "QStandardItemModel",
-    "QTableWidget", "QTimer", "QSocketNotifier", "QStyledItemDelegate",
+    "QTableWidget", "QTimer", "QSocketNotifier", "QStyledItemDelegate", "DSettings",
 }
 VALUE_TYPES = {
     "QVariant", "QVariantList", "QFont", "QPalette", "DPalette", "QPixmap", "QImage",

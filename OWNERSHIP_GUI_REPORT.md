@@ -18,11 +18,15 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DGuiApplicationHelper::generatePaletteColor` Qt value inputs | `DPalette * base` | exclusive mutable value borrow; no QObject ownership transfer | explicit value mapping; `dguiapplicationhelper.h` native value/reference signature |
 | `DGuiApplicationHelper::generatePalette` | `()` | copied scalar / no result | shim conversion; `dguiapplicationhelper.h` |
 | `DGuiApplicationHelper::generatePalette` Qt value inputs | `DPalette * base` | exclusive mutable value borrow; no QObject ownership transfer | explicit value mapping; `dguiapplicationhelper.h` native value/reference signature |
+| `DGuiApplicationHelper::fetchPalette` | `*mut DPalette` | owned heap copy | shim conversion; `dguiapplicationhelper.h` |
+| `DGuiApplicationHelper::fetchPalette` parameters | `DPlatformTheme*` | borrow | native `dguiapplicationhelper.h` implementation: dtkgui dguiapplicationhelper.cpp: reads theme->themeName()/fetchPalette during the call; not retained |
 | `DGuiApplicationHelper::isXWindowPlatform` | `bool` | copied scalar / no result | shim conversion; `dguiapplicationhelper.h` |
 | `DGuiApplicationHelper::isTabletEnvironment` | `bool` | copied scalar / no result | shim conversion; `dguiapplicationhelper.h` |
 | `DGuiApplicationHelper::isSpecialEffectsEnvironment` | `bool` | copied scalar / no result | shim conversion; `dguiapplicationhelper.h` |
 | `DGuiApplicationHelper::setAttribute` | `()` | copied scalar / no result | shim conversion; `dguiapplicationhelper.h` |
 | `DGuiApplicationHelper::testAttribute` | `bool` | copied scalar / no result | shim conversion; `dguiapplicationhelper.h` |
+| `DGuiApplicationHelper::systemTheme` | `DPlatformTheme*` | `object_borrow` | `dtkgui/src/kernel/dguiapplicationhelper.cpp`: returns d->systemTheme = new DPlatformTheme(0, q): child of the helper |
+| `DGuiApplicationHelper::applicationTheme` | `DPlatformTheme*` | `object_borrow` | `dtkgui/src/kernel/dguiapplicationhelper.cpp`: returns d->appTheme (systemTheme, or a lazily created child DPlatformTheme(windowLeader, systemTheme)) |
 | `DGuiApplicationHelper::applicationPalette` | `*mut DPalette` | owned heap copy | shim conversion; `dguiapplicationhelper.h` |
 | `DGuiApplicationHelper::applicationPalette` | `*mut DPalette` | owned heap copy | shim conversion; `dguiapplicationhelper.h` |
 | `DGuiApplicationHelper::setApplicationPalette` | `()` | copied scalar / no result | shim conversion; `dguiapplicationhelper.h` |
@@ -129,3 +133,81 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DFontManager::t9` | `*mut QFont` | owned heap copy | shim conversion; `dfontmanager.h` |
 | `DFontManager::t10` | `*mut QFont` | owned heap copy | shim conversion; `dfontmanager.h` |
 | `DFontManager::t11` | `*mut QFont` | owned heap copy | shim conversion; `dfontmanager.h` |
+| `DNativeSettings::isValid` | `bool` | copied scalar / no result | shim conversion; `dnativesettings.h` |
+| `DNativeSettings::getSetting` | `*mut QVariant` | owned heap copy | shim conversion; `dnativesettings.h` |
+| `DNativeSettings::setSetting` | `()` | copied scalar / no result | shim conversion; `dnativesettings.h` |
+| `DNativeSettings::setSetting` Qt value inputs | `QVariant * value` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dnativesettings.h` native value/reference signature |
+| `DPlatformTheme::isValid` | `bool` | copied scalar / no result | shim conversion; `dplatformtheme.h` |
+| `DPlatformTheme::parentTheme` | `DPlatformTheme*` | `object_borrow` | `dtkgui/src/kernel/dplatformtheme.cpp`: returns d->parent, the QObject parent theme; nullptr for the system theme |
+| `DPlatformTheme::setFallbackProperty` | `()` | copied scalar / no result | shim conversion; `dplatformtheme.h` |
+| `DPlatformTheme::palette` | `*mut DPalette` | owned heap copy | shim conversion; `dplatformtheme.h` |
+| `DPlatformTheme::setPalette` | `()` | copied scalar / no result | shim conversion; `dplatformtheme.h` |
+| `DPlatformTheme::setPalette` Qt value inputs | `DPalette * palette` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dplatformtheme.h` native value/reference signature |
+| `DPlatformTheme::cursorBlinkTime` | `i32` | copied scalar / no result | shim conversion; `dplatformtheme.h` |
+| `DPlatformTheme::cursorBlinkTimeout` | `i32` | copied scalar / no result | shim conversion; `dplatformtheme.h` |
+| `DPlatformTheme::cursorBlink` | `bool` | copied scalar / no result | shim conversion; `dplatformtheme.h` |
+| `DPlatformTheme::doubleClickDistance` | `i32` | copied scalar / no result | shim conversion; `dplatformtheme.h` |
+| `DPlatformTheme::doubleClickTime` | `i32` | copied scalar / no result | shim conversion; `dplatformtheme.h` |
+| `DPlatformTheme::dndDragThreshold` | `i32` | copied scalar / no result | shim conversion; `dplatformtheme.h` |
+| `DPlatformTheme::windowRadius` | `i32` | copied scalar / no result | shim conversion; `dplatformtheme.h` |
+| `DPlatformTheme::windowRadius` | `i32` | copied scalar / no result | shim conversion; `dplatformtheme.h` |
+| `DPlatformTheme::themeName` | `String` | owned Rust strings/container | shim conversion; `dplatformtheme.h` |
+| `DPlatformTheme::iconThemeName` | `String` | owned Rust strings/container | shim conversion; `dplatformtheme.h` |
+| `DPlatformTheme::soundThemeName` | `String` | owned Rust strings/container | shim conversion; `dplatformtheme.h` |
+| `DPlatformTheme::fontName` | `String` | owned Rust strings/container | shim conversion; `dplatformtheme.h` |
+| `DPlatformTheme::monoFontName` | `String` | owned Rust strings/container | shim conversion; `dplatformtheme.h` |
+| `DPlatformTheme::fontPointSize` | `f64` | copied scalar / no result | shim conversion; `dplatformtheme.h` |
+| `DPlatformTheme::gtkFontName` | `String` | owned Rust strings/container | shim conversion; `dplatformtheme.h` |
+| `DPlatformTheme::activeColor` | `QColor` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dplatformtheme.h` |
+| `DPlatformTheme::darkActiveColor` | `QColor` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dplatformtheme.h` |
+| `DPlatformTheme::isValidPalette` | `bool` | copied scalar / no result | shim conversion; `dplatformtheme.h` |
+| `DPlatformTheme::sizeMode` | `i32` | copied scalar / no result | shim conversion; `dplatformtheme.h` |
+| `DPlatformTheme::scrollBarPolicy` | `i32` | copied scalar / no result | shim conversion; `dplatformtheme.h` |
+| `DPlatformTheme::setCursorBlinkTime` | `()` | copied scalar / no result | shim conversion; `dplatformtheme.h` |
+| `DPlatformTheme::setCursorBlinkTimeout` | `()` | copied scalar / no result | shim conversion; `dplatformtheme.h` |
+| `DPlatformTheme::setCursorBlink` | `()` | copied scalar / no result | shim conversion; `dplatformtheme.h` |
+| `DPlatformTheme::setDoubleClickDistance` | `()` | copied scalar / no result | shim conversion; `dplatformtheme.h` |
+| `DPlatformTheme::setDoubleClickTime` | `()` | copied scalar / no result | shim conversion; `dplatformtheme.h` |
+| `DPlatformTheme::setDndDragThreshold` | `()` | copied scalar / no result | shim conversion; `dplatformtheme.h` |
+| `DPlatformTheme::setThemeName` | `()` | copied scalar / no result | shim conversion; `dplatformtheme.h` |
+| `DPlatformTheme::setIconThemeName` | `()` | copied scalar / no result | shim conversion; `dplatformtheme.h` |
+| `DPlatformTheme::setSoundThemeName` | `()` | copied scalar / no result | shim conversion; `dplatformtheme.h` |
+| `DPlatformTheme::setFontName` | `()` | copied scalar / no result | shim conversion; `dplatformtheme.h` |
+| `DPlatformTheme::setMonoFontName` | `()` | copied scalar / no result | shim conversion; `dplatformtheme.h` |
+| `DPlatformTheme::setFontPointSize` | `()` | copied scalar / no result | shim conversion; `dplatformtheme.h` |
+| `DPlatformTheme::setGtkFontName` | `()` | copied scalar / no result | shim conversion; `dplatformtheme.h` |
+| `DPlatformTheme::setActiveColor` | `()` | copied scalar / no result | shim conversion; `dplatformtheme.h` |
+| `DPlatformTheme::setActiveColor` Qt value inputs | `const QColor &activeColor` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dplatformtheme.h` native value/reference signature |
+| `DPlatformTheme::setDarkActiveColor` | `()` | copied scalar / no result | shim conversion; `dplatformtheme.h` |
+| `DPlatformTheme::setDarkActiveColor` Qt value inputs | `const QColor &activeColor` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dplatformtheme.h` native value/reference signature |
+| `DPlatformTheme::dotsPerInch` | `i32` | copied scalar / no result | shim conversion; `dplatformtheme.h` |
+| `DPlatformTheme::setDotsPerInch` | `()` | copied scalar / no result | shim conversion; `dplatformtheme.h` |
+| `DPlatformTheme::setWindowRadius` | `()` | copied scalar / no result | shim conversion; `dplatformtheme.h` |
+| `DWindowManagerHelper::instance` | `DWindowManagerHelper*` | `object_borrow` | `dtkgui/src/kernel/dwindowmanagerhelper.cpp`: returns Q_GLOBAL_STATIC wmhGlobal (treelandWMHGlobal on Wayland); never deleted by callers |
+| `DWindowManagerHelper::setWmClassName` | `()` | copied scalar / no result | shim conversion; `dwindowmanagerhelper.h` |
+| `DWindowManagerHelper::hasBlurWindow` | `bool` | copied scalar / no result | shim conversion; `dwindowmanagerhelper.h` |
+| `DWindowManagerHelper::hasComposite` | `bool` | copied scalar / no result | shim conversion; `dwindowmanagerhelper.h` |
+| `DWindowManagerHelper::hasNoTitlebar` | `bool` | copied scalar / no result | shim conversion; `dwindowmanagerhelper.h` |
+| `DWindowManagerHelper::hasWallpaperEffect` | `bool` | copied scalar / no result | shim conversion; `dwindowmanagerhelper.h` |
+| `DWindowManagerHelper::windowManagerNameString` | `String` | owned Rust strings/container | shim conversion; `dwindowmanagerhelper.h` |
+| `DWindowManagerHelper::windowManagerName` | `i32` | copied scalar / no result | shim conversion; `dwindowmanagerhelper.h` |
+| `DWindowManagerHelper::windowFromPoint` | `u32` | copied scalar / no result | shim conversion; `dwindowmanagerhelper.h` |
+| `DWindowManagerHelper::windowFromPoint` Qt value inputs | `const QPoint &p` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dwindowmanagerhelper.h` native value/reference signature |
+| `DDesktopServices::showFolder` | `bool` | copied scalar / no result | shim conversion; `ddesktopservices.h` |
+| `DDesktopServices::showFolder` | `bool` | copied scalar / no result | shim conversion; `ddesktopservices.h` |
+| `DDesktopServices::showFolder` Qt value inputs | `const QUrl &url` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `ddesktopservices.h` native value/reference signature |
+| `DDesktopServices::showFileItemProperty` | `bool` | copied scalar / no result | shim conversion; `ddesktopservices.h` |
+| `DDesktopServices::showFileItemProperty` | `bool` | copied scalar / no result | shim conversion; `ddesktopservices.h` |
+| `DDesktopServices::showFileItemProperty` Qt value inputs | `const QUrl &url` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `ddesktopservices.h` native value/reference signature |
+| `DDesktopServices::showFileItem` | `bool` | copied scalar / no result | shim conversion; `ddesktopservices.h` |
+| `DDesktopServices::showFileItem` | `bool` | copied scalar / no result | shim conversion; `ddesktopservices.h` |
+| `DDesktopServices::showFileItem` Qt value inputs | `const QUrl &url` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `ddesktopservices.h` native value/reference signature |
+| `DDesktopServices::trash` | `bool` | copied scalar / no result | shim conversion; `ddesktopservices.h` |
+| `DDesktopServices::trash` | `bool` | copied scalar / no result | shim conversion; `ddesktopservices.h` |
+| `DDesktopServices::trash` Qt value inputs | `const QUrl &url` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `ddesktopservices.h` native value/reference signature |
+| `DDesktopServices::playSystemSoundEffect` | `bool` | copied scalar / no result | shim conversion; `ddesktopservices.h` |
+| `DDesktopServices::playSystemSoundEffect` | `bool` | copied scalar / no result | shim conversion; `ddesktopservices.h` |
+| `DDesktopServices::previewSystemSoundEffect` | `bool` | copied scalar / no result | shim conversion; `ddesktopservices.h` |
+| `DDesktopServices::previewSystemSoundEffect` | `bool` | copied scalar / no result | shim conversion; `ddesktopservices.h` |
+| `DDesktopServices::getNameByEffectType` | `String` | owned Rust strings/container | shim conversion; `ddesktopservices.h` |
+| `DDesktopServices::errorMessage` | `String` | owned Rust strings/container | shim conversion; `ddesktopservices.h` |

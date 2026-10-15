@@ -48,6 +48,12 @@ pub mod genffi {
         type DStandardPaths;
         type DSysInfo;
         type DConfig;
+        type DSettings;
+        type DLogManager;
+        type DFileSystemWatcher;
+        type DBaseFileWatcher;
+        type DFileWatcher;
+        type DFileWatcherManager;
         fn gen_enum_d_standard_paths_x_d_g_data_home() -> i32;
         fn gen_enum_d_standard_paths_x_d_g_config_home() -> i32;
         fn gen_enum_d_standard_paths_x_d_g_cache_home() -> i32;
@@ -149,5 +155,74 @@ pub mod genffi {
         unsafe fn gen_d_config_is_read_only(self_: *mut DConfig, key: &str) -> bool;
         unsafe fn gen_d_config_name(self_: *mut DConfig) -> String;
         unsafe fn gen_d_config_subpath(self_: *mut DConfig) -> String;
+        unsafe fn gen_d_settings_new() -> *mut DSettings;
+        unsafe fn gen_d_settings_as_qobject(self_: *mut DSettings) -> *mut QObject;
+        unsafe fn gen_d_settings_keys(self_: *mut DSettings) -> Vec<String>;
+        unsafe fn gen_d_settings_value(self_: *mut DSettings, key: &str) -> *mut QVariant;
+        unsafe fn gen_d_settings_group_keys(self_: *mut DSettings) -> Vec<String>;
+        unsafe fn gen_d_settings_get_option(self_: *mut DSettings, key: &str) -> *mut QVariant;
+        unsafe fn gen_d_settings_sync(self_: *mut DSettings);
+        unsafe fn gen_d_settings_set_option(self_: *mut DSettings, key: &str, value: *mut QVariant);
+        unsafe fn gen_d_settings_reset(self_: *mut DSettings);
+        unsafe fn gen_d_log_manager_register_console_appender();
+        unsafe fn gen_d_log_manager_register_file_appender();
+        unsafe fn gen_d_log_manager_register_journal_appender();
+        unsafe fn gen_d_log_manager_getlog_file_path() -> String;
+        unsafe fn gen_d_log_manager_setlog_file_path(logFilePath: &str);
+        unsafe fn gen_d_log_manager_set_log_format(format: &str);
+        unsafe fn gen_d_file_system_watcher_new() -> *mut DFileSystemWatcher;
+        unsafe fn gen_d_file_system_watcher_as_qobject(
+            self_: *mut DFileSystemWatcher,
+        ) -> *mut QObject;
+        unsafe fn gen_d_file_system_watcher_add_path(
+            self_: *mut DFileSystemWatcher,
+            file: &str,
+        ) -> bool;
+        unsafe fn gen_d_file_system_watcher_add_paths(
+            self_: *mut DFileSystemWatcher,
+            files: Vec<String>,
+        ) -> Vec<String>;
+        unsafe fn gen_d_file_system_watcher_remove_path(
+            self_: *mut DFileSystemWatcher,
+            file: &str,
+        ) -> bool;
+        unsafe fn gen_d_file_system_watcher_remove_paths(
+            self_: *mut DFileSystemWatcher,
+            files: Vec<String>,
+        ) -> Vec<String>;
+        unsafe fn gen_d_file_system_watcher_files(self_: *mut DFileSystemWatcher) -> Vec<String>;
+        unsafe fn gen_d_file_system_watcher_directories(
+            self_: *mut DFileSystemWatcher,
+        ) -> Vec<String>;
+        unsafe fn gen_d_base_file_watcher_as_qobject(self_: *mut DBaseFileWatcher) -> *mut QObject;
+        unsafe fn gen_d_base_file_watcher_file_url(self_: *mut DBaseFileWatcher) -> QUrl;
+        unsafe fn gen_d_base_file_watcher_start_watcher(self_: *mut DBaseFileWatcher) -> bool;
+        unsafe fn gen_d_base_file_watcher_stop_watcher(self_: *mut DBaseFileWatcher) -> bool;
+        unsafe fn gen_d_base_file_watcher_restart_watcher(self_: *mut DBaseFileWatcher) -> bool;
+        unsafe fn gen_d_base_file_watcher_set_enabled_subfile_watcher(
+            self_: *mut DBaseFileWatcher,
+            subfileUrl: &QUrl,
+            enabled: bool,
+        );
+        unsafe fn gen_d_file_watcher_as_qobject(self_: *mut DFileWatcher) -> *mut QObject;
+        unsafe fn gen_d_file_watcher_as_d_base_file_watcher(
+            self_: *mut DFileWatcher,
+        ) -> *mut DBaseFileWatcher;
+        unsafe fn gen_d_file_watcher_manager_new() -> *mut DFileWatcherManager;
+        unsafe fn gen_d_file_watcher_manager_as_qobject(
+            self_: *mut DFileWatcherManager,
+        ) -> *mut QObject;
+        unsafe fn gen_d_file_watcher_manager_add(
+            self_: *mut DFileWatcherManager,
+            filePath: &str,
+        ) -> *mut DFileWatcher;
+        unsafe fn gen_d_file_watcher_manager_remove(
+            self_: *mut DFileWatcherManager,
+            filePath: &str,
+        );
+        unsafe fn gen_d_file_watcher_manager_remove_all(self_: *mut DFileWatcherManager);
+        unsafe fn gen_d_file_watcher_manager_watched_files(
+            self_: *mut DFileWatcherManager,
+        ) -> Vec<String>;
     }
 }

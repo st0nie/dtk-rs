@@ -234,9 +234,14 @@ a native lambda (no `DtkRelay` QObject per connection).
   DTK5-only and Qt-deprecated regions are excluded.
 - Each declaring class is imported **once** with only its own signals. The
   connector receives the wrapper's live `QObject*` and casts it with
-  `qobject_cast<const Declaring *>`; a null result returns no connection
+  `dynamic_cast<const Declaring *>`; a null result returns no connection
   (`Connection::new` panics). This replaces per-subclass redeclaration and is
   correct for secondary bases (`DObject` mixins), unlike a Rust pointer cast.
+  `qobject_cast` is not used: on a real X11 session `DNativeSettings` (and so
+  `DPlatformTheme`) installs a dynamic `QMetaObject` whose superclass chain
+  does not contain the static one, so `qobject_cast` returned null there
+  (observed with `gui_platform_selfcheck` on `DISPLAY=:0`, not offscreen).
+  DTK exports typeinfo for these classes (`nm -DC libdtk6gui.so`).
 - Every wrapper gets `on_*` for its class and all ancestors; a more-derived
   signal with the same name hides the base one. Overloaded signal names are
   skipped (the member pointer would be ambiguous).

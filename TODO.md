@@ -192,12 +192,28 @@ Known gaps in dtk-rs, roughly in priority order.
       wrapper, copied on return, deleted on Drop; non-const `DPalette&` inputs
       require `&mut DPalette`. Remaining raw integer enum inputs (`set_mode`,
       `set_attribute`) require `unsafe` pending validation.
-- [ ] Expand DGui bindings beyond `DGuiApplicationHelper`/`DImageHandler`/
-      `DFontManager`/`DPalette` (`/usr/include/dtk6/DGui`): DCI icons,
-      platform themes, desktop services etc. `DImageHandler::rotateImage(QImage&)` uses `&mut`
+- [x] DGui: `DPlatformTheme`/`DNativeSettings` (helper-owned borrowed
+      views, `system_theme`/`application_theme`), `DWindowManagerHelper`
+      (Q_GLOBAL_STATIC borrow), `DDesktopServices` (typed `SystemSoundEffect`,
+      requires the GUI app because natives create a static QDBusInterface)
+      (`gui_platform_selfcheck`).
+- [ ] Expand DGui further (`/usr/include/dtk6/DGui`): DCI icon players and
+      palettes, DIconTheme, DFileDrag, DRegionMonitor, DForeignWindow
+      (`QWindow*`/`QList<T*>` mappings needed). `DImageHandler::rotateImage(QImage&)` uses `&mut`
       to preserve the C++ non-const reference requirement.
-- [ ] Expand DCore bindings beyond `DStandardPaths`/`DSysInfo`/`DConfig`
-      (`/usr/include/dtk6/DCore`): DSettings, DLog, file watchers etc.
+- [x] DCore: `DSettings` (`from_json`/`from_json_file` caller-owned
+      factories, `set_file_backend` with native worker join and backend
+      deletion on its thread, null-option `setOption` rejected), `DLogManager`,
+      `DFileSystemWatcher`, `DFileWatcher`(+`DBaseFileWatcher` base view),
+      `DFileWatcherManager` (`add` returns a borrowed child) —
+      `core_extras_selfcheck`. DTK's `DFileWatcher` shares one process-global
+      `Q_GLOBAL_STATIC` inotify watcher whose QSocketNotifier stays bound to the
+      FIRST application's event dispatcher: it only delivers in the first
+      application scope of a process (owned `DFileSystemWatcher` works in
+      every scope).
+- [ ] Expand DCore further (`/usr/include/dtk6/DCore`): DSettingsOption/
+      DSettingsGroup views (`QPointer<T>` returns), DDesktopEntry, DTrashManager,
+      DRecentManager, D-Bus helpers etc.
       DConfig, QTimer and QSocketNotifier support scoped, headless QCoreApplication; other
       QtCore QObject classes still need individual lifecycle/thread audits.
       `DConfig::globalThread()` is a native-owned borrowed QThread that must

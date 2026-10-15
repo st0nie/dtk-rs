@@ -213,6 +213,7 @@ pub mod genffi {
         unsafe fn gen_d_about_dialog_new() -> *mut DAboutDialog;
         unsafe fn gen_d_about_dialog_as_qobject(self_: *mut DAboutDialog) -> *mut QObject;
         unsafe fn gen_d_about_dialog_as_widget(self_: *mut DAboutDialog) -> *mut QWidget;
+        unsafe fn gen_d_about_dialog_as_d_dialog(self_: *mut DAboutDialog) -> *mut DDialog;
         unsafe fn gen_d_about_dialog_window_title(self_: *mut DAboutDialog) -> String;
         unsafe fn gen_d_about_dialog_product_name(self_: *mut DAboutDialog) -> String;
         unsafe fn gen_d_about_dialog_version(self_: *mut DAboutDialog) -> String;
@@ -409,6 +410,8 @@ pub mod genffi {
         unsafe fn gen_d_arrow_line_drawer_new() -> *mut DArrowLineDrawer;
         unsafe fn gen_d_arrow_line_drawer_as_qobject(self_: *mut DArrowLineDrawer) -> *mut QObject;
         unsafe fn gen_d_arrow_line_drawer_as_widget(self_: *mut DArrowLineDrawer) -> *mut QWidget;
+        unsafe fn gen_d_arrow_line_drawer_as_d_drawer(self_: *mut DArrowLineDrawer)
+        -> *mut DDrawer;
         unsafe fn gen_d_arrow_line_drawer_set_title(self_: *mut DArrowLineDrawer, title: &str);
         unsafe fn gen_d_arrow_line_drawer_set_expand(self_: *mut DArrowLineDrawer, value: bool);
         unsafe fn gen_d_arrow_rectangle_as_qobject(self_: *mut DArrowRectangle) -> *mut QObject;
@@ -599,6 +602,9 @@ pub mod genffi {
         unsafe fn gen_d_blur_effect_with_border_widget_as_widget(
             self_: *mut DBlurEffectWithBorderWidget,
         ) -> *mut QWidget;
+        unsafe fn gen_d_blur_effect_with_border_widget_as_d_blur_effect_widget(
+            self_: *mut DBlurEffectWithBorderWidget,
+        ) -> *mut DBlurEffectWidget;
         unsafe fn gen_d_bounce_animation_new() -> *mut DBounceAnimation;
         unsafe fn gen_d_bounce_animation_as_qobject(self_: *mut DBounceAnimation) -> *mut QObject;
         unsafe fn gen_d_bounce_animation_set_ani_mation_enable(
@@ -613,9 +619,11 @@ pub mod genffi {
         unsafe fn gen_d_h_box_widget_new() -> *mut DHBoxWidget;
         unsafe fn gen_d_h_box_widget_as_qobject(self_: *mut DHBoxWidget) -> *mut QObject;
         unsafe fn gen_d_h_box_widget_as_widget(self_: *mut DHBoxWidget) -> *mut QWidget;
+        unsafe fn gen_d_h_box_widget_as_d_box_widget(self_: *mut DHBoxWidget) -> *mut DBoxWidget;
         unsafe fn gen_d_v_box_widget_new() -> *mut DVBoxWidget;
         unsafe fn gen_d_v_box_widget_as_qobject(self_: *mut DVBoxWidget) -> *mut QObject;
         unsafe fn gen_d_v_box_widget_as_widget(self_: *mut DVBoxWidget) -> *mut QWidget;
+        unsafe fn gen_d_v_box_widget_as_d_box_widget(self_: *mut DVBoxWidget) -> *mut DBoxWidget;
         unsafe fn gen_d_button_box_button_as_qobject(self_: *mut DButtonBoxButton) -> *mut QObject;
         unsafe fn gen_d_button_box_button_as_widget(self_: *mut DButtonBoxButton) -> *mut QWidget;
         unsafe fn gen_d_button_box_button_set_icon(self_: *mut DButtonBoxButton, icon: *mut QIcon);
@@ -751,6 +759,7 @@ pub mod genffi {
         unsafe fn gen_d_dialog_new() -> *mut DDialog;
         unsafe fn gen_d_dialog_as_qobject(self_: *mut DDialog) -> *mut QObject;
         unsafe fn gen_d_dialog_as_widget(self_: *mut DDialog) -> *mut QWidget;
+        unsafe fn gen_d_dialog_as_d_abstract_dialog(self_: *mut DDialog) -> *mut DAbstractDialog;
         unsafe fn gen_d_dialog_get_button_index_by_text(self_: *mut DDialog, text: &str) -> i32;
         unsafe fn gen_d_dialog_button_count(self_: *mut DDialog) -> i32;
         unsafe fn gen_d_dialog_content_count(self_: *mut DDialog) -> i32;
@@ -843,9 +852,13 @@ pub mod genffi {
         unsafe fn gen_d_dialog_close_button_as_widget(
             self_: *mut DDialogCloseButton,
         ) -> *mut QWidget;
+        unsafe fn gen_d_dialog_close_button_as_d_icon_button(
+            self_: *mut DDialogCloseButton,
+        ) -> *mut DIconButton;
         unsafe fn gen_d_drawer_new() -> *mut DDrawer;
         unsafe fn gen_d_drawer_as_qobject(self_: *mut DDrawer) -> *mut QObject;
         unsafe fn gen_d_drawer_as_widget(self_: *mut DDrawer) -> *mut QWidget;
+        unsafe fn gen_d_drawer_as_d_frame(self_: *mut DDrawer) -> *mut DFrame;
         unsafe fn gen_d_drawer_set_header(self_: *mut DDrawer, header: *mut QWidget);
         unsafe fn gen_d_drawer_set_content(
             self_: *mut DDrawer,
@@ -899,6 +912,9 @@ pub mod genffi {
         unsafe fn gen_d_feature_display_dialog_as_widget(
             self_: *mut DFeatureDisplayDialog,
         ) -> *mut QWidget;
+        unsafe fn gen_d_feature_display_dialog_as_d_dialog(
+            self_: *mut DFeatureDisplayDialog,
+        ) -> *mut DDialog;
         unsafe fn gen_d_feature_display_dialog_set_title(
             self_: *mut DFeatureDisplayDialog,
             title: &str,
@@ -925,6 +941,9 @@ pub mod genffi {
         unsafe fn gen_d_file_chooser_edit_new() -> *mut DFileChooserEdit;
         unsafe fn gen_d_file_chooser_edit_as_qobject(self_: *mut DFileChooserEdit) -> *mut QObject;
         unsafe fn gen_d_file_chooser_edit_as_widget(self_: *mut DFileChooserEdit) -> *mut QWidget;
+        unsafe fn gen_d_file_chooser_edit_as_d_line_edit(
+            self_: *mut DFileChooserEdit,
+        ) -> *mut DLineEdit;
         unsafe fn gen_d_file_chooser_edit_set_name_filters(
             self_: *mut DFileChooserEdit,
             filters: Vec<String>,
@@ -969,9 +988,15 @@ pub mod genffi {
         unsafe fn gen_d_floating_button_new() -> *mut DFloatingButton;
         unsafe fn gen_d_floating_button_as_qobject(self_: *mut DFloatingButton) -> *mut QObject;
         unsafe fn gen_d_floating_button_as_widget(self_: *mut DFloatingButton) -> *mut QWidget;
+        unsafe fn gen_d_floating_button_as_d_icon_button(
+            self_: *mut DFloatingButton,
+        ) -> *mut DIconButton;
         unsafe fn gen_d_floating_message_new() -> *mut DFloatingMessage;
         unsafe fn gen_d_floating_message_as_qobject(self_: *mut DFloatingMessage) -> *mut QObject;
         unsafe fn gen_d_floating_message_as_widget(self_: *mut DFloatingMessage) -> *mut QWidget;
+        unsafe fn gen_d_floating_message_as_d_floating_widget(
+            self_: *mut DFloatingMessage,
+        ) -> *mut DFloatingWidget;
         unsafe fn gen_d_floating_message_message_type(self_: *mut DFloatingMessage) -> i32;
         unsafe fn gen_d_floating_message_set_icon(self_: *mut DFloatingMessage, ico: *mut QIcon);
         unsafe fn gen_d_floating_message_set_icon_2(
@@ -1046,6 +1071,7 @@ pub mod genffi {
         unsafe fn gen_d_font_combo_box_new() -> *mut DFontComboBox;
         unsafe fn gen_d_font_combo_box_as_qobject(self_: *mut DFontComboBox) -> *mut QObject;
         unsafe fn gen_d_font_combo_box_as_widget(self_: *mut DFontComboBox) -> *mut QWidget;
+        unsafe fn gen_d_font_combo_box_as_d_combo_box(self_: *mut DFontComboBox) -> *mut DComboBox;
         unsafe fn gen_d_font_combo_box_current_font(self_: *mut DFontComboBox) -> *mut QFont;
         unsafe fn gen_d_font_combo_box_size_hint(self_: *mut DFontComboBox) -> QSize;
         unsafe fn gen_d_font_combo_box_set_current_font(self_: *mut DFontComboBox, f: *mut QFont);
@@ -1116,6 +1142,7 @@ pub mod genffi {
         unsafe fn gen_d_header_line_new() -> *mut DHeaderLine;
         unsafe fn gen_d_header_line_as_qobject(self_: *mut DHeaderLine) -> *mut QObject;
         unsafe fn gen_d_header_line_as_widget(self_: *mut DHeaderLine) -> *mut QWidget;
+        unsafe fn gen_d_header_line_as_d_base_line(self_: *mut DHeaderLine) -> *mut DBaseLine;
         unsafe fn gen_d_header_line_set_title(self_: *mut DHeaderLine, title: &str);
         unsafe fn gen_d_header_line_set_content(self_: *mut DHeaderLine, content: *mut QWidget);
         unsafe fn gen_d_header_line_title(self_: *mut DHeaderLine) -> String;
@@ -1178,6 +1205,7 @@ pub mod genffi {
         unsafe fn gen_d_input_dialog_new() -> *mut DInputDialog;
         unsafe fn gen_d_input_dialog_as_qobject(self_: *mut DInputDialog) -> *mut QObject;
         unsafe fn gen_d_input_dialog_as_widget(self_: *mut DInputDialog) -> *mut QWidget;
+        unsafe fn gen_d_input_dialog_as_d_dialog(self_: *mut DInputDialog) -> *mut DDialog;
         unsafe fn gen_d_input_dialog_set_input_mode(self_: *mut DInputDialog, mode: i32);
         unsafe fn gen_d_input_dialog_input_mode(self_: *mut DInputDialog) -> i32;
         unsafe fn gen_d_input_dialog_set_text_value(self_: *mut DInputDialog, text: &str);
@@ -1266,6 +1294,9 @@ pub mod genffi {
         unsafe fn gen_d_license_dialog_new() -> *mut DLicenseDialog;
         unsafe fn gen_d_license_dialog_as_qobject(self_: *mut DLicenseDialog) -> *mut QObject;
         unsafe fn gen_d_license_dialog_as_widget(self_: *mut DLicenseDialog) -> *mut QWidget;
+        unsafe fn gen_d_license_dialog_as_d_abstract_dialog(
+            self_: *mut DLicenseDialog,
+        ) -> *mut DAbstractDialog;
         unsafe fn gen_d_license_dialog_set_content(self_: *mut DLicenseDialog, content: &str);
         unsafe fn gen_d_license_dialog_set_file(self_: *mut DLicenseDialog, file: &str);
         unsafe fn gen_d_license_dialog_set_license_search_path(
@@ -1519,6 +1550,7 @@ pub mod genffi {
         unsafe fn gen_d_password_edit_new() -> *mut DPasswordEdit;
         unsafe fn gen_d_password_edit_as_qobject(self_: *mut DPasswordEdit) -> *mut QObject;
         unsafe fn gen_d_password_edit_as_widget(self_: *mut DPasswordEdit) -> *mut QWidget;
+        unsafe fn gen_d_password_edit_as_d_line_edit(self_: *mut DPasswordEdit) -> *mut DLineEdit;
         unsafe fn gen_d_password_edit_is_echo_mode(self_: *mut DPasswordEdit) -> bool;
         unsafe fn gen_d_password_edit_set_echo_mode(self_: *mut DPasswordEdit, mode: i32);
         unsafe fn gen_d_password_edit_set_echo_button_is_visible(
@@ -1618,6 +1650,9 @@ pub mod genffi {
         unsafe fn gen_d_print_preview_dialog_as_widget(
             self_: *mut DPrintPreviewDialog,
         ) -> *mut QWidget;
+        unsafe fn gen_d_print_preview_dialog_as_d_dialog(
+            self_: *mut DPrintPreviewDialog,
+        ) -> *mut DDialog;
         unsafe fn gen_d_print_preview_dialog_set_plugin_mime_data(mimeData: *mut QVariant);
         unsafe fn gen_d_print_preview_dialog_plugin_mime_data() -> *mut QVariant;
         unsafe fn gen_d_print_preview_dialog_set_current_plugin(pluginName: &str) -> bool;
@@ -1714,6 +1749,9 @@ pub mod genffi {
         unsafe fn gen_d_print_preview_widget_as_widget(
             self_: *mut DPrintPreviewWidget,
         ) -> *mut QWidget;
+        unsafe fn gen_d_print_preview_widget_as_d_frame(
+            self_: *mut DPrintPreviewWidget,
+        ) -> *mut DFrame;
         unsafe fn gen_d_print_preview_widget_set_visible(
             self_: *mut DPrintPreviewWidget,
             visible: bool,
@@ -1855,10 +1893,14 @@ pub mod genffi {
         unsafe fn gen_d_search_combo_box_new() -> *mut DSearchComboBox;
         unsafe fn gen_d_search_combo_box_as_qobject(self_: *mut DSearchComboBox) -> *mut QObject;
         unsafe fn gen_d_search_combo_box_as_widget(self_: *mut DSearchComboBox) -> *mut QWidget;
+        unsafe fn gen_d_search_combo_box_as_d_combo_box(
+            self_: *mut DSearchComboBox,
+        ) -> *mut DComboBox;
         unsafe fn gen_d_search_combo_box_set_editable(self_: *mut DSearchComboBox, editable: bool);
         unsafe fn gen_d_search_edit_new() -> *mut DSearchEdit;
         unsafe fn gen_d_search_edit_as_qobject(self_: *mut DSearchEdit) -> *mut QObject;
         unsafe fn gen_d_search_edit_as_widget(self_: *mut DSearchEdit) -> *mut QWidget;
+        unsafe fn gen_d_search_edit_as_d_line_edit(self_: *mut DSearchEdit) -> *mut DLineEdit;
         unsafe fn gen_d_search_edit_set_place_holder(self_: *mut DSearchEdit, placeHolder: &str);
         unsafe fn gen_d_search_edit_place_holder(self_: *mut DSearchEdit) -> String;
         unsafe fn gen_d_search_edit_clear(self_: *mut DSearchEdit);
@@ -1869,6 +1911,9 @@ pub mod genffi {
         unsafe fn gen_d_settings_dialog_new() -> *mut DSettingsDialog;
         unsafe fn gen_d_settings_dialog_as_qobject(self_: *mut DSettingsDialog) -> *mut QObject;
         unsafe fn gen_d_settings_dialog_as_widget(self_: *mut DSettingsDialog) -> *mut QWidget;
+        unsafe fn gen_d_settings_dialog_as_d_abstract_dialog(
+            self_: *mut DSettingsDialog,
+        ) -> *mut DAbstractDialog;
         unsafe fn gen_d_settings_dialog_widget_factory(
             self_: *mut DSettingsDialog,
         ) -> *mut DSettingsWidgetFactory;
@@ -2031,6 +2076,9 @@ pub mod genffi {
         unsafe fn gen_d_slide_stack_widget_transition_as_qobject(
             self_: *mut DSlideStackWidgetTransition,
         ) -> *mut QObject;
+        unsafe fn gen_d_slide_stack_widget_transition_as_d_abstract_stack_widget_transition(
+            self_: *mut DSlideStackWidgetTransition,
+        ) -> *mut DAbstractStackWidgetTransition;
         unsafe fn gen_d_stack_widget_new() -> *mut DStackWidget;
         unsafe fn gen_d_stack_widget_as_qobject(self_: *mut DStackWidget) -> *mut QObject;
         unsafe fn gen_d_stack_widget_as_widget(self_: *mut DStackWidget) -> *mut QWidget;
@@ -2298,6 +2346,9 @@ pub mod genffi {
         ) -> *mut QObject;
         unsafe fn gen_d_switch_header_line_as_widget(self_: *mut DSwitchHeaderLine)
         -> *mut QWidget;
+        unsafe fn gen_d_switch_header_line_as_d_header_line(
+            self_: *mut DSwitchHeaderLine,
+        ) -> *mut DHeaderLine;
         unsafe fn gen_d_switch_header_line_set_expand(self_: *mut DSwitchHeaderLine, value: bool);
         unsafe fn gen_d_switch_line_expand_new() -> *mut DSwitchLineExpand;
         unsafe fn gen_d_switch_line_expand_as_qobject(
@@ -2305,6 +2356,9 @@ pub mod genffi {
         ) -> *mut QObject;
         unsafe fn gen_d_switch_line_expand_as_widget(self_: *mut DSwitchLineExpand)
         -> *mut QWidget;
+        unsafe fn gen_d_switch_line_expand_as_d_drawer(
+            self_: *mut DSwitchLineExpand,
+        ) -> *mut DDrawer;
         unsafe fn gen_d_switch_line_expand_set_title(self_: *mut DSwitchLineExpand, title: &str);
         unsafe fn gen_d_switch_line_expand_set_expand(self_: *mut DSwitchLineExpand, value: bool);
         unsafe fn gen_d_switch_line_expand_header(self_: *mut DSwitchLineExpand) -> *mut DBaseLine;
@@ -2404,6 +2458,9 @@ pub mod genffi {
         unsafe fn gen_d_tablet_window_option_button_as_widget(
             self_: *mut DTabletWindowOptionButton,
         ) -> *mut QWidget;
+        unsafe fn gen_d_tablet_window_option_button_as_d_icon_button(
+            self_: *mut DTabletWindowOptionButton,
+        ) -> *mut DIconButton;
         unsafe fn gen_d_tablet_window_option_button_size_hint(
             self_: *mut DTabletWindowOptionButton,
         ) -> QSize;
@@ -2446,12 +2503,18 @@ pub mod genffi {
         unsafe fn gen_d_title_bar_tool_interface_as_qobject(
             self_: *mut DTitleBarToolInterface,
         ) -> *mut QObject;
+        unsafe fn gen_d_title_bar_tool_interface_as_d_titlebar_tool_base_interface(
+            self_: *mut DTitleBarToolInterface,
+        ) -> *mut DTitlebarToolBaseInterface;
         unsafe fn gen_d_title_bar_tool_interface_create_view(
             self_: *mut DTitleBarToolInterface,
         ) -> *mut QWidget;
         unsafe fn gen_d_title_bar_spacer_interface_as_qobject(
             self_: *mut DTitleBarSpacerInterface,
         ) -> *mut QObject;
+        unsafe fn gen_d_title_bar_spacer_interface_as_d_titlebar_tool_base_interface(
+            self_: *mut DTitleBarSpacerInterface,
+        ) -> *mut DTitlebarToolBaseInterface;
         unsafe fn gen_d_title_bar_spacer_interface_create_placeholder_view(
             self_: *mut DTitleBarSpacerInterface,
         ) -> *mut QWidget;
@@ -2468,6 +2531,7 @@ pub mod genffi {
         unsafe fn gen_d_tool_button_alignment(self_: *mut DToolButton) -> i32;
         unsafe fn gen_d_tool_tip_as_qobject(self_: *mut DToolTip) -> *mut QObject;
         unsafe fn gen_d_tool_tip_as_widget(self_: *mut DToolTip) -> *mut QWidget;
+        unsafe fn gen_d_tool_tip_as_d_tip_label(self_: *mut DToolTip) -> *mut DTipLabel;
         unsafe fn gen_d_tool_tip_set_tool_tip_text_format(format: i32);
         unsafe fn gen_d_tool_tip_tool_tip_text_format() -> i32;
         unsafe fn gen_d_tool_tip_set_tool_tip_show_mode(widget: *mut QWidget, mode: i32);
@@ -2542,10 +2606,16 @@ pub mod genffi {
         unsafe fn gen_d_window_close_button_as_widget(
             self_: *mut DWindowCloseButton,
         ) -> *mut QWidget;
+        unsafe fn gen_d_window_close_button_as_d_icon_button(
+            self_: *mut DWindowCloseButton,
+        ) -> *mut DIconButton;
         unsafe fn gen_d_window_close_button_size_hint(self_: *mut DWindowCloseButton) -> QSize;
         unsafe fn gen_d_window_max_button_new() -> *mut DWindowMaxButton;
         unsafe fn gen_d_window_max_button_as_qobject(self_: *mut DWindowMaxButton) -> *mut QObject;
         unsafe fn gen_d_window_max_button_as_widget(self_: *mut DWindowMaxButton) -> *mut QWidget;
+        unsafe fn gen_d_window_max_button_as_d_icon_button(
+            self_: *mut DWindowMaxButton,
+        ) -> *mut DIconButton;
         unsafe fn gen_d_window_max_button_is_maximized(self_: *mut DWindowMaxButton) -> bool;
         unsafe fn gen_d_window_max_button_size_hint(self_: *mut DWindowMaxButton) -> QSize;
         unsafe fn gen_d_window_max_button_set_maximized(
@@ -2555,6 +2625,9 @@ pub mod genffi {
         unsafe fn gen_d_window_min_button_new() -> *mut DWindowMinButton;
         unsafe fn gen_d_window_min_button_as_qobject(self_: *mut DWindowMinButton) -> *mut QObject;
         unsafe fn gen_d_window_min_button_as_widget(self_: *mut DWindowMinButton) -> *mut QWidget;
+        unsafe fn gen_d_window_min_button_as_d_icon_button(
+            self_: *mut DWindowMinButton,
+        ) -> *mut DIconButton;
         unsafe fn gen_d_window_min_button_size_hint(self_: *mut DWindowMinButton) -> QSize;
         unsafe fn gen_d_window_option_button_new() -> *mut DWindowOptionButton;
         unsafe fn gen_d_window_option_button_as_qobject(
@@ -2563,6 +2636,9 @@ pub mod genffi {
         unsafe fn gen_d_window_option_button_as_widget(
             self_: *mut DWindowOptionButton,
         ) -> *mut QWidget;
+        unsafe fn gen_d_window_option_button_as_d_icon_button(
+            self_: *mut DWindowOptionButton,
+        ) -> *mut DIconButton;
         unsafe fn gen_d_window_option_button_size_hint(self_: *mut DWindowOptionButton) -> QSize;
         unsafe fn gen_d_window_quit_full_button_new() -> *mut DWindowQuitFullButton;
         unsafe fn gen_d_window_quit_full_button_as_qobject(
@@ -2571,6 +2647,9 @@ pub mod genffi {
         unsafe fn gen_d_window_quit_full_button_as_widget(
             self_: *mut DWindowQuitFullButton,
         ) -> *mut QWidget;
+        unsafe fn gen_d_window_quit_full_button_as_d_icon_button(
+            self_: *mut DWindowQuitFullButton,
+        ) -> *mut DIconButton;
         unsafe fn gen_d_window_quit_full_button_size_hint(
             self_: *mut DWindowQuitFullButton,
         ) -> QSize;

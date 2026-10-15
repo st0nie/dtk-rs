@@ -12,7 +12,7 @@ Three layers plus a header-scanning generator:
 │ dtk/            Rust-facing API (serialized native borrows)   │
 │   src/lib.rs      hand-written: core classes, macros, signals  │
 │   src/widgets.rs  GENERATED: 146 DTK Widget classes             │
-│   src/core.rs/gui.rs GENERATED: DCore/DGui pilot classes      │
+│   src/core.rs/gui.rs GENERATED: selected DCore/DGui classes   │
 │   src/signals.rs  Connection + connect_typed (CXX-Qt)          │
 │   src/signals_gen.rs GENERATED typed on_* for every wrapper    │
 │   ↑ guarded QObject views, non-owning, !Send                   │
@@ -210,9 +210,18 @@ selected value types cross bridges via `as _` pointer casts. Sound because
 cxx opaque types are zero-sized Rust structs never dereferenced or moved in
 Rust, and each bridge names the same C++ type.
 The audit is recorded in tools/gen.py comments. DCore/DGui generation is
-currently **pilot scope**: `DStandardPaths`, `DSysInfo`, `DConfig`,
-`DGuiApplicationHelper`, `DImageHandler` and `DFontManager` are scanned (see
-`GEN_CORE_REPORT.md` / `GEN_GUI_REPORT.md`). DStandardPaths and DSysInfo
+still a **selected-class scope**: DCore `DStandardPaths`, `DSysInfo`,
+`DConfig`, `DSettings`, `DLogManager`, `DFileSystemWatcher`,
+`DBaseFileWatcher`, `DFileWatcher`, `DFileWatcherManager`; DGui
+`DGuiApplicationHelper`, `DImageHandler`, `DFontManager`, `DNativeSettings`,
+`DPlatformTheme`, `DWindowManagerHelper`, `DDesktopServices` (see
+`GEN_CORE_REPORT.md` / `GEN_GUI_REPORT.md`). Generated subclasses get
+`as_<base>()` views of direct DTK bases of the same domain (C++ `static_cast`,
+separately guarded borrow). `DSettings::from_json*` (parentless `new`) and
+`DFileWatcher::new` are hand-written owners; `set_file_backend` installs DTK's
+`QSettingBackend`, which `setBackend` moves to a private QThread joined on
+`DSettings::destroyed`; the binding deletes the backend on that thread at
+`QThread::finished`, before `~DSettings` returns. DStandardPaths and DSysInfo
 provide static functions usable without QApplication. DConfig has an audited
 `create`/`createGeneric` ownership transfer, exposed as hand-written
 `Option<Owned<DConfig>>` factories on either a scoped QCoreApplication or

@@ -3,6 +3,7 @@
 #include <QtCore/QObject>
 #include <QtCore/QPersistentModelIndex>
 #include <QtCore/QModelIndex>
+#include <QtCore/QVariant>
 #include <QtCore/qabstractitemmodel.h>
 #include <QtCore/qtimer.h>
 #include <QtGui/QFont>
@@ -37,6 +38,7 @@
 #include <darrowbutton.h>
 #include <darrowrectangle.h>
 #include <dbackgroundgroup.h>
+#include <dbasefilewatcher.h>
 #include <dblureffectwidget.h>
 #include <dboxwidget.h>
 #include <dcircleprogress.h>
@@ -47,6 +49,8 @@
 #include <ddrawer.h>
 #include <denhancedwidget.h>
 #include <dfilechooseredit.h>
+#include <dfilesystemwatcher.h>
+#include <dfilewatchermanager.h>
 #include <dfloatingmessage.h>
 #include <dflowlayout.h>
 #include <dfontcombobox.h>
@@ -62,12 +66,16 @@
 #include <dloadingindicator.h>
 #include <dmainwindow.h>
 #include <dmpriscontrol.h>
+#include <dnativesettings.h>
+#include <dpalette.h>
 #include <dpasswordedit.h>
 #include <dpicturesequenceview.h>
 #include <dplatformhandle.h>
+#include <dplatformtheme.h>
 #include <dprintpickcolorwidget.h>
 #include <dprintpreviewwidget.h>
 #include <dsearchedit.h>
+#include <dsettings.h>
 #include <dshortcutedit.h>
 #include <dsimplelistview.h>
 #include <dslider.h>
@@ -80,6 +88,7 @@
 #include <dtitlebar.h>
 #include <dtitlebarsettings.h>
 #include <dwaterprogress.h>
+#include <dwindowmanagerhelper.h>
 #include <dwindowmaxbutton.h>
 #include "rust/cxx.h"
 #include "cxx-qt-lib/qstring.h"
@@ -97,88 +106,97 @@
 #include "cxx-qt-lib/qurl.h"
 
 namespace dtkrs_cxxqt {
+inline ::Dtk::Gui::DPalette *clone_DPalette(const ::Dtk::Gui::DPalette &value) { return new ::Dtk::Gui::DPalette(value); }
 inline ::QFont *clone_QFont(const ::QFont &value) { return new ::QFont(value); }
 inline ::QIcon *clone_QIcon(const ::QIcon &value) { return new ::QIcon(value); }
 inline ::QImage *clone_QImage(const ::QImage &value) { return new ::QImage(value); }
 inline ::QKeySequence *clone_QKeySequence(const ::QKeySequence &value) { return new ::QKeySequence(value); }
 inline ::QPersistentModelIndex *clone_QModelIndex(const ::QModelIndex &value) { return new ::QPersistentModelIndex(value); }
 inline ::QPainterPath *clone_QPainterPath(const ::QPainterPath &value) { return new ::QPainterPath(value); }
-inline const ::Dtk::Widget::ColorButton *as_ColorButton(const ::QObject *object) { return qobject_cast<const ::Dtk::Widget::ColorButton *>(object); }
-inline const ::Dtk::Widget::ColorLabel *as_ColorLabel(const ::QObject *object) { return qobject_cast<const ::Dtk::Widget::ColorLabel *>(object); }
-inline const ::Dtk::Widget::DAboutDialog *as_DAboutDialog(const ::QObject *object) { return qobject_cast<const ::Dtk::Widget::DAboutDialog *>(object); }
-inline const ::Dtk::Widget::DAbstractDialog *as_DAbstractDialog(const ::QObject *object) { return qobject_cast<const ::Dtk::Widget::DAbstractDialog *>(object); }
-inline const ::Dtk::Widget::DAlertControl *as_DAlertControl(const ::QObject *object) { return qobject_cast<const ::Dtk::Widget::DAlertControl *>(object); }
-inline const ::Dtk::Widget::DAnchorsBase *as_DAnchorsBase(const ::QObject *object) { return qobject_cast<const ::Dtk::Widget::DAnchorsBase *>(object); }
-inline const ::Dtk::Widget::DArrowButton *as_DArrowButton(const ::QObject *object) { return qobject_cast<const ::Dtk::Widget::DArrowButton *>(object); }
-inline const ::Dtk::Widget::DArrowRectangle *as_DArrowRectangle(const ::QObject *object) { return qobject_cast<const ::Dtk::Widget::DArrowRectangle *>(object); }
-inline const ::Dtk::Widget::DBackgroundGroup *as_DBackgroundGroup(const ::QObject *object) { return qobject_cast<const ::Dtk::Widget::DBackgroundGroup *>(object); }
-inline const ::Dtk::Widget::DBlurEffectWidget *as_DBlurEffectWidget(const ::QObject *object) { return qobject_cast<const ::Dtk::Widget::DBlurEffectWidget *>(object); }
-inline const ::Dtk::Widget::DBoxWidget *as_DBoxWidget(const ::QObject *object) { return qobject_cast<const ::Dtk::Widget::DBoxWidget *>(object); }
-inline const ::Dtk::Widget::DCircleProgress *as_DCircleProgress(const ::QObject *object) { return qobject_cast<const ::Dtk::Widget::DCircleProgress *>(object); }
-inline const ::Dtk::Widget::DClipEffectWidget *as_DClipEffectWidget(const ::QObject *object) { return qobject_cast<const ::Dtk::Widget::DClipEffectWidget *>(object); }
-inline const ::Dtk::Core::DConfig *as_DConfig(const ::QObject *object) { return qobject_cast<const ::Dtk::Core::DConfig *>(object); }
-inline const ::Dtk::Widget::DCrumbEdit *as_DCrumbEdit(const ::QObject *object) { return qobject_cast<const ::Dtk::Widget::DCrumbEdit *>(object); }
-inline const ::Dtk::Widget::DDialog *as_DDialog(const ::QObject *object) { return qobject_cast<const ::Dtk::Widget::DDialog *>(object); }
-inline const ::Dtk::Widget::DDoubleSpinBox *as_DDoubleSpinBox(const ::QObject *object) { return qobject_cast<const ::Dtk::Widget::DDoubleSpinBox *>(object); }
-inline const ::Dtk::Widget::DDrawer *as_DDrawer(const ::QObject *object) { return qobject_cast<const ::Dtk::Widget::DDrawer *>(object); }
-inline const ::Dtk::Widget::DEnhancedWidget *as_DEnhancedWidget(const ::QObject *object) { return qobject_cast<const ::Dtk::Widget::DEnhancedWidget *>(object); }
-inline const ::Dtk::Widget::DFileChooserEdit *as_DFileChooserEdit(const ::QObject *object) { return qobject_cast<const ::Dtk::Widget::DFileChooserEdit *>(object); }
-inline const ::Dtk::Widget::DFloatingMessage *as_DFloatingMessage(const ::QObject *object) { return qobject_cast<const ::Dtk::Widget::DFloatingMessage *>(object); }
-inline const ::Dtk::Widget::DFlowLayout *as_DFlowLayout(const ::QObject *object) { return qobject_cast<const ::Dtk::Widget::DFlowLayout *>(object); }
-inline const ::Dtk::Widget::DFontComboBox *as_DFontComboBox(const ::QObject *object) { return qobject_cast<const ::Dtk::Widget::DFontComboBox *>(object); }
-inline const ::Dtk::Gui::DFontManager *as_DFontManager(const ::QObject *object) { return qobject_cast<const ::Dtk::Gui::DFontManager *>(object); }
-inline const ::Dtk::Widget::DGraphicsClipEffect *as_DGraphicsClipEffect(const ::QObject *object) { return qobject_cast<const ::Dtk::Widget::DGraphicsClipEffect *>(object); }
-inline const ::Dtk::Gui::DGuiApplicationHelper *as_DGuiApplicationHelper(const ::QObject *object) { return qobject_cast<const ::Dtk::Gui::DGuiApplicationHelper *>(object); }
-inline const ::Dtk::Widget::DImageViewer *as_DImageViewer(const ::QObject *object) { return qobject_cast<const ::Dtk::Widget::DImageViewer *>(object); }
-inline const ::Dtk::Widget::DInputDialog *as_DInputDialog(const ::QObject *object) { return qobject_cast<const ::Dtk::Widget::DInputDialog *>(object); }
-inline const ::Dtk::Widget::DIpv4LineEdit *as_DIpv4LineEdit(const ::QObject *object) { return qobject_cast<const ::Dtk::Widget::DIpv4LineEdit *>(object); }
-inline const ::Dtk::Widget::DKeySequenceEdit *as_DKeySequenceEdit(const ::QObject *object) { return qobject_cast<const ::Dtk::Widget::DKeySequenceEdit *>(object); }
-inline const ::Dtk::Widget::DLineEdit *as_DLineEdit(const ::QObject *object) { return qobject_cast<const ::Dtk::Widget::DLineEdit *>(object); }
-inline const ::Dtk::Widget::DListView *as_DListView(const ::QObject *object) { return qobject_cast<const ::Dtk::Widget::DListView *>(object); }
-inline const ::Dtk::Widget::DLoadingIndicator *as_DLoadingIndicator(const ::QObject *object) { return qobject_cast<const ::Dtk::Widget::DLoadingIndicator *>(object); }
-inline const ::Dtk::Widget::DMPRISControl *as_DMPRISControl(const ::QObject *object) { return qobject_cast<const ::Dtk::Widget::DMPRISControl *>(object); }
-inline const ::Dtk::Widget::DMainWindow *as_DMainWindow(const ::QObject *object) { return qobject_cast<const ::Dtk::Widget::DMainWindow *>(object); }
-inline const ::Dtk::Widget::DPasswordEdit *as_DPasswordEdit(const ::QObject *object) { return qobject_cast<const ::Dtk::Widget::DPasswordEdit *>(object); }
-inline const ::Dtk::Widget::DPictureSequenceView *as_DPictureSequenceView(const ::QObject *object) { return qobject_cast<const ::Dtk::Widget::DPictureSequenceView *>(object); }
-inline const ::Dtk::Gui::DPlatformHandle *as_DPlatformHandle(const ::QObject *object) { return qobject_cast<const ::Dtk::Gui::DPlatformHandle *>(object); }
-inline const ::Dtk::Widget::DPrintPickColorWidget *as_DPrintPickColorWidget(const ::QObject *object) { return qobject_cast<const ::Dtk::Widget::DPrintPickColorWidget *>(object); }
-inline const ::Dtk::Widget::DPrintPreviewWidget *as_DPrintPreviewWidget(const ::QObject *object) { return qobject_cast<const ::Dtk::Widget::DPrintPreviewWidget *>(object); }
-inline const ::Dtk::Widget::DSearchEdit *as_DSearchEdit(const ::QObject *object) { return qobject_cast<const ::Dtk::Widget::DSearchEdit *>(object); }
-inline const ::Dtk::Widget::DShortcutEditLabel *as_DShortcutEditLabel(const ::QObject *object) { return qobject_cast<const ::Dtk::Widget::DShortcutEditLabel *>(object); }
-inline const ::Dtk::Widget::DSimpleListView *as_DSimpleListView(const ::QObject *object) { return qobject_cast<const ::Dtk::Widget::DSimpleListView *>(object); }
-inline const ::Dtk::Widget::DSlider *as_DSlider(const ::QObject *object) { return qobject_cast<const ::Dtk::Widget::DSlider *>(object); }
-inline const ::Dtk::Widget::DSpinBox *as_DSpinBox(const ::QObject *object) { return qobject_cast<const ::Dtk::Widget::DSpinBox *>(object); }
-inline const ::Dtk::Widget::DStackWidget *as_DStackWidget(const ::QObject *object) { return qobject_cast<const ::Dtk::Widget::DStackWidget *>(object); }
-inline const ::Dtk::Widget::DSwitchButton *as_DSwitchButton(const ::QObject *object) { return qobject_cast<const ::Dtk::Widget::DSwitchButton *>(object); }
-inline const ::Dtk::Widget::DSwitchHeaderLine *as_DSwitchHeaderLine(const ::QObject *object) { return qobject_cast<const ::Dtk::Widget::DSwitchHeaderLine *>(object); }
-inline const ::Dtk::Widget::DTabBar *as_DTabBar(const ::QObject *object) { return qobject_cast<const ::Dtk::Widget::DTabBar *>(object); }
-inline const ::Dtk::Widget::DTickEffect *as_DTickEffect(const ::QObject *object) { return qobject_cast<const ::Dtk::Widget::DTickEffect *>(object); }
-inline const ::Dtk::Widget::DTitleBarToolInterface *as_DTitleBarToolInterface(const ::QObject *object) { return qobject_cast<const ::Dtk::Widget::DTitleBarToolInterface *>(object); }
-inline const ::Dtk::Widget::DTitlebar *as_DTitlebar(const ::QObject *object) { return qobject_cast<const ::Dtk::Widget::DTitlebar *>(object); }
-inline const ::Dtk::Widget::DWaterProgress *as_DWaterProgress(const ::QObject *object) { return qobject_cast<const ::Dtk::Widget::DWaterProgress *>(object); }
-inline const ::Dtk::Widget::DWindowMaxButton *as_DWindowMaxButton(const ::QObject *object) { return qobject_cast<const ::Dtk::Widget::DWindowMaxButton *>(object); }
-inline const ::QAbstractButton *as_QAbstractButton(const ::QObject *object) { return qobject_cast<const ::QAbstractButton *>(object); }
-inline const ::QAbstractItemDelegate *as_QAbstractItemDelegate(const ::QObject *object) { return qobject_cast<const ::QAbstractItemDelegate *>(object); }
-inline const ::QAbstractItemModel *as_QAbstractItemModel(const ::QObject *object) { return qobject_cast<const ::QAbstractItemModel *>(object); }
-inline const ::QAbstractItemView *as_QAbstractItemView(const ::QObject *object) { return qobject_cast<const ::QAbstractItemView *>(object); }
-inline const ::QAbstractSlider *as_QAbstractSlider(const ::QObject *object) { return qobject_cast<const ::QAbstractSlider *>(object); }
-inline const ::QAbstractSpinBox *as_QAbstractSpinBox(const ::QObject *object) { return qobject_cast<const ::QAbstractSpinBox *>(object); }
-inline const ::QAction *as_QAction(const ::QObject *object) { return qobject_cast<const ::QAction *>(object); }
-inline const ::QComboBox *as_QComboBox(const ::QObject *object) { return qobject_cast<const ::QComboBox *>(object); }
-inline const ::QDialog *as_QDialog(const ::QObject *object) { return qobject_cast<const ::QDialog *>(object); }
-inline const ::QDoubleSpinBox *as_QDoubleSpinBox(const ::QObject *object) { return qobject_cast<const ::QDoubleSpinBox *>(object); }
-inline const ::QFileDialog *as_QFileDialog(const ::QObject *object) { return qobject_cast<const ::QFileDialog *>(object); }
-inline const ::QGraphicsEffect *as_QGraphicsEffect(const ::QObject *object) { return qobject_cast<const ::QGraphicsEffect *>(object); }
-inline const ::QGraphicsView *as_QGraphicsView(const ::QObject *object) { return qobject_cast<const ::QGraphicsView *>(object); }
-inline const ::QLabel *as_QLabel(const ::QObject *object) { return qobject_cast<const ::QLabel *>(object); }
-inline const ::QLineEdit *as_QLineEdit(const ::QObject *object) { return qobject_cast<const ::QLineEdit *>(object); }
-inline const ::QMainWindow *as_QMainWindow(const ::QObject *object) { return qobject_cast<const ::QMainWindow *>(object); }
-inline const ::QMenu *as_QMenu(const ::QObject *object) { return qobject_cast<const ::QMenu *>(object); }
-inline const ::QProgressBar *as_QProgressBar(const ::QObject *object) { return qobject_cast<const ::QProgressBar *>(object); }
-inline const ::QSpinBox *as_QSpinBox(const ::QObject *object) { return qobject_cast<const ::QSpinBox *>(object); }
-inline const ::QTableWidget *as_QTableWidget(const ::QObject *object) { return qobject_cast<const ::QTableWidget *>(object); }
-inline const ::QTextEdit *as_QTextEdit(const ::QObject *object) { return qobject_cast<const ::QTextEdit *>(object); }
-inline const ::QTimer *as_QTimer(const ::QObject *object) { return qobject_cast<const ::QTimer *>(object); }
-inline const ::QWidget *as_QWidget(const ::QObject *object) { return qobject_cast<const ::QWidget *>(object); }
+inline ::QVariant *clone_QVariant(const ::QVariant &value) { return new ::QVariant(value); }
+inline const ::Dtk::Widget::ColorButton *as_ColorButton(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::ColorButton *>(object); }
+inline const ::Dtk::Widget::ColorLabel *as_ColorLabel(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::ColorLabel *>(object); }
+inline const ::Dtk::Widget::DAboutDialog *as_DAboutDialog(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DAboutDialog *>(object); }
+inline const ::Dtk::Widget::DAbstractDialog *as_DAbstractDialog(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DAbstractDialog *>(object); }
+inline const ::Dtk::Widget::DAlertControl *as_DAlertControl(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DAlertControl *>(object); }
+inline const ::Dtk::Widget::DAnchorsBase *as_DAnchorsBase(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DAnchorsBase *>(object); }
+inline const ::Dtk::Widget::DArrowButton *as_DArrowButton(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DArrowButton *>(object); }
+inline const ::Dtk::Widget::DArrowRectangle *as_DArrowRectangle(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DArrowRectangle *>(object); }
+inline const ::Dtk::Widget::DBackgroundGroup *as_DBackgroundGroup(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DBackgroundGroup *>(object); }
+inline const ::Dtk::Core::DBaseFileWatcher *as_DBaseFileWatcher(const ::QObject *object) { return dynamic_cast<const ::Dtk::Core::DBaseFileWatcher *>(object); }
+inline const ::Dtk::Widget::DBlurEffectWidget *as_DBlurEffectWidget(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DBlurEffectWidget *>(object); }
+inline const ::Dtk::Widget::DBoxWidget *as_DBoxWidget(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DBoxWidget *>(object); }
+inline const ::Dtk::Widget::DCircleProgress *as_DCircleProgress(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DCircleProgress *>(object); }
+inline const ::Dtk::Widget::DClipEffectWidget *as_DClipEffectWidget(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DClipEffectWidget *>(object); }
+inline const ::Dtk::Core::DConfig *as_DConfig(const ::QObject *object) { return dynamic_cast<const ::Dtk::Core::DConfig *>(object); }
+inline const ::Dtk::Widget::DCrumbEdit *as_DCrumbEdit(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DCrumbEdit *>(object); }
+inline const ::Dtk::Widget::DDialog *as_DDialog(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DDialog *>(object); }
+inline const ::Dtk::Widget::DDoubleSpinBox *as_DDoubleSpinBox(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DDoubleSpinBox *>(object); }
+inline const ::Dtk::Widget::DDrawer *as_DDrawer(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DDrawer *>(object); }
+inline const ::Dtk::Widget::DEnhancedWidget *as_DEnhancedWidget(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DEnhancedWidget *>(object); }
+inline const ::Dtk::Widget::DFileChooserEdit *as_DFileChooserEdit(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DFileChooserEdit *>(object); }
+inline const ::Dtk::Core::DFileSystemWatcher *as_DFileSystemWatcher(const ::QObject *object) { return dynamic_cast<const ::Dtk::Core::DFileSystemWatcher *>(object); }
+inline const ::Dtk::Core::DFileWatcherManager *as_DFileWatcherManager(const ::QObject *object) { return dynamic_cast<const ::Dtk::Core::DFileWatcherManager *>(object); }
+inline const ::Dtk::Widget::DFloatingMessage *as_DFloatingMessage(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DFloatingMessage *>(object); }
+inline const ::Dtk::Widget::DFlowLayout *as_DFlowLayout(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DFlowLayout *>(object); }
+inline const ::Dtk::Widget::DFontComboBox *as_DFontComboBox(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DFontComboBox *>(object); }
+inline const ::Dtk::Gui::DFontManager *as_DFontManager(const ::QObject *object) { return dynamic_cast<const ::Dtk::Gui::DFontManager *>(object); }
+inline const ::Dtk::Widget::DGraphicsClipEffect *as_DGraphicsClipEffect(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DGraphicsClipEffect *>(object); }
+inline const ::Dtk::Gui::DGuiApplicationHelper *as_DGuiApplicationHelper(const ::QObject *object) { return dynamic_cast<const ::Dtk::Gui::DGuiApplicationHelper *>(object); }
+inline const ::Dtk::Widget::DImageViewer *as_DImageViewer(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DImageViewer *>(object); }
+inline const ::Dtk::Widget::DInputDialog *as_DInputDialog(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DInputDialog *>(object); }
+inline const ::Dtk::Widget::DIpv4LineEdit *as_DIpv4LineEdit(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DIpv4LineEdit *>(object); }
+inline const ::Dtk::Widget::DKeySequenceEdit *as_DKeySequenceEdit(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DKeySequenceEdit *>(object); }
+inline const ::Dtk::Widget::DLineEdit *as_DLineEdit(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DLineEdit *>(object); }
+inline const ::Dtk::Widget::DListView *as_DListView(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DListView *>(object); }
+inline const ::Dtk::Widget::DLoadingIndicator *as_DLoadingIndicator(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DLoadingIndicator *>(object); }
+inline const ::Dtk::Widget::DMPRISControl *as_DMPRISControl(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DMPRISControl *>(object); }
+inline const ::Dtk::Widget::DMainWindow *as_DMainWindow(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DMainWindow *>(object); }
+inline const ::Dtk::Gui::DNativeSettings *as_DNativeSettings(const ::QObject *object) { return dynamic_cast<const ::Dtk::Gui::DNativeSettings *>(object); }
+inline const ::Dtk::Widget::DPasswordEdit *as_DPasswordEdit(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DPasswordEdit *>(object); }
+inline const ::Dtk::Widget::DPictureSequenceView *as_DPictureSequenceView(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DPictureSequenceView *>(object); }
+inline const ::Dtk::Gui::DPlatformHandle *as_DPlatformHandle(const ::QObject *object) { return dynamic_cast<const ::Dtk::Gui::DPlatformHandle *>(object); }
+inline const ::Dtk::Gui::DPlatformTheme *as_DPlatformTheme(const ::QObject *object) { return dynamic_cast<const ::Dtk::Gui::DPlatformTheme *>(object); }
+inline const ::Dtk::Widget::DPrintPickColorWidget *as_DPrintPickColorWidget(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DPrintPickColorWidget *>(object); }
+inline const ::Dtk::Widget::DPrintPreviewWidget *as_DPrintPreviewWidget(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DPrintPreviewWidget *>(object); }
+inline const ::Dtk::Widget::DSearchEdit *as_DSearchEdit(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DSearchEdit *>(object); }
+inline const ::Dtk::Core::DSettings *as_DSettings(const ::QObject *object) { return dynamic_cast<const ::Dtk::Core::DSettings *>(object); }
+inline const ::Dtk::Widget::DShortcutEditLabel *as_DShortcutEditLabel(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DShortcutEditLabel *>(object); }
+inline const ::Dtk::Widget::DSimpleListView *as_DSimpleListView(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DSimpleListView *>(object); }
+inline const ::Dtk::Widget::DSlider *as_DSlider(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DSlider *>(object); }
+inline const ::Dtk::Widget::DSpinBox *as_DSpinBox(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DSpinBox *>(object); }
+inline const ::Dtk::Widget::DStackWidget *as_DStackWidget(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DStackWidget *>(object); }
+inline const ::Dtk::Widget::DSwitchButton *as_DSwitchButton(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DSwitchButton *>(object); }
+inline const ::Dtk::Widget::DSwitchHeaderLine *as_DSwitchHeaderLine(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DSwitchHeaderLine *>(object); }
+inline const ::Dtk::Widget::DTabBar *as_DTabBar(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DTabBar *>(object); }
+inline const ::Dtk::Widget::DTickEffect *as_DTickEffect(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DTickEffect *>(object); }
+inline const ::Dtk::Widget::DTitleBarToolInterface *as_DTitleBarToolInterface(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DTitleBarToolInterface *>(object); }
+inline const ::Dtk::Widget::DTitlebar *as_DTitlebar(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DTitlebar *>(object); }
+inline const ::Dtk::Widget::DWaterProgress *as_DWaterProgress(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DWaterProgress *>(object); }
+inline const ::Dtk::Gui::DWindowManagerHelper *as_DWindowManagerHelper(const ::QObject *object) { return dynamic_cast<const ::Dtk::Gui::DWindowManagerHelper *>(object); }
+inline const ::Dtk::Widget::DWindowMaxButton *as_DWindowMaxButton(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DWindowMaxButton *>(object); }
+inline const ::QAbstractButton *as_QAbstractButton(const ::QObject *object) { return dynamic_cast<const ::QAbstractButton *>(object); }
+inline const ::QAbstractItemDelegate *as_QAbstractItemDelegate(const ::QObject *object) { return dynamic_cast<const ::QAbstractItemDelegate *>(object); }
+inline const ::QAbstractItemModel *as_QAbstractItemModel(const ::QObject *object) { return dynamic_cast<const ::QAbstractItemModel *>(object); }
+inline const ::QAbstractItemView *as_QAbstractItemView(const ::QObject *object) { return dynamic_cast<const ::QAbstractItemView *>(object); }
+inline const ::QAbstractSlider *as_QAbstractSlider(const ::QObject *object) { return dynamic_cast<const ::QAbstractSlider *>(object); }
+inline const ::QAbstractSpinBox *as_QAbstractSpinBox(const ::QObject *object) { return dynamic_cast<const ::QAbstractSpinBox *>(object); }
+inline const ::QAction *as_QAction(const ::QObject *object) { return dynamic_cast<const ::QAction *>(object); }
+inline const ::QComboBox *as_QComboBox(const ::QObject *object) { return dynamic_cast<const ::QComboBox *>(object); }
+inline const ::QDialog *as_QDialog(const ::QObject *object) { return dynamic_cast<const ::QDialog *>(object); }
+inline const ::QDoubleSpinBox *as_QDoubleSpinBox(const ::QObject *object) { return dynamic_cast<const ::QDoubleSpinBox *>(object); }
+inline const ::QFileDialog *as_QFileDialog(const ::QObject *object) { return dynamic_cast<const ::QFileDialog *>(object); }
+inline const ::QGraphicsEffect *as_QGraphicsEffect(const ::QObject *object) { return dynamic_cast<const ::QGraphicsEffect *>(object); }
+inline const ::QGraphicsView *as_QGraphicsView(const ::QObject *object) { return dynamic_cast<const ::QGraphicsView *>(object); }
+inline const ::QLabel *as_QLabel(const ::QObject *object) { return dynamic_cast<const ::QLabel *>(object); }
+inline const ::QLineEdit *as_QLineEdit(const ::QObject *object) { return dynamic_cast<const ::QLineEdit *>(object); }
+inline const ::QMainWindow *as_QMainWindow(const ::QObject *object) { return dynamic_cast<const ::QMainWindow *>(object); }
+inline const ::QMenu *as_QMenu(const ::QObject *object) { return dynamic_cast<const ::QMenu *>(object); }
+inline const ::QProgressBar *as_QProgressBar(const ::QObject *object) { return dynamic_cast<const ::QProgressBar *>(object); }
+inline const ::QSpinBox *as_QSpinBox(const ::QObject *object) { return dynamic_cast<const ::QSpinBox *>(object); }
+inline const ::QTableWidget *as_QTableWidget(const ::QObject *object) { return dynamic_cast<const ::QTableWidget *>(object); }
+inline const ::QTextEdit *as_QTextEdit(const ::QObject *object) { return dynamic_cast<const ::QTextEdit *>(object); }
+inline const ::QTimer *as_QTimer(const ::QObject *object) { return dynamic_cast<const ::QTimer *>(object); }
+inline const ::QWidget *as_QWidget(const ::QObject *object) { return dynamic_cast<const ::QWidget *>(object); }
 using QPersistentModelIndex = ::QPersistentModelIndex;
 } // namespace dtkrs_cxxqt

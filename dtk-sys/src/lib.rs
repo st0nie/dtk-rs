@@ -103,6 +103,8 @@ pub mod ffi {
 
         type DApplication;
         type DConfig;
+        type DSettings;
+        type DFileWatcher;
         type DMainWindow;
         type DTitlebar;
         type DLabel;
@@ -152,6 +154,10 @@ pub mod ffi {
         unsafe fn application_has_arg(arg: &str) -> bool;
         unsafe fn core_config_create_generic(name: &str, subpath: &str) -> *mut DConfig;
         unsafe fn core_config_create(app_id: &str, name: &str, subpath: &str) -> *mut DConfig;
+        unsafe fn core_settings_from_json(json: &str) -> *mut DSettings;
+        unsafe fn core_settings_from_json_file(path: &str) -> *mut DSettings;
+        unsafe fn core_settings_set_file_backend(settings: *mut DSettings, path: &str) -> bool;
+        unsafe fn core_file_watcher_new(path: &str) -> *mut DFileWatcher;
 
         // QWidget common
         unsafe fn widget_show(w: *mut QWidget);

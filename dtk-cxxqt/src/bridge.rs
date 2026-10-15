@@ -25,14 +25,19 @@ pub mod ffi {
         type QList_QUrl = cxx_qt_lib::QList<QUrl>;
         include!("cxx-qt-lib/core/qlist/qlist_i32.h");
         type QList_i32 = cxx_qt_lib::QList<i32>;
+        #[namespace = "Dtk::Gui"]
+        type DPalette;
         type QFont;
         type QIcon;
         type QImage;
         type QKeySequence;
         type QModelIndex;
         type QPainterPath;
+        type QVariant;
         #[namespace = "dtkrs_cxxqt"]
         type QPersistentModelIndex;
+        #[namespace = "dtkrs_cxxqt"]
+        fn clone_DPalette(value: &DPalette) -> *mut DPalette;
         #[namespace = "dtkrs_cxxqt"]
         fn clone_QFont(value: &QFont) -> *mut QFont;
         #[namespace = "dtkrs_cxxqt"]
@@ -45,6 +50,8 @@ pub mod ffi {
         fn clone_QModelIndex(value: &QModelIndex) -> *mut QPersistentModelIndex;
         #[namespace = "dtkrs_cxxqt"]
         fn clone_QPainterPath(value: &QPainterPath) -> *mut QPainterPath;
+        #[namespace = "dtkrs_cxxqt"]
+        fn clone_QVariant(value: &QVariant) -> *mut QVariant;
         /// # Safety
         /// `object` is null or a live QObject on its owner thread.
         #[namespace = "dtkrs_cxxqt"]
@@ -81,6 +88,10 @@ pub mod ffi {
         /// `object` is null or a live QObject on its owner thread.
         #[namespace = "dtkrs_cxxqt"]
         unsafe fn as_DBackgroundGroup(object: *const QObject) -> *const DBackgroundGroup;
+        /// # Safety
+        /// `object` is null or a live QObject on its owner thread.
+        #[namespace = "dtkrs_cxxqt"]
+        unsafe fn as_DBaseFileWatcher(object: *const QObject) -> *const DBaseFileWatcher;
         /// # Safety
         /// `object` is null or a live QObject on its owner thread.
         #[namespace = "dtkrs_cxxqt"]
@@ -125,6 +136,14 @@ pub mod ffi {
         /// `object` is null or a live QObject on its owner thread.
         #[namespace = "dtkrs_cxxqt"]
         unsafe fn as_DFileChooserEdit(object: *const QObject) -> *const DFileChooserEdit;
+        /// # Safety
+        /// `object` is null or a live QObject on its owner thread.
+        #[namespace = "dtkrs_cxxqt"]
+        unsafe fn as_DFileSystemWatcher(object: *const QObject) -> *const DFileSystemWatcher;
+        /// # Safety
+        /// `object` is null or a live QObject on its owner thread.
+        #[namespace = "dtkrs_cxxqt"]
+        unsafe fn as_DFileWatcherManager(object: *const QObject) -> *const DFileWatcherManager;
         /// # Safety
         /// `object` is null or a live QObject on its owner thread.
         #[namespace = "dtkrs_cxxqt"]
@@ -188,6 +207,10 @@ pub mod ffi {
         /// # Safety
         /// `object` is null or a live QObject on its owner thread.
         #[namespace = "dtkrs_cxxqt"]
+        unsafe fn as_DNativeSettings(object: *const QObject) -> *const DNativeSettings;
+        /// # Safety
+        /// `object` is null or a live QObject on its owner thread.
+        #[namespace = "dtkrs_cxxqt"]
         unsafe fn as_DPasswordEdit(object: *const QObject) -> *const DPasswordEdit;
         /// # Safety
         /// `object` is null or a live QObject on its owner thread.
@@ -200,6 +223,10 @@ pub mod ffi {
         /// # Safety
         /// `object` is null or a live QObject on its owner thread.
         #[namespace = "dtkrs_cxxqt"]
+        unsafe fn as_DPlatformTheme(object: *const QObject) -> *const DPlatformTheme;
+        /// # Safety
+        /// `object` is null or a live QObject on its owner thread.
+        #[namespace = "dtkrs_cxxqt"]
         unsafe fn as_DPrintPickColorWidget(object: *const QObject) -> *const DPrintPickColorWidget;
         /// # Safety
         /// `object` is null or a live QObject on its owner thread.
@@ -209,6 +236,10 @@ pub mod ffi {
         /// `object` is null or a live QObject on its owner thread.
         #[namespace = "dtkrs_cxxqt"]
         unsafe fn as_DSearchEdit(object: *const QObject) -> *const DSearchEdit;
+        /// # Safety
+        /// `object` is null or a live QObject on its owner thread.
+        #[namespace = "dtkrs_cxxqt"]
+        unsafe fn as_DSettings(object: *const QObject) -> *const DSettings;
         /// # Safety
         /// `object` is null or a live QObject on its owner thread.
         #[namespace = "dtkrs_cxxqt"]
@@ -259,6 +290,10 @@ pub mod ffi {
         /// `object` is null or a live QObject on its owner thread.
         #[namespace = "dtkrs_cxxqt"]
         unsafe fn as_DWaterProgress(object: *const QObject) -> *const DWaterProgress;
+        /// # Safety
+        /// `object` is null or a live QObject on its owner thread.
+        #[namespace = "dtkrs_cxxqt"]
+        unsafe fn as_DWindowManagerHelper(object: *const QObject) -> *const DWindowManagerHelper;
         /// # Safety
         /// `object` is null or a live QObject on its owner thread.
         #[namespace = "dtkrs_cxxqt"]
@@ -504,6 +539,36 @@ pub mod ffi {
     }
 
     unsafe extern "C++Qt" {
+        #[namespace = "Dtk::Core"]
+        #[qobject]
+        type DBaseFileWatcher;
+        /// `void fileDeleted(const QUrl &url)`
+        #[qsignal]
+        #[cxx_name = "fileDeleted"]
+        pub(self) fn file_deleted(self: &DBaseFileWatcher, a0: &QUrl);
+        /// `void fileAttributeChanged(const QUrl &url)`
+        #[qsignal]
+        #[cxx_name = "fileAttributeChanged"]
+        pub(self) fn file_attribute_changed(self: &DBaseFileWatcher, a0: &QUrl);
+        /// `void fileMoved(const QUrl &fromUrl, const QUrl &toUrl)`
+        #[qsignal]
+        #[cxx_name = "fileMoved"]
+        pub(self) fn file_moved(self: &DBaseFileWatcher, a0: &QUrl, a1: &QUrl);
+        /// `void subfileCreated(const QUrl &url)`
+        #[qsignal]
+        #[cxx_name = "subfileCreated"]
+        pub(self) fn subfile_created(self: &DBaseFileWatcher, a0: &QUrl);
+        /// `void fileModified(const QUrl &url)`
+        #[qsignal]
+        #[cxx_name = "fileModified"]
+        pub(self) fn file_modified(self: &DBaseFileWatcher, a0: &QUrl);
+        /// `void fileClosed(const QUrl &url)`
+        #[qsignal]
+        #[cxx_name = "fileClosed"]
+        pub(self) fn file_closed(self: &DBaseFileWatcher, a0: &QUrl);
+    }
+
+    unsafe extern "C++Qt" {
         #[namespace = "Dtk::Widget"]
         #[qobject]
         type DBlurEffectWidget;
@@ -743,6 +808,72 @@ pub mod ffi {
         #[qsignal]
         #[cxx_name = "dialogClosed"]
         pub(self) fn dialog_closed(self: &DFileChooserEdit, a0: i32);
+    }
+
+    unsafe extern "C++Qt" {
+        #[namespace = "Dtk::Core"]
+        #[qobject]
+        type DFileSystemWatcher;
+        /// `void fileDeleted(const QString &path, const QString &name, QPrivateSignal)`
+        #[qsignal]
+        #[cxx_name = "fileDeleted"]
+        pub(self) fn file_deleted(self: &DFileSystemWatcher, a0: &QString, a1: &QString);
+        /// `void fileAttributeChanged(const QString &path, const QString &name, QPrivateSignal)`
+        #[qsignal]
+        #[cxx_name = "fileAttributeChanged"]
+        pub(self) fn file_attribute_changed(self: &DFileSystemWatcher, a0: &QString, a1: &QString);
+        /// `void fileClosed(const QString &path, const QString &name, QPrivateSignal)`
+        #[qsignal]
+        #[cxx_name = "fileClosed"]
+        pub(self) fn file_closed(self: &DFileSystemWatcher, a0: &QString, a1: &QString);
+        /// `void fileMoved(const QString &fromPath, const QString &fromName, const QString &toPath, const QString &toName, QPrivateSignal)`
+        #[qsignal]
+        #[cxx_name = "fileMoved"]
+        pub(self) fn file_moved(
+            self: &DFileSystemWatcher,
+            a0: &QString,
+            a1: &QString,
+            a2: &QString,
+            a3: &QString,
+        );
+        /// `void fileCreated(const QString &path, const QString &name, QPrivateSignal)`
+        #[qsignal]
+        #[cxx_name = "fileCreated"]
+        pub(self) fn file_created(self: &DFileSystemWatcher, a0: &QString, a1: &QString);
+        /// `void fileModified(const QString &path, const QString &name, QPrivateSignal)`
+        #[qsignal]
+        #[cxx_name = "fileModified"]
+        pub(self) fn file_modified(self: &DFileSystemWatcher, a0: &QString, a1: &QString);
+    }
+
+    unsafe extern "C++Qt" {
+        #[namespace = "Dtk::Core"]
+        #[qobject]
+        type DFileWatcherManager;
+        /// `void fileDeleted(const QString &filePath)`
+        #[qsignal]
+        #[cxx_name = "fileDeleted"]
+        pub(self) fn file_deleted(self: &DFileWatcherManager, a0: &QString);
+        /// `void fileAttributeChanged(const QString &filePath)`
+        #[qsignal]
+        #[cxx_name = "fileAttributeChanged"]
+        pub(self) fn file_attribute_changed(self: &DFileWatcherManager, a0: &QString);
+        /// `void fileMoved(const QString &fromFilePath, const QString &toFilePath)`
+        #[qsignal]
+        #[cxx_name = "fileMoved"]
+        pub(self) fn file_moved(self: &DFileWatcherManager, a0: &QString, a1: &QString);
+        /// `void subfileCreated(const QString &filePath)`
+        #[qsignal]
+        #[cxx_name = "subfileCreated"]
+        pub(self) fn subfile_created(self: &DFileWatcherManager, a0: &QString);
+        /// `void fileModified(const QString &filePath)`
+        #[qsignal]
+        #[cxx_name = "fileModified"]
+        pub(self) fn file_modified(self: &DFileWatcherManager, a0: &QString);
+        /// `void fileClosed(const QString &filePath)`
+        #[qsignal]
+        #[cxx_name = "fileClosed"]
+        pub(self) fn file_closed(self: &DFileWatcherManager, a0: &QString);
     }
 
     unsafe extern "C++Qt" {
@@ -1112,6 +1243,20 @@ pub mod ffi {
     }
 
     unsafe extern "C++Qt" {
+        #[namespace = "Dtk::Gui"]
+        #[qobject]
+        type DNativeSettings;
+        /// `void allKeysChanged()`
+        #[qsignal]
+        #[cxx_name = "allKeysChanged"]
+        pub(self) fn all_keys_changed(self: &DNativeSettings);
+        /// `void propertyChanged(const QByteArray &name, const QVariant &value)`
+        #[qsignal]
+        #[cxx_name = "propertyChanged"]
+        pub(self) fn property_changed(self: &DNativeSettings, a0: &QByteArray, a1: &QVariant);
+    }
+
+    unsafe extern "C++Qt" {
         #[namespace = "Dtk::Widget"]
         #[qobject]
         type DPasswordEdit;
@@ -1206,6 +1351,92 @@ pub mod ffi {
     }
 
     unsafe extern "C++Qt" {
+        #[namespace = "Dtk::Gui"]
+        #[qobject]
+        type DPlatformTheme;
+        /// `void cursorBlinkTimeChanged(int cursorBlinkTime)`
+        #[qsignal]
+        #[cxx_name = "cursorBlinkTimeChanged"]
+        pub(self) fn cursor_blink_time_changed(self: &DPlatformTheme, a0: i32);
+        /// `void cursorBlinkTimeoutChanged(int cursorBlinkTimeout)`
+        #[qsignal]
+        #[cxx_name = "cursorBlinkTimeoutChanged"]
+        pub(self) fn cursor_blink_timeout_changed(self: &DPlatformTheme, a0: i32);
+        /// `void cursorBlinkChanged(bool cursorBlink)`
+        #[qsignal]
+        #[cxx_name = "cursorBlinkChanged"]
+        pub(self) fn cursor_blink_changed(self: &DPlatformTheme, a0: bool);
+        /// `void doubleClickDistanceChanged(int doubleClickDistance)`
+        #[qsignal]
+        #[cxx_name = "doubleClickDistanceChanged"]
+        pub(self) fn double_click_distance_changed(self: &DPlatformTheme, a0: i32);
+        /// `void doubleClickTimeChanged(int doubleClickTime)`
+        #[qsignal]
+        #[cxx_name = "doubleClickTimeChanged"]
+        pub(self) fn double_click_time_changed(self: &DPlatformTheme, a0: i32);
+        /// `void dndDragThresholdChanged(int dndDragThreshold)`
+        #[qsignal]
+        #[cxx_name = "dndDragThresholdChanged"]
+        pub(self) fn dnd_drag_threshold_changed(self: &DPlatformTheme, a0: i32);
+        /// `void themeNameChanged(QByteArray themeName)`
+        #[qsignal]
+        #[cxx_name = "themeNameChanged"]
+        pub(self) fn theme_name_changed(self: &DPlatformTheme, a0: &QByteArray);
+        /// `void iconThemeNameChanged(QByteArray iconThemeName)`
+        #[qsignal]
+        #[cxx_name = "iconThemeNameChanged"]
+        pub(self) fn icon_theme_name_changed(self: &DPlatformTheme, a0: &QByteArray);
+        /// `void soundThemeNameChanged(QByteArray soundThemeName)`
+        #[qsignal]
+        #[cxx_name = "soundThemeNameChanged"]
+        pub(self) fn sound_theme_name_changed(self: &DPlatformTheme, a0: &QByteArray);
+        /// `void fontNameChanged(QByteArray fontName)`
+        #[qsignal]
+        #[cxx_name = "fontNameChanged"]
+        pub(self) fn font_name_changed(self: &DPlatformTheme, a0: &QByteArray);
+        /// `void monoFontNameChanged(QByteArray monoFontName)`
+        #[qsignal]
+        #[cxx_name = "monoFontNameChanged"]
+        pub(self) fn mono_font_name_changed(self: &DPlatformTheme, a0: &QByteArray);
+        /// `void fontPointSizeChanged(qreal fontPointSize)`
+        #[qsignal]
+        #[cxx_name = "fontPointSizeChanged"]
+        pub(self) fn font_point_size_changed(self: &DPlatformTheme, a0: f64);
+        /// `void gtkFontNameChanged(QByteArray fontName)`
+        #[qsignal]
+        #[cxx_name = "gtkFontNameChanged"]
+        pub(self) fn gtk_font_name_changed(self: &DPlatformTheme, a0: &QByteArray);
+        /// `void activeColorChanged(QColor activeColor)`
+        #[qsignal]
+        #[cxx_name = "activeColorChanged"]
+        pub(self) fn active_color_changed(self: &DPlatformTheme, a0: &QColor);
+        /// `void darkActiveColorChanged(QColor activeColor)`
+        #[qsignal]
+        #[cxx_name = "darkActiveColorChanged"]
+        pub(self) fn dark_active_color_changed(self: &DPlatformTheme, a0: &QColor);
+        /// `void paletteChanged(DPalette palette)`
+        #[qsignal]
+        #[cxx_name = "paletteChanged"]
+        pub(self) fn palette_changed(self: &DPlatformTheme, a0: &DPalette);
+        /// `void dotsPerInchChanged(const QString &screen, int dpi)`
+        #[qsignal]
+        #[cxx_name = "dotsPerInchChanged"]
+        pub(self) fn dots_per_inch_changed(self: &DPlatformTheme, a0: &QString, a1: i32);
+        /// `void windowRadiusChanged(int r)`
+        #[qsignal]
+        #[cxx_name = "windowRadiusChanged"]
+        pub(self) fn window_radius_changed(self: &DPlatformTheme, a0: i32);
+        /// `void sizeModeChanged(int sizeMode)`
+        #[qsignal]
+        #[cxx_name = "sizeModeChanged"]
+        pub(self) fn size_mode_changed(self: &DPlatformTheme, a0: i32);
+        /// `void scrollBarPolicyChanged(int scrollBarPolicy)`
+        #[qsignal]
+        #[cxx_name = "scrollBarPolicyChanged"]
+        pub(self) fn scroll_bar_policy_changed(self: &DPlatformTheme, a0: i32);
+    }
+
+    unsafe extern "C++Qt" {
         #[namespace = "Dtk::Widget"]
         #[qobject]
         type DPrintPickColorWidget;
@@ -1257,6 +1488,16 @@ pub mod ffi {
         #[qsignal]
         #[cxx_name = "voiceChanged"]
         pub(self) fn voice_changed(self: &DSearchEdit);
+    }
+
+    unsafe extern "C++Qt" {
+        #[namespace = "Dtk::Core"]
+        #[qobject]
+        type DSettings;
+        /// `void valueChanged(const QString &key, const QVariant &value)`
+        #[qsignal]
+        #[cxx_name = "valueChanged"]
+        pub(self) fn value_changed(self: &DSettings, a0: &QString, a1: &QVariant);
     }
 
     unsafe extern "C++Qt" {
@@ -1469,6 +1710,40 @@ pub mod ffi {
         #[qsignal]
         #[cxx_name = "valueChanged"]
         pub(self) fn value_changed(self: &DWaterProgress);
+    }
+
+    unsafe extern "C++Qt" {
+        #[namespace = "Dtk::Gui"]
+        #[qobject]
+        type DWindowManagerHelper;
+        /// `void windowManagerChanged()`
+        #[qsignal]
+        #[cxx_name = "windowManagerChanged"]
+        pub(self) fn window_manager_changed(self: &DWindowManagerHelper);
+        /// `void hasBlurWindowChanged()`
+        #[qsignal]
+        #[cxx_name = "hasBlurWindowChanged"]
+        pub(self) fn has_blur_window_changed(self: &DWindowManagerHelper);
+        /// `void hasCompositeChanged()`
+        #[qsignal]
+        #[cxx_name = "hasCompositeChanged"]
+        pub(self) fn has_composite_changed(self: &DWindowManagerHelper);
+        /// `void hasNoTitlebarChanged()`
+        #[qsignal]
+        #[cxx_name = "hasNoTitlebarChanged"]
+        pub(self) fn has_no_titlebar_changed(self: &DWindowManagerHelper);
+        /// `void hasWallpaperEffectChanged()`
+        #[qsignal]
+        #[cxx_name = "hasWallpaperEffectChanged"]
+        pub(self) fn has_wallpaper_effect_changed(self: &DWindowManagerHelper);
+        /// `void windowListChanged()`
+        #[qsignal]
+        #[cxx_name = "windowListChanged"]
+        pub(self) fn window_list_changed(self: &DWindowManagerHelper);
+        /// `void windowMotifWMHintsChanged(quint32 winId)`
+        #[qsignal]
+        #[cxx_name = "windowMotifWMHintsChanged"]
+        pub(self) fn window_motif_w_m_hints_changed(self: &DWindowManagerHelper, a0: u32);
     }
 
     unsafe extern "C++Qt" {

@@ -99,6 +99,12 @@ widget_wrapper!(
     genffi::gen_d_about_dialog_as_widget
 );
 impl DAboutDialog {
+    /// Base-class view of the same native object: a separately guarded,
+    /// borrowed `DDialog` (C++ `static_cast`); never an owner.
+    pub fn as_d_dialog(&self) -> DDialog {
+        let _call = dtk_sys::NativeCall::new();
+        DDialog::from_raw(unsafe { genffi::gen_d_about_dialog_as_d_dialog(self.live_ptr()) })
+    }
     pub fn new() -> Owned<Self> {
         crate::require_application();
         let _call = dtk_sys::NativeCall::new();
@@ -653,6 +659,12 @@ widget_wrapper!(
     genffi::gen_d_arrow_line_drawer_as_widget
 );
 impl DArrowLineDrawer {
+    /// Base-class view of the same native object: a separately guarded,
+    /// borrowed `DDrawer` (C++ `static_cast`); never an owner.
+    pub fn as_d_drawer(&self) -> DDrawer {
+        let _call = dtk_sys::NativeCall::new();
+        DDrawer::from_raw(unsafe { genffi::gen_d_arrow_line_drawer_as_d_drawer(self.live_ptr()) })
+    }
     pub fn new() -> Owned<Self> {
         crate::require_application();
         let _call = dtk_sys::NativeCall::new();
@@ -1109,6 +1121,14 @@ widget_wrapper!(
     genffi::gen_d_blur_effect_with_border_widget_as_widget
 );
 impl DBlurEffectWithBorderWidget {
+    /// Base-class view of the same native object: a separately guarded,
+    /// borrowed `DBlurEffectWidget` (C++ `static_cast`); never an owner.
+    pub fn as_d_blur_effect_widget(&self) -> DBlurEffectWidget {
+        let _call = dtk_sys::NativeCall::new();
+        DBlurEffectWidget::from_raw(unsafe {
+            genffi::gen_d_blur_effect_with_border_widget_as_d_blur_effect_widget(self.live_ptr())
+        })
+    }
     pub fn new() -> Owned<Self> {
         crate::require_application();
         let _call = dtk_sys::NativeCall::new();
@@ -1170,6 +1190,12 @@ widget_wrapper!(
     genffi::gen_d_h_box_widget_as_widget
 );
 impl DHBoxWidget {
+    /// Base-class view of the same native object: a separately guarded,
+    /// borrowed `DBoxWidget` (C++ `static_cast`); never an owner.
+    pub fn as_d_box_widget(&self) -> DBoxWidget {
+        let _call = dtk_sys::NativeCall::new();
+        DBoxWidget::from_raw(unsafe { genffi::gen_d_h_box_widget_as_d_box_widget(self.live_ptr()) })
+    }
     pub fn new() -> Owned<Self> {
         crate::require_application();
         let _call = dtk_sys::NativeCall::new();
@@ -1184,6 +1210,12 @@ widget_wrapper!(
     genffi::gen_d_v_box_widget_as_widget
 );
 impl DVBoxWidget {
+    /// Base-class view of the same native object: a separately guarded,
+    /// borrowed `DBoxWidget` (C++ `static_cast`); never an owner.
+    pub fn as_d_box_widget(&self) -> DBoxWidget {
+        let _call = dtk_sys::NativeCall::new();
+        DBoxWidget::from_raw(unsafe { genffi::gen_d_v_box_widget_as_d_box_widget(self.live_ptr()) })
+    }
     pub fn new() -> Owned<Self> {
         crate::require_application();
         let _call = dtk_sys::NativeCall::new();
@@ -1551,6 +1583,14 @@ widget_wrapper!(
     genffi::gen_d_dialog_as_widget
 );
 impl DDialog {
+    /// Base-class view of the same native object: a separately guarded,
+    /// borrowed `DAbstractDialog` (C++ `static_cast`); never an owner.
+    pub fn as_d_abstract_dialog(&self) -> DAbstractDialog {
+        let _call = dtk_sys::NativeCall::new();
+        DAbstractDialog::from_raw(unsafe {
+            genffi::gen_d_dialog_as_d_abstract_dialog(self.live_ptr())
+        })
+    }
     pub fn new() -> Owned<Self> {
         crate::require_application();
         let _call = dtk_sys::NativeCall::new();
@@ -1779,6 +1819,14 @@ widget_wrapper!(
     genffi::gen_d_dialog_close_button_as_widget
 );
 impl DDialogCloseButton {
+    /// Base-class view of the same native object: a separately guarded,
+    /// borrowed `DIconButton` (C++ `static_cast`); never an owner.
+    pub fn as_d_icon_button(&self) -> DIconButton {
+        let _call = dtk_sys::NativeCall::new();
+        DIconButton::from_raw(unsafe {
+            genffi::gen_d_dialog_close_button_as_d_icon_button(self.live_ptr())
+        })
+    }
     pub fn new() -> Owned<Self> {
         crate::require_application();
         let _call = dtk_sys::NativeCall::new();
@@ -1795,6 +1843,12 @@ widget_wrapper!(
     genffi::gen_d_drawer_as_widget
 );
 impl DDrawer {
+    /// Base-class view of the same native object: a separately guarded,
+    /// borrowed `DFrame` (C++ `static_cast`); never an owner.
+    pub fn as_d_frame(&self) -> DFrame {
+        let _call = dtk_sys::NativeCall::new();
+        DFrame::from_raw(unsafe { genffi::gen_d_drawer_as_d_frame(self.live_ptr()) })
+    }
     pub fn new() -> Owned<Self> {
         crate::require_application();
         let _call = dtk_sys::NativeCall::new();
@@ -1965,6 +2019,14 @@ widget_wrapper!(
     genffi::gen_d_feature_display_dialog_as_widget
 );
 impl DFeatureDisplayDialog {
+    /// Base-class view of the same native object: a separately guarded,
+    /// borrowed `DDialog` (C++ `static_cast`); never an owner.
+    pub fn as_d_dialog(&self) -> DDialog {
+        let _call = dtk_sys::NativeCall::new();
+        DDialog::from_raw(unsafe {
+            genffi::gen_d_feature_display_dialog_as_d_dialog(self.live_ptr())
+        })
+    }
     pub fn new() -> Owned<Self> {
         crate::require_application();
         let _call = dtk_sys::NativeCall::new();
@@ -2018,6 +2080,14 @@ widget_wrapper!(
     genffi::gen_d_file_chooser_edit_as_widget
 );
 impl DFileChooserEdit {
+    /// Base-class view of the same native object: a separately guarded,
+    /// borrowed `DLineEdit` (C++ `static_cast`); never an owner.
+    pub fn as_d_line_edit(&self) -> DLineEdit {
+        let _call = dtk_sys::NativeCall::new();
+        DLineEdit::from_raw(unsafe {
+            genffi::gen_d_file_chooser_edit_as_d_line_edit(self.live_ptr())
+        })
+    }
     pub fn new() -> Owned<Self> {
         crate::require_application();
         let _call = dtk_sys::NativeCall::new();
@@ -2127,6 +2197,14 @@ widget_wrapper!(
     genffi::gen_d_floating_button_as_widget
 );
 impl DFloatingButton {
+    /// Base-class view of the same native object: a separately guarded,
+    /// borrowed `DIconButton` (C++ `static_cast`); never an owner.
+    pub fn as_d_icon_button(&self) -> DIconButton {
+        let _call = dtk_sys::NativeCall::new();
+        DIconButton::from_raw(unsafe {
+            genffi::gen_d_floating_button_as_d_icon_button(self.live_ptr())
+        })
+    }
     pub fn new() -> Owned<Self> {
         crate::require_application();
         let _call = dtk_sys::NativeCall::new();
@@ -2143,6 +2221,14 @@ widget_wrapper!(
     genffi::gen_d_floating_message_as_widget
 );
 impl DFloatingMessage {
+    /// Base-class view of the same native object: a separately guarded,
+    /// borrowed `DFloatingWidget` (C++ `static_cast`); never an owner.
+    pub fn as_d_floating_widget(&self) -> DFloatingWidget {
+        let _call = dtk_sys::NativeCall::new();
+        DFloatingWidget::from_raw(unsafe {
+            genffi::gen_d_floating_message_as_d_floating_widget(self.live_ptr())
+        })
+    }
     pub fn new() -> Owned<Self> {
         crate::require_application();
         let _call = dtk_sys::NativeCall::new();
@@ -2334,6 +2420,12 @@ widget_wrapper!(
     genffi::gen_d_font_combo_box_as_widget
 );
 impl DFontComboBox {
+    /// Base-class view of the same native object: a separately guarded,
+    /// borrowed `DComboBox` (C++ `static_cast`); never an owner.
+    pub fn as_d_combo_box(&self) -> DComboBox {
+        let _call = dtk_sys::NativeCall::new();
+        DComboBox::from_raw(unsafe { genffi::gen_d_font_combo_box_as_d_combo_box(self.live_ptr()) })
+    }
     pub fn new() -> Owned<Self> {
         crate::require_application();
         let _call = dtk_sys::NativeCall::new();
@@ -2520,6 +2612,12 @@ widget_wrapper!(
     genffi::gen_d_header_line_as_widget
 );
 impl DHeaderLine {
+    /// Base-class view of the same native object: a separately guarded,
+    /// borrowed `DBaseLine` (C++ `static_cast`); never an owner.
+    pub fn as_d_base_line(&self) -> DBaseLine {
+        let _call = dtk_sys::NativeCall::new();
+        DBaseLine::from_raw(unsafe { genffi::gen_d_header_line_as_d_base_line(self.live_ptr()) })
+    }
     pub fn new() -> Owned<Self> {
         crate::require_application();
         let _call = dtk_sys::NativeCall::new();
@@ -2730,6 +2828,12 @@ widget_wrapper!(
     genffi::gen_d_input_dialog_as_widget
 );
 impl DInputDialog {
+    /// Base-class view of the same native object: a separately guarded,
+    /// borrowed `DDialog` (C++ `static_cast`); never an owner.
+    pub fn as_d_dialog(&self) -> DDialog {
+        let _call = dtk_sys::NativeCall::new();
+        DDialog::from_raw(unsafe { genffi::gen_d_input_dialog_as_d_dialog(self.live_ptr()) })
+    }
     pub fn new() -> Owned<Self> {
         crate::require_application();
         let _call = dtk_sys::NativeCall::new();
@@ -2995,6 +3099,14 @@ widget_wrapper!(
     genffi::gen_d_license_dialog_as_widget
 );
 impl DLicenseDialog {
+    /// Base-class view of the same native object: a separately guarded,
+    /// borrowed `DAbstractDialog` (C++ `static_cast`); never an owner.
+    pub fn as_d_abstract_dialog(&self) -> DAbstractDialog {
+        let _call = dtk_sys::NativeCall::new();
+        DAbstractDialog::from_raw(unsafe {
+            genffi::gen_d_license_dialog_as_d_abstract_dialog(self.live_ptr())
+        })
+    }
     pub fn new() -> Owned<Self> {
         crate::require_application();
         let _call = dtk_sys::NativeCall::new();
@@ -3655,6 +3767,12 @@ widget_wrapper!(
     genffi::gen_d_password_edit_as_widget
 );
 impl DPasswordEdit {
+    /// Base-class view of the same native object: a separately guarded,
+    /// borrowed `DLineEdit` (C++ `static_cast`); never an owner.
+    pub fn as_d_line_edit(&self) -> DLineEdit {
+        let _call = dtk_sys::NativeCall::new();
+        DLineEdit::from_raw(unsafe { genffi::gen_d_password_edit_as_d_line_edit(self.live_ptr()) })
+    }
     pub fn new() -> Owned<Self> {
         crate::require_application();
         let _call = dtk_sys::NativeCall::new();
@@ -3867,6 +3985,14 @@ widget_wrapper!(
     genffi::gen_d_print_preview_dialog_as_widget
 );
 impl DPrintPreviewDialog {
+    /// Base-class view of the same native object: a separately guarded,
+    /// borrowed `DDialog` (C++ `static_cast`); never an owner.
+    pub fn as_d_dialog(&self) -> DDialog {
+        let _call = dtk_sys::NativeCall::new();
+        DDialog::from_raw(unsafe {
+            genffi::gen_d_print_preview_dialog_as_d_dialog(self.live_ptr())
+        })
+    }
     pub fn new() -> Owned<Self> {
         crate::require_application();
         let _call = dtk_sys::NativeCall::new();
@@ -4187,6 +4313,12 @@ widget_wrapper!(
     genffi::gen_d_print_preview_widget_as_widget
 );
 impl DPrintPreviewWidget {
+    /// Base-class view of the same native object: a separately guarded,
+    /// borrowed `DFrame` (C++ `static_cast`); never an owner.
+    pub fn as_d_frame(&self) -> DFrame {
+        let _call = dtk_sys::NativeCall::new();
+        DFrame::from_raw(unsafe { genffi::gen_d_print_preview_widget_as_d_frame(self.live_ptr()) })
+    }
     pub fn set_visible(&self, visible: bool) {
         let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_print_preview_widget_set_visible(self.live_ptr(), visible) }
@@ -4424,6 +4556,14 @@ widget_wrapper!(
     genffi::gen_d_search_combo_box_as_widget
 );
 impl DSearchComboBox {
+    /// Base-class view of the same native object: a separately guarded,
+    /// borrowed `DComboBox` (C++ `static_cast`); never an owner.
+    pub fn as_d_combo_box(&self) -> DComboBox {
+        let _call = dtk_sys::NativeCall::new();
+        DComboBox::from_raw(unsafe {
+            genffi::gen_d_search_combo_box_as_d_combo_box(self.live_ptr())
+        })
+    }
     pub fn new() -> Owned<Self> {
         crate::require_application();
         let _call = dtk_sys::NativeCall::new();
@@ -4444,6 +4584,12 @@ widget_wrapper!(
     genffi::gen_d_search_edit_as_widget
 );
 impl DSearchEdit {
+    /// Base-class view of the same native object: a separately guarded,
+    /// borrowed `DLineEdit` (C++ `static_cast`); never an owner.
+    pub fn as_d_line_edit(&self) -> DLineEdit {
+        let _call = dtk_sys::NativeCall::new();
+        DLineEdit::from_raw(unsafe { genffi::gen_d_search_edit_as_d_line_edit(self.live_ptr()) })
+    }
     pub fn new() -> Owned<Self> {
         crate::require_application();
         let _call = dtk_sys::NativeCall::new();
@@ -4486,6 +4632,14 @@ widget_wrapper!(
     genffi::gen_d_settings_dialog_as_widget
 );
 impl DSettingsDialog {
+    /// Base-class view of the same native object: a separately guarded,
+    /// borrowed `DAbstractDialog` (C++ `static_cast`); never an owner.
+    pub fn as_d_abstract_dialog(&self) -> DAbstractDialog {
+        let _call = dtk_sys::NativeCall::new();
+        DAbstractDialog::from_raw(unsafe {
+            genffi::gen_d_settings_dialog_as_d_abstract_dialog(self.live_ptr())
+        })
+    }
     pub fn new() -> Owned<Self> {
         crate::require_application();
         let _call = dtk_sys::NativeCall::new();
@@ -4944,6 +5098,16 @@ object_wrapper!(
     genffi::gen_d_slide_stack_widget_transition_as_qobject
 );
 impl DSlideStackWidgetTransition {
+    /// Base-class view of the same native object: a separately guarded,
+    /// borrowed `DAbstractStackWidgetTransition` (C++ `static_cast`); never an owner.
+    pub fn as_d_abstract_stack_widget_transition(&self) -> DAbstractStackWidgetTransition {
+        let _call = dtk_sys::NativeCall::new();
+        DAbstractStackWidgetTransition::from_raw(unsafe {
+            genffi::gen_d_slide_stack_widget_transition_as_d_abstract_stack_widget_transition(
+                self.live_ptr(),
+            )
+        })
+    }
     pub fn new() -> Owned<Self> {
         crate::require_application();
         let _call = dtk_sys::NativeCall::new();
@@ -5601,6 +5765,14 @@ widget_wrapper!(
     genffi::gen_d_switch_header_line_as_widget
 );
 impl DSwitchHeaderLine {
+    /// Base-class view of the same native object: a separately guarded,
+    /// borrowed `DHeaderLine` (C++ `static_cast`); never an owner.
+    pub fn as_d_header_line(&self) -> DHeaderLine {
+        let _call = dtk_sys::NativeCall::new();
+        DHeaderLine::from_raw(unsafe {
+            genffi::gen_d_switch_header_line_as_d_header_line(self.live_ptr())
+        })
+    }
     pub fn new() -> Owned<Self> {
         crate::require_application();
         let _call = dtk_sys::NativeCall::new();
@@ -5621,6 +5793,12 @@ widget_wrapper!(
     genffi::gen_d_switch_line_expand_as_widget
 );
 impl DSwitchLineExpand {
+    /// Base-class view of the same native object: a separately guarded,
+    /// borrowed `DDrawer` (C++ `static_cast`); never an owner.
+    pub fn as_d_drawer(&self) -> DDrawer {
+        let _call = dtk_sys::NativeCall::new();
+        DDrawer::from_raw(unsafe { genffi::gen_d_switch_line_expand_as_d_drawer(self.live_ptr()) })
+    }
     pub fn new() -> Owned<Self> {
         crate::require_application();
         let _call = dtk_sys::NativeCall::new();
@@ -5940,6 +6118,14 @@ widget_wrapper!(
     genffi::gen_d_tablet_window_option_button_as_widget
 );
 impl DTabletWindowOptionButton {
+    /// Base-class view of the same native object: a separately guarded,
+    /// borrowed `DIconButton` (C++ `static_cast`); never an owner.
+    pub fn as_d_icon_button(&self) -> DIconButton {
+        let _call = dtk_sys::NativeCall::new();
+        DIconButton::from_raw(unsafe {
+            genffi::gen_d_tablet_window_option_button_as_d_icon_button(self.live_ptr())
+        })
+    }
     pub fn new() -> Owned<Self> {
         crate::require_application();
         let _call = dtk_sys::NativeCall::new();
@@ -6067,6 +6253,16 @@ object_wrapper!(
     genffi::gen_d_title_bar_tool_interface_as_qobject
 );
 impl DTitleBarToolInterface {
+    /// Base-class view of the same native object: a separately guarded,
+    /// borrowed `DTitlebarToolBaseInterface` (C++ `static_cast`); never an owner.
+    pub fn as_d_titlebar_tool_base_interface(&self) -> DTitlebarToolBaseInterface {
+        let _call = dtk_sys::NativeCall::new();
+        DTitlebarToolBaseInterface::from_raw(unsafe {
+            genffi::gen_d_title_bar_tool_interface_as_d_titlebar_tool_base_interface(
+                self.live_ptr(),
+            )
+        })
+    }
     /// # Safety
     /// This pure virtual factory has no uniform native ownership contract.
     /// Audit the foreign implementation's allocation/ownership rules; this
@@ -6087,6 +6283,16 @@ object_wrapper!(
     genffi::gen_d_title_bar_spacer_interface_as_qobject
 );
 impl DTitleBarSpacerInterface {
+    /// Base-class view of the same native object: a separately guarded,
+    /// borrowed `DTitlebarToolBaseInterface` (C++ `static_cast`); never an owner.
+    pub fn as_d_titlebar_tool_base_interface(&self) -> DTitlebarToolBaseInterface {
+        let _call = dtk_sys::NativeCall::new();
+        DTitlebarToolBaseInterface::from_raw(unsafe {
+            genffi::gen_d_title_bar_spacer_interface_as_d_titlebar_tool_base_interface(
+                self.live_ptr(),
+            )
+        })
+    }
     /// # Safety
     /// This pure virtual factory has no uniform native ownership contract.
     /// Audit the foreign implementation's allocation/ownership rules; this
@@ -6148,6 +6354,12 @@ widget_wrapper!(
     genffi::gen_d_tool_tip_as_widget
 );
 impl DToolTip {
+    /// Base-class view of the same native object: a separately guarded,
+    /// borrowed `DTipLabel` (C++ `static_cast`); never an owner.
+    pub fn as_d_tip_label(&self) -> DTipLabel {
+        let _call = dtk_sys::NativeCall::new();
+        DTipLabel::from_raw(unsafe { genffi::gen_d_tool_tip_as_d_tip_label(self.live_ptr()) })
+    }
     pub fn set_tool_tip_text_format(format: i32) {
         crate::require_application();
         let _call = dtk_sys::NativeCall::new();
@@ -6417,6 +6629,14 @@ widget_wrapper!(
     genffi::gen_d_window_close_button_as_widget
 );
 impl DWindowCloseButton {
+    /// Base-class view of the same native object: a separately guarded,
+    /// borrowed `DIconButton` (C++ `static_cast`); never an owner.
+    pub fn as_d_icon_button(&self) -> DIconButton {
+        let _call = dtk_sys::NativeCall::new();
+        DIconButton::from_raw(unsafe {
+            genffi::gen_d_window_close_button_as_d_icon_button(self.live_ptr())
+        })
+    }
     pub fn new() -> Owned<Self> {
         crate::require_application();
         let _call = dtk_sys::NativeCall::new();
@@ -6437,6 +6657,14 @@ widget_wrapper!(
     genffi::gen_d_window_max_button_as_widget
 );
 impl DWindowMaxButton {
+    /// Base-class view of the same native object: a separately guarded,
+    /// borrowed `DIconButton` (C++ `static_cast`); never an owner.
+    pub fn as_d_icon_button(&self) -> DIconButton {
+        let _call = dtk_sys::NativeCall::new();
+        DIconButton::from_raw(unsafe {
+            genffi::gen_d_window_max_button_as_d_icon_button(self.live_ptr())
+        })
+    }
     pub fn new() -> Owned<Self> {
         crate::require_application();
         let _call = dtk_sys::NativeCall::new();
@@ -6465,6 +6693,14 @@ widget_wrapper!(
     genffi::gen_d_window_min_button_as_widget
 );
 impl DWindowMinButton {
+    /// Base-class view of the same native object: a separately guarded,
+    /// borrowed `DIconButton` (C++ `static_cast`); never an owner.
+    pub fn as_d_icon_button(&self) -> DIconButton {
+        let _call = dtk_sys::NativeCall::new();
+        DIconButton::from_raw(unsafe {
+            genffi::gen_d_window_min_button_as_d_icon_button(self.live_ptr())
+        })
+    }
     pub fn new() -> Owned<Self> {
         crate::require_application();
         let _call = dtk_sys::NativeCall::new();
@@ -6485,6 +6721,14 @@ widget_wrapper!(
     genffi::gen_d_window_option_button_as_widget
 );
 impl DWindowOptionButton {
+    /// Base-class view of the same native object: a separately guarded,
+    /// borrowed `DIconButton` (C++ `static_cast`); never an owner.
+    pub fn as_d_icon_button(&self) -> DIconButton {
+        let _call = dtk_sys::NativeCall::new();
+        DIconButton::from_raw(unsafe {
+            genffi::gen_d_window_option_button_as_d_icon_button(self.live_ptr())
+        })
+    }
     pub fn new() -> Owned<Self> {
         crate::require_application();
         let _call = dtk_sys::NativeCall::new();
@@ -6505,6 +6749,14 @@ widget_wrapper!(
     genffi::gen_d_window_quit_full_button_as_widget
 );
 impl DWindowQuitFullButton {
+    /// Base-class view of the same native object: a separately guarded,
+    /// borrowed `DIconButton` (C++ `static_cast`); never an owner.
+    pub fn as_d_icon_button(&self) -> DIconButton {
+        let _call = dtk_sys::NativeCall::new();
+        DIconButton::from_raw(unsafe {
+            genffi::gen_d_window_quit_full_button_as_d_icon_button(self.live_ptr())
+        })
+    }
     pub fn new() -> Owned<Self> {
         crate::require_application();
         let _call = dtk_sys::NativeCall::new();

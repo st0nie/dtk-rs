@@ -450,3 +450,205 @@ impl DConfig {
         unsafe { genffi::gen_d_config_subpath(self.live_ptr()) }
     }
 }
+
+core_object_wrapper!(
+    DSettings,
+    genffi::DSettings,
+    genffi::gen_d_settings_as_qobject
+);
+impl DSettings {
+    pub fn new() -> Owned<Self> {
+        crate::require_core_application();
+        let _call = dtk_sys::NativeCall::new();
+        Owned::new(Self::from_raw(unsafe { genffi::gen_d_settings_new() }))
+    }
+    pub fn keys(&self) -> Vec<String> {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_settings_keys(self.live_ptr()) }
+    }
+    pub fn value(&self, key: &str) -> QVariant {
+        let _call = dtk_sys::NativeCall::new();
+        QVariant::from_raw(unsafe { genffi::gen_d_settings_value(self.live_ptr(), key) } as _)
+    }
+    pub fn group_keys(&self) -> Vec<String> {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_settings_group_keys(self.live_ptr()) }
+    }
+    pub fn get_option(&self, key: &str) -> QVariant {
+        let _call = dtk_sys::NativeCall::new();
+        QVariant::from_raw(unsafe { genffi::gen_d_settings_get_option(self.live_ptr(), key) } as _)
+    }
+    pub fn sync(&self) {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_settings_sync(self.live_ptr()) }
+    }
+    pub fn set_option(&self, key: &str, value: &QVariant) {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_settings_set_option(self.live_ptr(), key, value.ptr as _) }
+    }
+    pub fn reset(&self) {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_settings_reset(self.live_ptr()) }
+    }
+}
+
+opaque_wrapper!(DLogManager, genffi::DLogManager);
+impl DLogManager {
+    pub fn register_console_appender() {
+        dtk_sys::assert_not_closing();
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_log_manager_register_console_appender() }
+    }
+    pub fn register_file_appender() {
+        dtk_sys::assert_not_closing();
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_log_manager_register_file_appender() }
+    }
+    pub fn register_journal_appender() {
+        dtk_sys::assert_not_closing();
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_log_manager_register_journal_appender() }
+    }
+    pub fn getlog_file_path() -> String {
+        dtk_sys::assert_not_closing();
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_log_manager_getlog_file_path() }
+    }
+    pub fn setlog_file_path(logFilePath: &str) {
+        dtk_sys::assert_not_closing();
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_log_manager_setlog_file_path(logFilePath) }
+    }
+    pub fn set_log_format(format: &str) {
+        dtk_sys::assert_not_closing();
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_log_manager_set_log_format(format) }
+    }
+}
+
+core_object_wrapper!(
+    DFileSystemWatcher,
+    genffi::DFileSystemWatcher,
+    genffi::gen_d_file_system_watcher_as_qobject
+);
+impl DFileSystemWatcher {
+    pub fn new() -> Owned<Self> {
+        crate::require_core_application();
+        let _call = dtk_sys::NativeCall::new();
+        Owned::new(Self::from_raw(unsafe {
+            genffi::gen_d_file_system_watcher_new()
+        }))
+    }
+    pub fn add_path(&self, file: &str) -> bool {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_file_system_watcher_add_path(self.live_ptr(), file) }
+    }
+    pub fn add_paths(&self, files: Vec<String>) -> Vec<String> {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_file_system_watcher_add_paths(self.live_ptr(), files) }
+    }
+    pub fn remove_path(&self, file: &str) -> bool {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_file_system_watcher_remove_path(self.live_ptr(), file) }
+    }
+    pub fn remove_paths(&self, files: Vec<String>) -> Vec<String> {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_file_system_watcher_remove_paths(self.live_ptr(), files) }
+    }
+    pub fn files(&self) -> Vec<String> {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_file_system_watcher_files(self.live_ptr()) }
+    }
+    pub fn directories(&self) -> Vec<String> {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_file_system_watcher_directories(self.live_ptr()) }
+    }
+}
+
+core_object_wrapper!(
+    DBaseFileWatcher,
+    genffi::DBaseFileWatcher,
+    genffi::gen_d_base_file_watcher_as_qobject
+);
+impl DBaseFileWatcher {
+    pub fn file_url(&self) -> QUrl {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_base_file_watcher_file_url(self.live_ptr()) }
+    }
+    pub fn start_watcher(&self) -> bool {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_base_file_watcher_start_watcher(self.live_ptr()) }
+    }
+    pub fn stop_watcher(&self) -> bool {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_base_file_watcher_stop_watcher(self.live_ptr()) }
+    }
+    pub fn restart_watcher(&self) -> bool {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_base_file_watcher_restart_watcher(self.live_ptr()) }
+    }
+    pub fn set_enabled_subfile_watcher(&self, subfileUrl: &QUrl, enabled: bool) {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe {
+            genffi::gen_d_base_file_watcher_set_enabled_subfile_watcher(
+                self.live_ptr(),
+                subfileUrl,
+                enabled,
+            )
+        }
+    }
+}
+
+core_object_wrapper!(
+    DFileWatcher,
+    genffi::DFileWatcher,
+    genffi::gen_d_file_watcher_as_qobject
+);
+impl DFileWatcher {
+    /// Base-class view of the same native object: a separately guarded,
+    /// borrowed `DBaseFileWatcher` (C++ `static_cast`); never an owner.
+    pub fn as_d_base_file_watcher(&self) -> DBaseFileWatcher {
+        let _call = dtk_sys::NativeCall::new();
+        DBaseFileWatcher::from_raw(unsafe {
+            genffi::gen_d_file_watcher_as_d_base_file_watcher(self.live_ptr())
+        })
+    }
+}
+
+core_object_wrapper!(
+    DFileWatcherManager,
+    genffi::DFileWatcherManager,
+    genffi::gen_d_file_watcher_manager_as_qobject
+);
+impl DFileWatcherManager {
+    pub fn new() -> Owned<Self> {
+        crate::require_core_application();
+        let _call = dtk_sys::NativeCall::new();
+        Owned::new(Self::from_raw(unsafe {
+            genffi::gen_d_file_watcher_manager_new()
+        }))
+    }
+    /// Native ownership: `object_borrow`.
+    /// Evidence: `dtkcore/src/filesystem/dfilewatchermanager.cpp`: new DFileWatcher(filePath, this) child kept in watchersMap; remove()/removeAll() deleteLater it.
+    pub fn add(&self, filePath: &str) -> Option<DFileWatcher> {
+        let _call = dtk_sys::NativeCall::new();
+        {
+            let ptr = unsafe { genffi::gen_d_file_watcher_manager_add(self.live_ptr(), filePath) };
+            (!ptr.is_null()).then(|| DFileWatcher::from_raw(ptr))
+        }
+    }
+    pub fn remove(&self, filePath: &str) {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_file_watcher_manager_remove(self.live_ptr(), filePath) }
+    }
+    pub fn remove_all(&self) {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_file_watcher_manager_remove_all(self.live_ptr()) }
+    }
+    pub fn watched_files(&self) -> Vec<String> {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_file_watcher_manager_watched_files(self.live_ptr()) }
+    }
+}
+
+crate::impl_default_owned!(DSettings, DFileSystemWatcher, DFileWatcherManager);

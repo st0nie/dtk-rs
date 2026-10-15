@@ -84,7 +84,7 @@ type Connector<A> =
 
 /// Connect a generated CXX-Qt connector to a live sender.
 ///
-/// The connector casts the QObject with `qobject_cast` to the class that
+/// The connector casts the QObject with C++ `dynamic_cast` to the class that
 /// declares the signal; a wrapper that does not actually derive from it
 /// (impossible for generated wrappers) panics instead of connecting.
 pub(crate) fn connect_typed<S: Signal0 + ?Sized, A: 'static>(

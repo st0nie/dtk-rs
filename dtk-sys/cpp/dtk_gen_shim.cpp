@@ -26,6 +26,7 @@ int32_t gen_enum_d_print_preview_setting_info_setting_type_p_s_watermark() { ret
 DAboutDialog *gen_d_about_dialog_new() { return new DAboutDialog; }
 QObject *gen_d_about_dialog_as_qobject(DAboutDialog *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_about_dialog_as_widget(DAboutDialog *self) { return static_cast<QWidget *>(self); }
+DDialog *gen_d_about_dialog_as_d_dialog(DAboutDialog *self) { return static_cast<DDialog *>(self); }
 rust::String gen_d_about_dialog_window_title(DAboutDialog *self) { return to_rust_string(self->windowTitle()); }
 rust::String gen_d_about_dialog_product_name(DAboutDialog *self) { return to_rust_string(self->productName()); }
 rust::String gen_d_about_dialog_version(DAboutDialog *self) { return to_rust_string(self->version()); }
@@ -138,6 +139,7 @@ int32_t gen_d_arrow_button_button_state(DArrowButton *self) { return self->butto
 DArrowLineDrawer *gen_d_arrow_line_drawer_new() { return new DArrowLineDrawer; }
 QObject *gen_d_arrow_line_drawer_as_qobject(DArrowLineDrawer *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_arrow_line_drawer_as_widget(DArrowLineDrawer *self) { return static_cast<QWidget *>(self); }
+DDrawer *gen_d_arrow_line_drawer_as_d_drawer(DArrowLineDrawer *self) { return static_cast<DDrawer *>(self); }
 void gen_d_arrow_line_drawer_set_title(DArrowLineDrawer *self, rust::Str title) { self->setTitle(from_rust_str(title)); }
 void gen_d_arrow_line_drawer_set_expand(DArrowLineDrawer *self, bool value) { self->setExpand(value); }
 QObject *gen_d_arrow_rectangle_as_qobject(DArrowRectangle *self) { return static_cast<QObject *>(self); }
@@ -233,6 +235,7 @@ void gen_d_blur_effect_group_remove_widget(DBlurEffectGroup *self, DBlurEffectWi
 DBlurEffectWithBorderWidget *gen_d_blur_effect_with_border_widget_new() { return new DBlurEffectWithBorderWidget; }
 QObject *gen_d_blur_effect_with_border_widget_as_qobject(DBlurEffectWithBorderWidget *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_blur_effect_with_border_widget_as_widget(DBlurEffectWithBorderWidget *self) { return static_cast<QWidget *>(self); }
+DBlurEffectWidget *gen_d_blur_effect_with_border_widget_as_d_blur_effect_widget(DBlurEffectWithBorderWidget *self) { return static_cast<DBlurEffectWidget *>(self); }
 DBounceAnimation *gen_d_bounce_animation_new() { return new DBounceAnimation; }
 QObject *gen_d_bounce_animation_as_qobject(DBounceAnimation *self) { return static_cast<QObject *>(self); }
 void gen_d_bounce_animation_set_ani_mation_enable(DBounceAnimation *self, bool enable) { self->setAniMationEnable(enable); }
@@ -244,9 +247,11 @@ QSize gen_d_box_widget_size_hint(DBoxWidget *self) { return self->sizeHint(); }
 DHBoxWidget *gen_d_h_box_widget_new() { return new DHBoxWidget; }
 QObject *gen_d_h_box_widget_as_qobject(DHBoxWidget *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_h_box_widget_as_widget(DHBoxWidget *self) { return static_cast<QWidget *>(self); }
+DBoxWidget *gen_d_h_box_widget_as_d_box_widget(DHBoxWidget *self) { return static_cast<DBoxWidget *>(self); }
 DVBoxWidget *gen_d_v_box_widget_new() { return new DVBoxWidget; }
 QObject *gen_d_v_box_widget_as_qobject(DVBoxWidget *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_v_box_widget_as_widget(DVBoxWidget *self) { return static_cast<QWidget *>(self); }
+DBoxWidget *gen_d_v_box_widget_as_d_box_widget(DVBoxWidget *self) { return static_cast<DBoxWidget *>(self); }
 QObject *gen_d_button_box_button_as_qobject(DButtonBoxButton *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_button_box_button_as_widget(DButtonBoxButton *self) { return static_cast<QWidget *>(self); }
 void gen_d_button_box_button_set_icon(DButtonBoxButton *self, QIcon * icon) { self->setIcon(*icon); }
@@ -327,6 +332,7 @@ void gen_d_crumb_edit_set_dual_click_make_crumb(DCrumbEdit *self, bool flag) { s
 DDialog *gen_d_dialog_new() { return new DDialog; }
 QObject *gen_d_dialog_as_qobject(DDialog *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_dialog_as_widget(DDialog *self) { return static_cast<QWidget *>(self); }
+DAbstractDialog *gen_d_dialog_as_d_abstract_dialog(DDialog *self) { return static_cast<DAbstractDialog *>(self); }
 int32_t gen_d_dialog_get_button_index_by_text(DDialog *self, rust::Str text) { return self->getButtonIndexByText(from_rust_str(text)); }
 int32_t gen_d_dialog_button_count(DDialog *self) { return self->buttonCount(); }
 int32_t gen_d_dialog_content_count(DDialog *self) { return self->contentCount(); }
@@ -374,9 +380,11 @@ int32_t gen_d_dialog_exec(DDialog *self) { return self->exec(); }
 DDialogCloseButton *gen_d_dialog_close_button_new() { return new DDialogCloseButton; }
 QObject *gen_d_dialog_close_button_as_qobject(DDialogCloseButton *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_dialog_close_button_as_widget(DDialogCloseButton *self) { return static_cast<QWidget *>(self); }
+DIconButton *gen_d_dialog_close_button_as_d_icon_button(DDialogCloseButton *self) { return static_cast<DIconButton *>(self); }
 DDrawer *gen_d_drawer_new() { return new DDrawer; }
 QObject *gen_d_drawer_as_qobject(DDrawer *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_drawer_as_widget(DDrawer *self) { return static_cast<QWidget *>(self); }
+DFrame *gen_d_drawer_as_d_frame(DDrawer *self) { return static_cast<DFrame *>(self); }
 void gen_d_drawer_set_header(DDrawer *self, QWidget * header) { if (!object_can_adopt(self, header)) { return; } object_mark_native_adopted(self, header); self->setHeader(header); }
 void gen_d_drawer_set_content(DDrawer *self, QWidget * content, int32_t alignment) { if (!object_can_adopt(self, content)) { return; } object_mark_native_adopted(self, content); self->setContent(content, Qt::Alignment::fromInt(alignment)); }
 QWidget * gen_d_drawer_get_content(DDrawer *self) { return self->getContent(); }
@@ -411,6 +419,7 @@ void gen_d_feature_item_set_description(DFeatureItem *self, rust::Str descriptio
 DFeatureDisplayDialog *gen_d_feature_display_dialog_new() { return new DFeatureDisplayDialog; }
 QObject *gen_d_feature_display_dialog_as_qobject(DFeatureDisplayDialog *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_feature_display_dialog_as_widget(DFeatureDisplayDialog *self) { return static_cast<QWidget *>(self); }
+DDialog *gen_d_feature_display_dialog_as_d_dialog(DFeatureDisplayDialog *self) { return static_cast<DDialog *>(self); }
 void gen_d_feature_display_dialog_set_title(DFeatureDisplayDialog *self, rust::Str title) { self->setTitle(from_rust_str(title)); }
 void gen_d_feature_display_dialog_add_item(DFeatureDisplayDialog *self, DFeatureItem * item) { feature_dialog_add(self, item); }
 DFeatureItem * gen_d_feature_display_dialog_remove_item(DFeatureDisplayDialog *self, DFeatureItem * item) { return feature_dialog_take(self, item); }
@@ -422,6 +431,7 @@ bool gen_d_feature_display_dialog_is_empty(DFeatureDisplayDialog *self) { return
 DFileChooserEdit *gen_d_file_chooser_edit_new() { return new DFileChooserEdit; }
 QObject *gen_d_file_chooser_edit_as_qobject(DFileChooserEdit *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_file_chooser_edit_as_widget(DFileChooserEdit *self) { return static_cast<QWidget *>(self); }
+DLineEdit *gen_d_file_chooser_edit_as_d_line_edit(DFileChooserEdit *self) { return static_cast<DLineEdit *>(self); }
 void gen_d_file_chooser_edit_set_name_filters(DFileChooserEdit *self, rust::Vec<rust::String> filters) { self->setNameFilters(to_qstringlist(std::move(filters))); }
 rust::Vec<rust::String> gen_d_file_chooser_edit_name_filters(DFileChooserEdit *self) { return to_rust_string_vec(self->nameFilters()); }
 void gen_d_file_chooser_edit_set_directory_url(DFileChooserEdit *self, const QUrl &directory) { self->setDirectoryUrl(directory); }
@@ -444,9 +454,11 @@ DFileIconProvider * gen_d_file_icon_provider_global_provider() { return const_ca
 DFloatingButton *gen_d_floating_button_new() { return new DFloatingButton; }
 QObject *gen_d_floating_button_as_qobject(DFloatingButton *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_floating_button_as_widget(DFloatingButton *self) { return static_cast<QWidget *>(self); }
+DIconButton *gen_d_floating_button_as_d_icon_button(DFloatingButton *self) { return static_cast<DIconButton *>(self); }
 DFloatingMessage *gen_d_floating_message_new() { return new DFloatingMessage; }
 QObject *gen_d_floating_message_as_qobject(DFloatingMessage *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_floating_message_as_widget(DFloatingMessage *self) { return static_cast<QWidget *>(self); }
+DFloatingWidget *gen_d_floating_message_as_d_floating_widget(DFloatingMessage *self) { return static_cast<DFloatingWidget *>(self); }
 int32_t gen_d_floating_message_message_type(DFloatingMessage *self) { return static_cast<int32_t>(self->messageType()); }
 void gen_d_floating_message_set_icon(DFloatingMessage *self, QIcon * ico) { self->setIcon(*ico); }
 void gen_d_floating_message_set_icon_2(DFloatingMessage *self, DDciIcon * icon) { self->setIcon(*icon); }
@@ -487,6 +499,7 @@ void gen_d_flow_layout_set_spacing(DFlowLayout *self, int32_t spacing) { self->s
 DFontComboBox *gen_d_font_combo_box_new() { return new DFontComboBox; }
 QObject *gen_d_font_combo_box_as_qobject(DFontComboBox *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_font_combo_box_as_widget(DFontComboBox *self) { return static_cast<QWidget *>(self); }
+DComboBox *gen_d_font_combo_box_as_d_combo_box(DFontComboBox *self) { return static_cast<DComboBox *>(self); }
 QFont * gen_d_font_combo_box_current_font(DFontComboBox *self) { return new QFont(self->currentFont()); }
 QSize gen_d_font_combo_box_size_hint(DFontComboBox *self) { return self->sizeHint(); }
 void gen_d_font_combo_box_set_current_font(DFontComboBox *self, QFont * f) { self->setCurrentFont(*f); }
@@ -526,6 +539,7 @@ void gen_d_graphics_glow_effect_set_opacity(DGraphicsGlowEffect *self, double op
 DHeaderLine *gen_d_header_line_new() { return new DHeaderLine; }
 QObject *gen_d_header_line_as_qobject(DHeaderLine *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_header_line_as_widget(DHeaderLine *self) { return static_cast<QWidget *>(self); }
+DBaseLine *gen_d_header_line_as_d_base_line(DHeaderLine *self) { return static_cast<DBaseLine *>(self); }
 void gen_d_header_line_set_title(DHeaderLine *self, rust::Str title) { self->setTitle(from_rust_str(title)); }
 void gen_d_header_line_set_content(DHeaderLine *self, QWidget * content) { if (!object_can_adopt(self, content)) { return; } object_mark_native_adopted(self, content); self->setContent(content); }
 rust::String gen_d_header_line_title(DHeaderLine *self) { return to_rust_string(self->title()); }
@@ -576,6 +590,7 @@ QWidget *gen_d_indeterminate_progressbar_as_widget(DIndeterminateProgressbar *se
 DInputDialog *gen_d_input_dialog_new() { return new DInputDialog; }
 QObject *gen_d_input_dialog_as_qobject(DInputDialog *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_input_dialog_as_widget(DInputDialog *self) { return static_cast<QWidget *>(self); }
+DDialog *gen_d_input_dialog_as_d_dialog(DInputDialog *self) { return static_cast<DDialog *>(self); }
 void gen_d_input_dialog_set_input_mode(DInputDialog *self, int32_t mode) { self->setInputMode(static_cast<DInputDialog::InputMode>(mode)); }
 int32_t gen_d_input_dialog_input_mode(DInputDialog *self) { return static_cast<int32_t>(self->inputMode()); }
 void gen_d_input_dialog_set_text_value(DInputDialog *self, rust::Str text) { self->setTextValue(from_rust_str(text)); }
@@ -637,6 +652,7 @@ rust::String gen_d_key_sequence_edit_get_key_sequence(DKeySequenceEdit *self, QK
 DLicenseDialog *gen_d_license_dialog_new() { return new DLicenseDialog; }
 QObject *gen_d_license_dialog_as_qobject(DLicenseDialog *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_license_dialog_as_widget(DLicenseDialog *self) { return static_cast<QWidget *>(self); }
+DAbstractDialog *gen_d_license_dialog_as_d_abstract_dialog(DLicenseDialog *self) { return static_cast<DAbstractDialog *>(self); }
 void gen_d_license_dialog_set_content(DLicenseDialog *self, rust::Str content) { self->setContent(QByteArray(from_rust_str(content).toUtf8())); }
 void gen_d_license_dialog_set_file(DLicenseDialog *self, rust::Str file) { self->setFile(from_rust_str(file)); }
 void gen_d_license_dialog_set_license_search_path(DLicenseDialog *self, rust::Str path) { self->setLicenseSearchPath(from_rust_str(path)); }
@@ -770,6 +786,7 @@ void gen_d_palette_helper_reset_palette(DPaletteHelper *self, QWidget * widget) 
 DPasswordEdit *gen_d_password_edit_new() { return new DPasswordEdit; }
 QObject *gen_d_password_edit_as_qobject(DPasswordEdit *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_password_edit_as_widget(DPasswordEdit *self) { return static_cast<QWidget *>(self); }
+DLineEdit *gen_d_password_edit_as_d_line_edit(DPasswordEdit *self) { return static_cast<DLineEdit *>(self); }
 bool gen_d_password_edit_is_echo_mode(DPasswordEdit *self) { return self->isEchoMode(); }
 void gen_d_password_edit_set_echo_mode(DPasswordEdit *self, int32_t mode) { self->setEchoMode(static_cast<QLineEdit::EchoMode>(mode)); }
 void gen_d_password_edit_set_echo_button_is_visible(DPasswordEdit *self, bool visible) { self->setEchoButtonIsVisible(visible); }
@@ -813,6 +830,7 @@ void gen_d_print_pick_color_widget_slot_edit_color(DPrintPickColorWidget *self, 
 DPrintPreviewDialog *gen_d_print_preview_dialog_new() { return new DPrintPreviewDialog; }
 QObject *gen_d_print_preview_dialog_as_qobject(DPrintPreviewDialog *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_print_preview_dialog_as_widget(DPrintPreviewDialog *self) { return static_cast<QWidget *>(self); }
+DDialog *gen_d_print_preview_dialog_as_d_dialog(DPrintPreviewDialog *self) { return static_cast<DDialog *>(self); }
 void gen_d_print_preview_dialog_set_plugin_mime_data(QVariant * mimeData) { DPrintPreviewDialog::setPluginMimeData(*mimeData); }
 QVariant * gen_d_print_preview_dialog_plugin_mime_data() { return new QVariant(DPrintPreviewDialog::pluginMimeData()); }
 bool gen_d_print_preview_dialog_set_current_plugin(rust::Str pluginName) { return DPrintPreviewDialog::setCurrentPlugin(from_rust_str(pluginName)); }
@@ -860,6 +878,7 @@ void gen_d_printer_delete(DPrinter *self) { delete self; }
 void gen_d_printer_set_preview_mode(DPrinter *self, bool isPreview) { self->setPreviewMode(isPreview); }
 QObject *gen_d_print_preview_widget_as_qobject(DPrintPreviewWidget *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_print_preview_widget_as_widget(DPrintPreviewWidget *self) { return static_cast<QWidget *>(self); }
+DFrame *gen_d_print_preview_widget_as_d_frame(DPrintPreviewWidget *self) { return static_cast<DFrame *>(self); }
 void gen_d_print_preview_widget_set_visible(DPrintPreviewWidget *self, bool visible) { self->setVisible(visible); }
 void gen_d_print_preview_widget_set_page_range(DPrintPreviewWidget *self, int32_t from, int32_t to) { self->setPageRange(from, to); }
 void gen_d_print_preview_widget_set_page_range_a_l_l(DPrintPreviewWidget *self) { self->setPageRangeALL(); }
@@ -917,10 +936,12 @@ QSize gen_d_progress_bar_minimum_size_hint(DProgressBar *self) { return self->mi
 DSearchComboBox *gen_d_search_combo_box_new() { return new DSearchComboBox; }
 QObject *gen_d_search_combo_box_as_qobject(DSearchComboBox *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_search_combo_box_as_widget(DSearchComboBox *self) { return static_cast<QWidget *>(self); }
+DComboBox *gen_d_search_combo_box_as_d_combo_box(DSearchComboBox *self) { return static_cast<DComboBox *>(self); }
 void gen_d_search_combo_box_set_editable(DSearchComboBox *self, bool editable) { self->setEditable(editable); }
 DSearchEdit *gen_d_search_edit_new() { return new DSearchEdit; }
 QObject *gen_d_search_edit_as_qobject(DSearchEdit *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_search_edit_as_widget(DSearchEdit *self) { return static_cast<QWidget *>(self); }
+DLineEdit *gen_d_search_edit_as_d_line_edit(DSearchEdit *self) { return static_cast<DLineEdit *>(self); }
 void gen_d_search_edit_set_place_holder(DSearchEdit *self, rust::Str placeHolder) { self->setPlaceHolder(from_rust_str(placeHolder)); }
 rust::String gen_d_search_edit_place_holder(DSearchEdit *self) { return to_rust_string(self->placeHolder()); }
 void gen_d_search_edit_clear(DSearchEdit *self) { self->clear(); }
@@ -931,6 +952,7 @@ rust::String gen_d_search_edit_placeholder_text(DSearchEdit *self) { return to_r
 DSettingsDialog *gen_d_settings_dialog_new() { return new DSettingsDialog; }
 QObject *gen_d_settings_dialog_as_qobject(DSettingsDialog *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_settings_dialog_as_widget(DSettingsDialog *self) { return static_cast<QWidget *>(self); }
+DAbstractDialog *gen_d_settings_dialog_as_d_abstract_dialog(DSettingsDialog *self) { return static_cast<DAbstractDialog *>(self); }
 DSettingsWidgetFactory * gen_d_settings_dialog_widget_factory(DSettingsDialog *self) { return const_cast<DSettingsWidgetFactory *>(self->widgetFactory()); }
 bool gen_d_settings_dialog_group_is_visible(DSettingsDialog *self, rust::Str groupKey) { return self->groupIsVisible(from_rust_str(groupKey)); }
 void gen_d_settings_dialog_set_reset_visible(DSettingsDialog *self, bool visible) { self->setResetVisible(visible); }
@@ -1029,6 +1051,7 @@ void gen_d_spinner_set_background_color(DSpinner *self, const QColor &color) { s
 QObject *gen_d_abstract_stack_widget_transition_as_qobject(DAbstractStackWidgetTransition *self) { return static_cast<QObject *>(self); }
 DSlideStackWidgetTransition *gen_d_slide_stack_widget_transition_new() { return new DSlideStackWidgetTransition; }
 QObject *gen_d_slide_stack_widget_transition_as_qobject(DSlideStackWidgetTransition *self) { return static_cast<QObject *>(self); }
+DAbstractStackWidgetTransition *gen_d_slide_stack_widget_transition_as_d_abstract_stack_widget_transition(DSlideStackWidgetTransition *self) { return static_cast<DAbstractStackWidgetTransition *>(self); }
 DStackWidget *gen_d_stack_widget_new() { return new DStackWidget; }
 QObject *gen_d_stack_widget_as_qobject(DStackWidget *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_stack_widget_as_widget(DStackWidget *self) { return static_cast<QWidget *>(self); }
@@ -1138,10 +1161,12 @@ QSize gen_d_switch_button_size_hint(DSwitchButton *self) { return self->sizeHint
 DSwitchHeaderLine *gen_d_switch_header_line_new() { return new DSwitchHeaderLine; }
 QObject *gen_d_switch_header_line_as_qobject(DSwitchHeaderLine *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_switch_header_line_as_widget(DSwitchHeaderLine *self) { return static_cast<QWidget *>(self); }
+DHeaderLine *gen_d_switch_header_line_as_d_header_line(DSwitchHeaderLine *self) { return static_cast<DHeaderLine *>(self); }
 void gen_d_switch_header_line_set_expand(DSwitchHeaderLine *self, bool value) { self->setExpand(value); }
 DSwitchLineExpand *gen_d_switch_line_expand_new() { return new DSwitchLineExpand; }
 QObject *gen_d_switch_line_expand_as_qobject(DSwitchLineExpand *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_switch_line_expand_as_widget(DSwitchLineExpand *self) { return static_cast<QWidget *>(self); }
+DDrawer *gen_d_switch_line_expand_as_d_drawer(DSwitchLineExpand *self) { return static_cast<DDrawer *>(self); }
 void gen_d_switch_line_expand_set_title(DSwitchLineExpand *self, rust::Str title) { self->setTitle(from_rust_str(title)); }
 void gen_d_switch_line_expand_set_expand(DSwitchLineExpand *self, bool value) { self->setExpand(value); }
 DBaseLine * gen_d_switch_line_expand_header(DSwitchLineExpand *self) { return const_cast<DBaseLine *>(self->header()); }
@@ -1216,6 +1241,7 @@ void gen_d_tab_bar_stop_drag(DTabBar *self, int32_t action) { self->stopDrag(sta
 DTabletWindowOptionButton *gen_d_tablet_window_option_button_new() { return new DTabletWindowOptionButton; }
 QObject *gen_d_tablet_window_option_button_as_qobject(DTabletWindowOptionButton *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_tablet_window_option_button_as_widget(DTabletWindowOptionButton *self) { return static_cast<QWidget *>(self); }
+DIconButton *gen_d_tablet_window_option_button_as_d_icon_button(DTabletWindowOptionButton *self) { return static_cast<DIconButton *>(self); }
 QSize gen_d_tablet_window_option_button_size_hint(DTabletWindowOptionButton *self) { return self->sizeHint(); }
 DTextEdit *gen_d_text_edit_new() { return new DTextEdit; }
 QObject *gen_d_text_edit_as_qobject(DTextEdit *self) { return static_cast<QObject *>(self); }
@@ -1243,8 +1269,10 @@ rust::String gen_d_titlebar_tool_base_interface_id(DTitlebarToolBaseInterface *s
 rust::String gen_d_titlebar_tool_base_interface_description(DTitlebarToolBaseInterface *self) { return to_rust_string(self->description()); }
 rust::String gen_d_titlebar_tool_base_interface_icon_name(DTitlebarToolBaseInterface *self) { return to_rust_string(self->iconName()); }
 QObject *gen_d_title_bar_tool_interface_as_qobject(DTitleBarToolInterface *self) { return static_cast<QObject *>(self); }
+DTitlebarToolBaseInterface *gen_d_title_bar_tool_interface_as_d_titlebar_tool_base_interface(DTitleBarToolInterface *self) { return static_cast<DTitlebarToolBaseInterface *>(self); }
 QWidget * gen_d_title_bar_tool_interface_create_view(DTitleBarToolInterface *self) { return self->createView(); }
 QObject *gen_d_title_bar_spacer_interface_as_qobject(DTitleBarSpacerInterface *self) { return static_cast<QObject *>(self); }
+DTitlebarToolBaseInterface *gen_d_title_bar_spacer_interface_as_d_titlebar_tool_base_interface(DTitleBarSpacerInterface *self) { return static_cast<DTitlebarToolBaseInterface *>(self); }
 QWidget * gen_d_title_bar_spacer_interface_create_placeholder_view(DTitleBarSpacerInterface *self) { return self->createPlaceholderView(); }
 int32_t gen_d_title_bar_spacer_interface_size(DTitleBarSpacerInterface *self) { return self->size(); }
 QWidget * gen_d_titlebar_settings_tools_edit_panel(DTitlebarSettings *self) { return self->toolsEditPanel(); }
@@ -1255,6 +1283,7 @@ void gen_d_tool_button_set_alignment(DToolButton *self, int32_t flag) { self->se
 int32_t gen_d_tool_button_alignment(DToolButton *self) { return (self->alignment()).toInt(); }
 QObject *gen_d_tool_tip_as_qobject(DToolTip *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_tool_tip_as_widget(DToolTip *self) { return static_cast<QWidget *>(self); }
+DTipLabel *gen_d_tool_tip_as_d_tip_label(DToolTip *self) { return static_cast<DTipLabel *>(self); }
 void gen_d_tool_tip_set_tool_tip_text_format(int32_t format) { DToolTip::setToolTipTextFormat(static_cast<Qt::TextFormat>(format)); }
 int32_t gen_d_tool_tip_tool_tip_text_format() { return static_cast<int32_t>(DToolTip::toolTipTextFormat()); }
 void gen_d_tool_tip_set_tool_tip_show_mode(QWidget * widget, int32_t mode) { DToolTip::setToolTipShowMode(widget, static_cast<DToolTip::ToolTipShowMode>(mode)); }
@@ -1313,24 +1342,29 @@ void gen_d_water_progress_set_text_visible(DWaterProgress *self, bool visible) {
 DWindowCloseButton *gen_d_window_close_button_new() { return new DWindowCloseButton; }
 QObject *gen_d_window_close_button_as_qobject(DWindowCloseButton *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_window_close_button_as_widget(DWindowCloseButton *self) { return static_cast<QWidget *>(self); }
+DIconButton *gen_d_window_close_button_as_d_icon_button(DWindowCloseButton *self) { return static_cast<DIconButton *>(self); }
 QSize gen_d_window_close_button_size_hint(DWindowCloseButton *self) { return self->sizeHint(); }
 DWindowMaxButton *gen_d_window_max_button_new() { return new DWindowMaxButton; }
 QObject *gen_d_window_max_button_as_qobject(DWindowMaxButton *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_window_max_button_as_widget(DWindowMaxButton *self) { return static_cast<QWidget *>(self); }
+DIconButton *gen_d_window_max_button_as_d_icon_button(DWindowMaxButton *self) { return static_cast<DIconButton *>(self); }
 bool gen_d_window_max_button_is_maximized(DWindowMaxButton *self) { return self->isMaximized(); }
 QSize gen_d_window_max_button_size_hint(DWindowMaxButton *self) { return self->sizeHint(); }
 void gen_d_window_max_button_set_maximized(DWindowMaxButton *self, bool isMaximized) { self->setMaximized(isMaximized); }
 DWindowMinButton *gen_d_window_min_button_new() { return new DWindowMinButton; }
 QObject *gen_d_window_min_button_as_qobject(DWindowMinButton *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_window_min_button_as_widget(DWindowMinButton *self) { return static_cast<QWidget *>(self); }
+DIconButton *gen_d_window_min_button_as_d_icon_button(DWindowMinButton *self) { return static_cast<DIconButton *>(self); }
 QSize gen_d_window_min_button_size_hint(DWindowMinButton *self) { return self->sizeHint(); }
 DWindowOptionButton *gen_d_window_option_button_new() { return new DWindowOptionButton; }
 QObject *gen_d_window_option_button_as_qobject(DWindowOptionButton *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_window_option_button_as_widget(DWindowOptionButton *self) { return static_cast<QWidget *>(self); }
+DIconButton *gen_d_window_option_button_as_d_icon_button(DWindowOptionButton *self) { return static_cast<DIconButton *>(self); }
 QSize gen_d_window_option_button_size_hint(DWindowOptionButton *self) { return self->sizeHint(); }
 DWindowQuitFullButton *gen_d_window_quit_full_button_new() { return new DWindowQuitFullButton; }
 QObject *gen_d_window_quit_full_button_as_qobject(DWindowQuitFullButton *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_window_quit_full_button_as_widget(DWindowQuitFullButton *self) { return static_cast<QWidget *>(self); }
+DIconButton *gen_d_window_quit_full_button_as_d_icon_button(DWindowQuitFullButton *self) { return static_cast<DIconButton *>(self); }
 QSize gen_d_window_quit_full_button_size_hint(DWindowQuitFullButton *self) { return self->sizeHint(); }
 
 } // namespace dtkrs

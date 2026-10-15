@@ -207,10 +207,8 @@ class QtAncestryTests(unittest.TestCase):
             report = Path(REPO, f"OWNERSHIP_{domain}_REPORT.md").read_text()
             self.assertIn("matching apt source", report)
             self.assertIn("copied scalar / no result", report)
-        report = Path(REPO, "OWNERSHIP_WIDGET_REPORT.md").read_text()
+        report = "".join(Path(REPO, f"OWNERSHIP_{d}_REPORT.md").read_text() for d in ("WIDGET", "CORE", "GUI"))
         for (cls, method), (contract, source, _) in POINTER_RETURNS.items():
-            if cls == "DGuiApplicationHelper":
-                continue
             with self.subTest(api=f"{cls}::{method}"):
                 self.assertIn(f"`{cls}::{method}`", report)
                 self.assertIn(f"`{source}`", report)
@@ -428,6 +426,28 @@ class ByValueAndSignalTests(unittest.TestCase):
         self.assertNotIn("Pin<", code)
         self.assertNotIn("&mut", code)
         self.assertEqual(len(re.findall(r"#\[qsignal\]", bridge)), len(re.findall(r"pub\(self\) fn", bridge)))
+
+
+
+class SelectedCoreGuiTests(unittest.TestCase):
+    def test_dcore_dgui_extensions_have_audited_contracts(self):
+        root = Path(REPO)
+        core = (root / "dtk/src/core.rs").read_text()
+        gui = (root / "dtk/src/gui.rs").read_text()
+        cpp = (root / "dtk-sys/cpp/dtk_core_shim.cpp").read_text()
+        self.assertIn("pub fn as_d_base_file_watcher(&self) -> DBaseFileWatcher", core)
+        self.assertIn("pub fn as_d_native_settings(&self) -> DNativeSettings", gui)
+        self.assertIn("pub fn add(&self, filePath: &str) -> Option<DFileWatcher>", core)
+        # Null QPointer<DSettingsOption> dereference repaired natively.
+        self.assertIn("if (!self->option(from_rust_str(key))) return;", cpp)
+        self.assertIn("pub fn get_name_by_effect_type(effect: SystemSoundEffect) -> String", gui)
+        services = gui.split("impl DDesktopServices {", 1)[1].split("\n}\n", 1)[0]
+        self.assertEqual(services.count("crate::require_application();"), services.count("pub fn "))
+        # DGui header basenames collide with deprecated DWidget headers.
+        self.assertIn("#include <DDesktopServices>", (root / "dtk-sys/include/dtk_gui_shim.h").read_text())
+        for owned in ("DPlatformTheme", "DWindowManagerHelper", "DFileWatcher"):
+            with self.subTest(owned=owned):
+                self.assertNotIn(f"Owned<{owned}>", core + gui)
 
 
 if __name__ == "__main__":

@@ -1,14 +1,14 @@
-# DTK6 core pilot binding coverage report
+# DTK6 core (selected classes) binding coverage report
 
-classes: 3, methods generated: 52, skipped: 13
+classes: 9, methods generated: 80, skipped: 23
 
-Qt ancestry: 0 widgets, 1 QObjects, 2 opaque types
+Qt ancestry: 0 widgets, 6 QObjects, 3 opaque types
 
 ## skip reasons
-- unsupported param type: 9
-- unsupported return type: 4
+- unsupported param type: 12
+- unsupported return type: 11
 
-> Pilot scope: only the listed classes/headers were scanned; this is NOT library-wide coverage.
+> Selected-class scope: only the listed classes/headers were scanned; this is NOT library-wide coverage.
 
 ## DStandardPaths — 13 methods generated, 0 skipped
 
@@ -28,3 +28,25 @@ Qt ancestry: 0 widgets, 1 QObjects, 2 opaque types
 - `static DConfig *createGeneric(const QString &name, const QString &subpath = QStr` ← unsupported param type: QObject *
 - `static DConfig *createGeneric(DConfigBackend *backend, const QString &name, cons` ← unsupported param type: DConfigBackend *
 - `static QThread *globalThread();` ← unsupported return type: QThread *
+
+## DSettings — 7 methods generated, 8 skipped
+- `void setBackend(DSettingsBackend *backend = nullptr);` ← unsupported param type: DSettingsBackend *
+- `static QPointer<DSettings> fromJson(const QByteArray &json);` ← unsupported return type: QPointer<DSettings>
+- `static QPointer<DSettings> fromJsonFile(const QString &filepath);` ← unsupported return type: QPointer<DSettings>
+- `QJsonObject meta() const;` ← unsupported return type: QJsonObject
+- `QList<QPointer<DSettingsOption>> options() const;` ← unsupported return type: QList<QPointer<DSettingsOption>>
+- `QPointer<DSettingsOption> option(const QString &key) const;` ← unsupported return type: QPointer<DSettingsOption>
+- `QList<QPointer<DSettingsGroup>> groups() const;` ← unsupported return type: QList<QPointer<DSettingsGroup>>
+- `QPointer<DSettingsGroup> group(const QString &key) const;` ← unsupported return type: QPointer<DSettingsGroup>
+
+## DLogManager — 6 methods generated, 0 skipped
+
+## DFileSystemWatcher — 6 methods generated, 0 skipped
+
+## DBaseFileWatcher — 5 methods generated, 2 skipped
+- `static bool ghostSignal(const QUrl &targetUrl, SignalType1 signal, const QUrl &a` ← unsupported param type: SignalType1
+- `static bool ghostSignal(const QUrl &targetUrl, SignalType2 signal, const QUrl &a` ← unsupported param type: SignalType2
+
+## DFileWatcher — 0 methods generated, 0 skipped
+
+## DFileWatcherManager — 4 methods generated, 0 skipped

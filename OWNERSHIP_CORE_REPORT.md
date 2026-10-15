@@ -60,3 +60,36 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DConfig::isReadOnly` | `bool` | copied scalar / no result | shim conversion; `dconfig.h` |
 | `DConfig::name` | `String` | owned Rust strings/container | shim conversion; `dconfig.h` |
 | `DConfig::subpath` | `String` | owned Rust strings/container | shim conversion; `dconfig.h` |
+| `DSettings()` | `new DSettings` | constructor `Owned` | constructor; `dsettings.h` |
+| `DSettings::keys` | `Vec<String>` | owned Rust strings/container | shim conversion; `dsettings.h` |
+| `DSettings::value` | `*mut QVariant` | owned heap copy | shim conversion; `dsettings.h` |
+| `DSettings::groupKeys` | `Vec<String>` | owned Rust strings/container | shim conversion; `dsettings.h` |
+| `DSettings::getOption` | `*mut QVariant` | owned heap copy | shim conversion; `dsettings.h` |
+| `DSettings::sync` | `()` | copied scalar / no result | shim conversion; `dsettings.h` |
+| `DSettings::setOption` | `()` | copied scalar / no result | shim conversion; `dsettings.h` |
+| `DSettings::setOption` Qt value inputs | `QVariant * value` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dsettings.h` native value/reference signature |
+| `DSettings::reset` | `()` | copied scalar / no result | shim conversion; `dsettings.h` |
+| `DLogManager::registerConsoleAppender` | `()` | copied scalar / no result | shim conversion; `LogManager.h` |
+| `DLogManager::registerFileAppender` | `()` | copied scalar / no result | shim conversion; `LogManager.h` |
+| `DLogManager::registerJournalAppender` | `()` | copied scalar / no result | shim conversion; `LogManager.h` |
+| `DLogManager::getlogFilePath` | `String` | owned Rust strings/container | shim conversion; `LogManager.h` |
+| `DLogManager::setlogFilePath` | `()` | copied scalar / no result | shim conversion; `LogManager.h` |
+| `DLogManager::setLogFormat` | `()` | copied scalar / no result | shim conversion; `LogManager.h` |
+| `DFileSystemWatcher()` | `new DFileSystemWatcher` | constructor `Owned` | constructor; `dfilesystemwatcher.h` |
+| `DFileSystemWatcher::addPath` | `bool` | copied scalar / no result | shim conversion; `dfilesystemwatcher.h` |
+| `DFileSystemWatcher::addPaths` | `Vec<String>` | owned Rust strings/container | shim conversion; `dfilesystemwatcher.h` |
+| `DFileSystemWatcher::removePath` | `bool` | copied scalar / no result | shim conversion; `dfilesystemwatcher.h` |
+| `DFileSystemWatcher::removePaths` | `Vec<String>` | owned Rust strings/container | shim conversion; `dfilesystemwatcher.h` |
+| `DFileSystemWatcher::files` | `Vec<String>` | owned Rust strings/container | shim conversion; `dfilesystemwatcher.h` |
+| `DFileSystemWatcher::directories` | `Vec<String>` | owned Rust strings/container | shim conversion; `dfilesystemwatcher.h` |
+| `DBaseFileWatcher::fileUrl` | `QUrl` | by-value copy (cxx-qt-lib trivial type) | shim conversion; `dbasefilewatcher.h` |
+| `DBaseFileWatcher::startWatcher` | `bool` | copied scalar / no result | shim conversion; `dbasefilewatcher.h` |
+| `DBaseFileWatcher::stopWatcher` | `bool` | copied scalar / no result | shim conversion; `dbasefilewatcher.h` |
+| `DBaseFileWatcher::restartWatcher` | `bool` | copied scalar / no result | shim conversion; `dbasefilewatcher.h` |
+| `DBaseFileWatcher::setEnabledSubfileWatcher` | `()` | copied scalar / no result | shim conversion; `dbasefilewatcher.h` |
+| `DBaseFileWatcher::setEnabledSubfileWatcher` Qt value inputs | `const QUrl &subfileUrl` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dbasefilewatcher.h` native value/reference signature |
+| `DFileWatcherManager()` | `new DFileWatcherManager` | constructor `Owned` | constructor; `dfilewatchermanager.h` |
+| `DFileWatcherManager::add` | `DFileWatcher*` | `object_borrow` | `dtkcore/src/filesystem/dfilewatchermanager.cpp`: new DFileWatcher(filePath, this) child kept in watchersMap; remove()/removeAll() deleteLater it |
+| `DFileWatcherManager::remove` | `()` | copied scalar / no result | shim conversion; `dfilewatchermanager.h` |
+| `DFileWatcherManager::removeAll` | `()` | copied scalar / no result | shim conversion; `dfilewatchermanager.h` |
+| `DFileWatcherManager::watchedFiles` | `Vec<String>` | owned Rust strings/container | shim conversion; `dfilewatchermanager.h` |

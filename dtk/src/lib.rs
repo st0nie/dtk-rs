@@ -2574,6 +2574,46 @@ pub mod core;
 pub mod gui;
 pub mod widgets;
 
+impl core::DSettings {
+    /// Parse DTK settings JSON (`{"groups": [...]}`). Native `fromJson`
+    /// returns a parentless `new DSettings` that the caller must release.
+    pub fn from_json(json: &str) -> Owned<Self> {
+        require_core_application();
+        let _call = dtk_sys::NativeCall::new();
+        Owned::new(Self::from_raw(
+            unsafe { ffi::core_settings_from_json(json) } as _,
+        ))
+    }
+    /// Same as [`from_json`](Self::from_json), reading the file (an unreadable
+    /// file gives settings without options).
+    pub fn from_json_file(path: &str) -> Owned<Self> {
+        require_core_application();
+        let _call = dtk_sys::NativeCall::new();
+        Owned::new(Self::from_raw(
+            unsafe { ffi::core_settings_from_json_file(path) } as _,
+        ))
+    }
+    /// Persist options to a QSettings file through DTK's `QSettingBackend`
+    /// (written on its own worker thread, joined when these settings are
+    /// destroyed). Returns false if a backend was already installed.
+    pub fn set_file_backend(&self, path: &str) -> bool {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { ffi::core_settings_set_file_backend(self.live_ptr() as _, path) }
+    }
+}
+
+impl core::DFileWatcher {
+    /// Watch one file or directory (inotify, shared native DTK watcher).
+    /// Call `start_watcher()` to begin; signals deliver `QUrl`s.
+    pub fn new(path: &str) -> Owned<Self> {
+        require_core_application();
+        let _call = dtk_sys::NativeCall::new();
+        Owned::new(Self::from_raw(
+            unsafe { ffi::core_file_watcher_new(path) } as _
+        ))
+    }
+}
+
 impl core::DConfig {
     // Both native factories explicitly transfer their returned QObject to
     // callers, regardless of whether the configuration metadata is valid.

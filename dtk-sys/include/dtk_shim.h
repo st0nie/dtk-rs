@@ -43,6 +43,10 @@
 #include <DDciIcon>
 #include <DPalette>
 #include <dconfig.h>
+#include <DSettings>
+#include <DSettingsOption>
+#include <DFileWatcher>
+#include <qsettingbackend.h>
 #include <QPoint>
 #include <QRect>
 #include <QSize>
@@ -110,6 +114,8 @@ using ::QVariantList;
 using Dtk::Gui::DDciIcon;
 using Dtk::Gui::DPalette;
 using Dtk::Core::DConfig;
+using Dtk::Core::DSettings;
+using Dtk::Core::DFileWatcher;
 using ::QPoint;
 using ::QRect;
 using ::QSize;
@@ -202,6 +208,14 @@ bool application_has_arg(rust::Str arg);
 // Null is possible; neither factory sets a QObject parent here.
 DConfig *core_config_create_generic(rust::Str name, rust::Str subpath);
 DConfig *core_config_create(rust::Str app_id, rust::Str name, rust::Str subpath);
+// dtkcore dsettings.cpp: fromJson returns QPointer(new DSettings) without a
+// parent ("needs to be manually released"): caller ownership.
+DSettings *core_settings_from_json(rust::Str json);
+DSettings *core_settings_from_json_file(rust::Str path);
+// Installs a QSettings-file backend once (false if one was already installed).
+bool core_settings_set_file_backend(DSettings *settings, rust::Str path);
+// dtkcore dfilewatcher.cpp: plain QObject constructor with a null parent.
+DFileWatcher *core_file_watcher_new(rust::Str path);
 
 // ---- QWidget common (applies to all widgets) ----
 void widget_show(QWidget *w);
