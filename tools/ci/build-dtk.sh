@@ -6,6 +6,10 @@
 # instead of taking whatever version a distribution currently ships.
 #
 # Usage: tools/ci/build-dtk.sh [prefix]   (default /usr; needs Qt6 dev packages)
+# Later DTK modules locate earlier ones (and dtkcore's DConfig JSON under
+# /usr/share/dsg) at their install location, so each module is installed into
+# the prefix directly. With DTK_STAGE set, every module is also installed under
+# that DESTDIR, e.g. for caching the build.
 set -euo pipefail
 
 DTK_TAG=${DTK_TAG:-6.7.47}
@@ -28,6 +32,9 @@ build() {
         -DBUILD_TESTING=OFF -DBUILD_DOCS=OFF -DBUILD_EXAMPLES=OFF "$@"
     cmake --build "$WORK/build/$repo"
     cmake --install "$WORK/build/$repo"
+    if [[ -n "${DTK_STAGE:-}" ]]; then
+        DESTDIR="$DTK_STAGE" cmake --install "$WORK/build/$repo"
+    fi
 }
 
 fetch treeland-protocols "$TREELAND_PROTOCOLS_TAG"

@@ -45,16 +45,16 @@ jobs:
         id: dtk-cache
         uses: actions/cache@v4
         with:
-          path: /opt/dtk
+          path: /opt/dtk-stage
           key: dtk-${{ env.DTK_TAG }}-deepin-crimson-${{ hashFiles('tools/ci/build-dtk.sh') }}
 
       - name: Build DTK ${{ env.DTK_TAG }}
         if: steps.dtk-cache.outputs.cache-hit != 'true'
-        run: bash tools/ci/build-dtk.sh /opt/dtk
+        run: DTK_STAGE=/opt/dtk-stage bash tools/ci/build-dtk.sh /usr
 
       - name: Use DTK ${{ env.DTK_TAG }}
         run: |
-          cp -a /opt/dtk/. /usr/
+          cp -a /opt/dtk-stage/usr/. /usr/
           ldconfig
           pkg-config --modversion dtk6widget dtk6gui dtk6core
 
