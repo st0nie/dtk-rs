@@ -228,8 +228,11 @@ Known gaps in dtk-rs, roughly in priority order.
       application scope of a process (owned `DFileSystemWatcher` works in
       every scope).
 - [ ] Expand DCore further (`/usr/include/dtk6/DCore`): DSettingsOption/
-      DSettingsGroup views (`QPointer<T>` returns), DDesktopEntry, DTrashManager,
-      DRecentManager, D-Bus helpers etc.
+      DSettingsGroup views (`QPointer<T>` returns), DDesktopEntry (needs
+      generated constructors with arguments; its in/out `QString&` statics stay
+      unmapped), DRecentManager (`DRecentData&`), D-Bus helpers etc.
+      `DTrashManager` (borrowed Q_GLOBAL_STATIC instance) and `DSGApplication`
+      ids are generated (`core_extras_selfcheck`).
       DConfig, QTimer and QSocketNotifier support scoped, headless QCoreApplication; other
       QtCore QObject classes still need individual lifecycle/thread audits.
       `DConfig::globalThread()` is a native-owned borrowed QThread that must

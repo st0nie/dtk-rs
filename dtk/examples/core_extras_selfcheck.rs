@@ -1,7 +1,11 @@
 //! DCore coverage beyond the pilot: DSettings (JSON + QSettings file backend),
-//! file watchers and DLogManager, all headless (no display needed).
+//! file watchers, DLogManager, DTrashManager and DSGApplication, all headless
+//! (no display needed).
 //! env -u DISPLAY -u WAYLAND_DISPLAY -u QT_QPA_PLATFORM cargo run --example core_extras_selfcheck
-use dtk::core::{DFileSystemWatcher, DFileWatcher, DFileWatcherManager, DLogManager, DSettings};
+use dtk::core::{
+    DFileSystemWatcher, DFileWatcher, DFileWatcherManager, DLogManager, DSGApplication, DSettings,
+    DTrashManager,
+};
 use dtk::{QCoreApplication, QTimer, QVariant};
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -32,6 +36,7 @@ fn main() {
 
         watchers(app, &dir);
         log_manager(&dir);
+        trash_and_app_id();
     });
     // A fresh scope reads the persisted value back through a new backend.
     QCoreApplication::with("dtk-core-extras-selfcheck", |app| {
@@ -174,4 +179,18 @@ fn log_manager(dir: &std::path::Path) {
     DLogManager::setlog_file_path(log.to_str().unwrap());
     assert_eq!(DLogManager::getlog_file_path(), log.to_str().unwrap());
     DLogManager::set_log_format("%{message}\n");
+}
+
+/// DTrashManager::instance() is a borrowed Q_GLOBAL_STATIC view; repeated
+/// calls see the same object. Only read-only queries run here: moving a
+/// file would write to the user's real trash. DSGApplication::id() falls
+/// back to the application name when no DSG id is configured.
+fn trash_and_app_id() {
+    let trash = DTrashManager::instance().expect("process-wide trash manager");
+    let again = DTrashManager::instance().unwrap();
+    assert!(trash.is_alive() && again.is_alive());
+    let _ = trash.trash_is_empty();
+    assert!(!trash.move_to_trash("/nonexistent/dtk-rs-selfcheck", false));
+    let id = DSGApplication::id();
+    assert!(!id.is_empty(), "fallback app id");
 }

@@ -61,6 +61,7 @@ POINTER_RETURNS = {
     ("DGuiApplicationHelper", "applicationTheme"): ("object_borrow", "dtkgui/src/kernel/dguiapplicationhelper.cpp", "returns d->appTheme (systemTheme, or a lazily created child DPlatformTheme(windowLeader, systemTheme))"),
     ("DPlatformTheme", "parentTheme"): ("object_borrow", "dtkgui/src/kernel/dplatformtheme.cpp", "returns d->parent, the QObject parent theme; nullptr for the system theme"),
     ("DWindowManagerHelper", "instance"): ("object_borrow", "dtkgui/src/kernel/dwindowmanagerhelper.cpp", "returns Q_GLOBAL_STATIC wmhGlobal (treelandWMHGlobal on Wayland); never deleted by callers"),
+    ("DTrashManager", "instance"): ("object_borrow", "dtkcore/src/filesystem/dtrashmanager_linux.cpp", "returns Q_GLOBAL_STATIC(DTrashManager_, globalTrashManager); never deleted by callers"),
     ("DFileWatcherManager", "add"): ("object_borrow", "dtkcore/src/filesystem/dfilewatchermanager.cpp", "new DFileWatcher(filePath, this) child kept in watchersMap; remove()/removeAll() deleteLater it"),
 }
 
