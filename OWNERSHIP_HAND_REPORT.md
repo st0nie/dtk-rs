@@ -241,6 +241,7 @@ Each row identifies a receiver, retained/call borrow, unique destructor or outpu
 | `model_set_data` | `data` | `QVariant*` | borrow of independently Rust-owned Qt value; native value/reference conversion, no allocation transfer |
 | `model_insert_rows` | `model` | `QAbstractItemModel*` | receiver borrow, no ownership transfer; guarded owning-thread native transaction through result wrapping |
 | `model_remove_rows` | `model` | `QAbstractItemModel*` | receiver borrow, no ownership transfer; guarded owning-thread native transaction through result wrapping |
+| `model_sort` | `model` | `QAbstractItemModel*` | receiver borrow, no ownership transfer; guarded owning-thread native transaction through result wrapping |
 | `model_index` | `model` | `QAbstractItemModel*` | receiver borrow, no ownership transfer; guarded owning-thread native transaction through result wrapping |
 | `model_index` | `parent` | `QPersistentModelIndex*` | borrow of independently Rust-owned Qt value; native value/reference conversion, no allocation transfer |
 | `model_set_index_data` | `model` | `QAbstractItemModel*` | receiver borrow, no ownership transfer; guarded owning-thread native transaction through result wrapping |
@@ -382,7 +383,7 @@ Each row identifies a receiver, retained/call borrow, unique destructor or outpu
 | `paint_widget_inject_key` | `w` | `QWidget*` | receiver borrow, no ownership transfer; guarded owning-thread native transaction through result wrapping |
 | `shortcut_new` | `parent` | `QWidget*` | borrow widget owner; new native shortcut scope/parent-owned; callback capture cancellation |
 
-Raw pointer input parameters audited: **284**.
+Raw pointer input parameters audited: **285**.
 
 ## Callback and retained borrows
 
@@ -424,6 +425,8 @@ Imports only: no construction, ownership, deletion or `Pin<&mut T>`/`&mut T` rec
 | `DAbstractDialog` | `size_changed` | `&DAbstractDialog` | typed signal connection | `connectors::d_abstract_dialog_size_changed` |
 | `DAlertControl` | `alert_changed` | `&DAlertControl` | typed signal connection | `connectors::d_alert_control_alert_changed` |
 | `DAnchorsBase` | `enabled_changed` | `&DAnchorsBase` | typed signal connection | `connectors::d_anchors_base_enabled_changed` |
+| `DAnchorsBase` | `fill_changed` | `&DAnchorsBase` | typed signal connection | `connectors::d_anchors_base_fill_changed` |
+| `DAnchorsBase` | `center_in_changed` | `&DAnchorsBase` | typed signal connection | `connectors::d_anchors_base_center_in_changed` |
 | `DAnchorsBase` | `margins_changed` | `&DAnchorsBase` | typed signal connection | `connectors::d_anchors_base_margins_changed` |
 | `DAnchorsBase` | `top_margin_changed` | `&DAnchorsBase` | typed signal connection | `connectors::d_anchors_base_top_margin_changed` |
 | `DAnchorsBase` | `bottom_margin_changed` | `&DAnchorsBase` | typed signal connection | `connectors::d_anchors_base_bottom_margin_changed` |
@@ -456,6 +459,10 @@ Imports only: no construction, ownership, deletion or `Pin<&mut T>`/`&mut T` rec
 | `DBlurEffectWidget` | `blur_source_image_dirtied` | `&DBlurEffectWidget` | typed signal connection | `connectors::d_blur_effect_widget_blur_source_image_dirtied` |
 | `DBoxWidget` | `size_changed` | `&DBoxWidget` | typed signal connection | `connectors::d_box_widget_size_changed` |
 | `DBoxWidget` | `direction_changed` | `&DBoxWidget` | typed signal connection | `connectors::d_box_widget_direction_changed` |
+| `DButtonBox` | `button_clicked` | `&DButtonBox` | typed signal connection | `connectors::d_button_box_button_clicked` |
+| `DButtonBox` | `button_pressed` | `&DButtonBox` | typed signal connection | `connectors::d_button_box_button_pressed` |
+| `DButtonBox` | `button_released` | `&DButtonBox` | typed signal connection | `connectors::d_button_box_button_released` |
+| `DButtonBox` | `button_toggled` | `&DButtonBox` | typed signal connection | `connectors::d_button_box_button_toggled` |
 | `DCircleProgress` | `clicked` | `&DCircleProgress` | typed signal connection | `connectors::d_circle_progress_clicked` |
 | `DCircleProgress` | `mouse_entered` | `&DCircleProgress` | typed signal connection | `connectors::d_circle_progress_mouse_entered` |
 | `DCircleProgress` | `mouse_leaved` | `&DCircleProgress` | typed signal connection | `connectors::d_circle_progress_mouse_leaved` |
@@ -483,6 +490,7 @@ Imports only: no construction, ownership, deletion or `Pin<&mut T>`/`&mut T` rec
 | `DEnhancedWidget` | `width_changed` | `&DEnhancedWidget` | typed signal connection | `connectors::d_enhanced_widget_width_changed` |
 | `DEnhancedWidget` | `height_changed` | `&DEnhancedWidget` | typed signal connection | `connectors::d_enhanced_widget_height_changed` |
 | `DEnhancedWidget` | `size_changed` | `&DEnhancedWidget` | typed signal connection | `connectors::d_enhanced_widget_size_changed` |
+| `DEnhancedWidget` | `target_changed` | `&DEnhancedWidget` | typed signal connection | `connectors::d_enhanced_widget_target_changed` |
 | `DEnhancedWidget` | `enabled_changed` | `&DEnhancedWidget` | typed signal connection | `connectors::d_enhanced_widget_enabled_changed` |
 | `DEnhancedWidget` | `showed` | `&DEnhancedWidget` | typed signal connection | `connectors::d_enhanced_widget_showed` |
 | `DFileChooserEdit` | `file_choosed` | `&DFileChooserEdit` | typed signal connection | `connectors::d_file_chooser_edit_file_choosed` |
@@ -505,6 +513,7 @@ Imports only: no construction, ownership, deletion or `Pin<&mut T>`/`&mut T` rec
 | `DFlowLayout` | `horizontal_spacing_changed` | `&DFlowLayout` | typed signal connection | `connectors::d_flow_layout_horizontal_spacing_changed` |
 | `DFlowLayout` | `vertical_spacing_changed` | `&DFlowLayout` | typed signal connection | `connectors::d_flow_layout_vertical_spacing_changed` |
 | `DFlowLayout` | `count_changed` | `&DFlowLayout` | typed signal connection | `connectors::d_flow_layout_count_changed` |
+| `DFlowLayout` | `flow_changed` | `&DFlowLayout` | typed signal connection | `connectors::d_flow_layout_flow_changed` |
 | `DFlowLayout` | `size_hint_changed` | `&DFlowLayout` | typed signal connection | `connectors::d_flow_layout_size_hint_changed` |
 | `DFontComboBox` | `current_font_changed` | `&DFontComboBox` | typed signal connection | `connectors::d_font_combo_box_current_font_changed` |
 | `DFontManager` | `font_changed` | `&DFontManager` | typed signal connection | `connectors::d_font_manager_font_changed` |
@@ -621,6 +630,7 @@ Imports only: no construction, ownership, deletion or `Pin<&mut T>`/`&mut T` rec
 | `DSearchEdit` | `voice_changed` | `&DSearchEdit` | typed signal connection | `connectors::d_search_edit_voice_changed` |
 | `DSettings` | `value_changed` | `&DSettings` | typed signal connection | `connectors::d_settings_value_changed` |
 | `DShortcutEditLabel` | `color_setting_change` | `&DShortcutEditLabel` | typed signal connection | `connectors::d_shortcut_edit_label_color_setting_change` |
+| `DSimpleListView` | `change_column_visible` | `&DSimpleListView` | typed signal connection | `connectors::d_simple_list_view_change_column_visible` |
 | `DSimpleListView` | `change_sorting_status` | `&DSimpleListView` | typed signal connection | `connectors::d_simple_list_view_change_sorting_status` |
 | `DSlider` | `value_changed` | `&DSlider` | typed signal connection | `connectors::d_slider_value_changed` |
 | `DSlider` | `slider_pressed` | `&DSlider` | typed signal connection | `connectors::d_slider_slider_pressed` |
@@ -633,6 +643,8 @@ Imports only: no construction, ownership, deletion or `Pin<&mut T>`/`&mut T` rec
 | `DStackWidget` | `busy_changed` | `&DStackWidget` | typed signal connection | `connectors::d_stack_widget_busy_changed` |
 | `DStackWidget` | `depth_changed` | `&DStackWidget` | typed signal connection | `connectors::d_stack_widget_depth_changed` |
 | `DStackWidget` | `current_index_changed` | `&DStackWidget` | typed signal connection | `connectors::d_stack_widget_current_index_changed` |
+| `DStackWidget` | `current_widget_changed` | `&DStackWidget` | typed signal connection | `connectors::d_stack_widget_current_widget_changed` |
+| `DStackWidget` | `widget_depth_changed` | `&DStackWidget` | typed signal connection | `connectors::d_stack_widget_widget_depth_changed` |
 | `DStackWidget` | `switch_widget_finished` | `&DStackWidget` | typed signal connection | `connectors::d_stack_widget_switch_widget_finished` |
 | `DSwitchButton` | `checked_changed` | `&DSwitchButton` | typed signal connection | `connectors::d_switch_button_checked_changed` |
 | `DSwitchHeaderLine` | `checked_changed` | `&DSwitchHeaderLine` | typed signal connection | `connectors::d_switch_header_line_checked_changed` |
@@ -653,6 +665,7 @@ Imports only: no construction, ownership, deletion or `Pin<&mut T>`/`&mut T` rec
 | `DTitleBarToolInterface` | `triggered` | `&DTitleBarToolInterface` | typed signal connection | `connectors::d_title_bar_tool_interface_triggered` |
 | `DTitlebar` | `option_clicked` | `&DTitlebar` | typed signal connection | `connectors::d_titlebar_option_clicked` |
 | `DTitlebar` | `double_clicked` | `&DTitlebar` | typed signal connection | `connectors::d_titlebar_double_clicked` |
+| `DTitlebar` | `mouse_pressed` | `&DTitlebar` | typed signal connection | `connectors::d_titlebar_mouse_pressed` |
 | `DTitlebar` | `mouse_moving` | `&DTitlebar` | typed signal connection | `connectors::d_titlebar_mouse_moving` |
 | `DWaterProgress` | `value_changed` | `&DWaterProgress` | typed signal connection | `connectors::d_water_progress_value_changed` |
 | `DWindowManagerHelper` | `window_manager_changed` | `&DWindowManagerHelper` | typed signal connection | `connectors::d_window_manager_helper_window_manager_changed` |
@@ -668,9 +681,13 @@ Imports only: no construction, ownership, deletion or `Pin<&mut T>`/`&mut T` rec
 | `QAbstractButton` | `clicked` | `&QAbstractButton` | typed signal connection | `connectors::q_abstract_button_clicked` |
 | `QAbstractButton` | `toggled` | `&QAbstractButton` | typed signal connection | `connectors::q_abstract_button_toggled` |
 | `QAbstractButton` | `is_checked` | `&QAbstractButton` | const method | `connectors::q_abstract_button_is_checked` |
+| `QAbstractItemDelegate` | `commit_data` | `&QAbstractItemDelegate` | typed signal connection | `connectors::q_abstract_item_delegate_commit_data` |
+| `QAbstractItemDelegate` | `close_editor` | `&QAbstractItemDelegate` | typed signal connection | `connectors::q_abstract_item_delegate_close_editor` |
 | `QAbstractItemDelegate` | `size_hint_changed` | `&QAbstractItemDelegate` | typed signal connection | `connectors::q_abstract_item_delegate_size_hint_changed` |
 | `QAbstractItemModel` | `data_changed` | `&QAbstractItemModel` | typed signal connection | `connectors::q_abstract_item_model_data_changed` |
 | `QAbstractItemModel` | `header_data_changed` | `&QAbstractItemModel` | typed signal connection | `connectors::q_abstract_item_model_header_data_changed` |
+| `QAbstractItemModel` | `layout_changed` | `&QAbstractItemModel` | typed signal connection | `connectors::q_abstract_item_model_layout_changed` |
+| `QAbstractItemModel` | `layout_about_to_be_changed` | `&QAbstractItemModel` | typed signal connection | `connectors::q_abstract_item_model_layout_about_to_be_changed` |
 | `QAbstractItemModel` | `rows_about_to_be_inserted` | `&QAbstractItemModel` | typed signal connection | `connectors::q_abstract_item_model_rows_about_to_be_inserted` |
 | `QAbstractItemModel` | `rows_inserted` | `&QAbstractItemModel` | typed signal connection | `connectors::q_abstract_item_model_rows_inserted` |
 | `QAbstractItemModel` | `rows_about_to_be_removed` | `&QAbstractItemModel` | typed signal connection | `connectors::q_abstract_item_model_rows_about_to_be_removed` |
@@ -738,13 +755,25 @@ Imports only: no construction, ownership, deletion or `Pin<&mut T>`/`&mut T` rec
 | `QLineEdit` | `editing_finished` | `&QLineEdit` | typed signal connection | `connectors::q_line_edit_editing_finished` |
 | `QLineEdit` | `selection_changed` | `&QLineEdit` | typed signal connection | `connectors::q_line_edit_selection_changed` |
 | `QLineEdit` | `input_rejected` | `&QLineEdit` | typed signal connection | `connectors::q_line_edit_input_rejected` |
+| `QListView` | `indexes_moved` | `&QListView` | typed signal connection | `connectors::q_list_view_indexes_moved` |
 | `QMainWindow` | `icon_size_changed` | `&QMainWindow` | typed signal connection | `connectors::q_main_window_icon_size_changed` |
 | `QMainWindow` | `tool_button_style_changed` | `&QMainWindow` | typed signal connection | `connectors::q_main_window_tool_button_style_changed` |
 | `QMenu` | `about_to_show` | `&QMenu` | typed signal connection | `connectors::q_menu_about_to_show` |
 | `QMenu` | `about_to_hide` | `&QMenu` | typed signal connection | `connectors::q_menu_about_to_hide` |
+| `QMenu` | `triggered` | `&QMenu` | typed signal connection | `connectors::q_menu_triggered` |
+| `QMenu` | `hovered` | `&QMenu` | typed signal connection | `connectors::q_menu_hovered` |
+| `QMessageBox` | `button_clicked` | `&QMessageBox` | typed signal connection | `connectors::q_message_box_button_clicked` |
 | `QProgressBar` | `value_changed` | `&QProgressBar` | typed signal connection | `connectors::q_progress_bar_value_changed` |
 | `QSpinBox` | `value_changed` | `&QSpinBox` | typed signal connection | `connectors::q_spin_box_value_changed` |
 | `QSpinBox` | `text_changed` | `&QSpinBox` | typed signal connection | `connectors::q_spin_box_text_changed` |
+| `QStandardItemModel` | `item_changed` | `&QStandardItemModel` | typed signal connection | `connectors::q_standard_item_model_item_changed` |
+| `QTableWidget` | `item_pressed` | `&QTableWidget` | typed signal connection | `connectors::q_table_widget_item_pressed` |
+| `QTableWidget` | `item_clicked` | `&QTableWidget` | typed signal connection | `connectors::q_table_widget_item_clicked` |
+| `QTableWidget` | `item_double_clicked` | `&QTableWidget` | typed signal connection | `connectors::q_table_widget_item_double_clicked` |
+| `QTableWidget` | `item_activated` | `&QTableWidget` | typed signal connection | `connectors::q_table_widget_item_activated` |
+| `QTableWidget` | `item_entered` | `&QTableWidget` | typed signal connection | `connectors::q_table_widget_item_entered` |
+| `QTableWidget` | `item_changed` | `&QTableWidget` | typed signal connection | `connectors::q_table_widget_item_changed` |
+| `QTableWidget` | `current_item_changed` | `&QTableWidget` | typed signal connection | `connectors::q_table_widget_current_item_changed` |
 | `QTableWidget` | `item_selection_changed` | `&QTableWidget` | typed signal connection | `connectors::q_table_widget_item_selection_changed` |
 | `QTableWidget` | `cell_pressed` | `&QTableWidget` | typed signal connection | `connectors::q_table_widget_cell_pressed` |
 | `QTableWidget` | `cell_clicked` | `&QTableWidget` | typed signal connection | `connectors::q_table_widget_cell_clicked` |
@@ -760,9 +789,10 @@ Imports only: no construction, ownership, deletion or `Pin<&mut T>`/`&mut T` rec
 | `QTextEdit` | `selection_changed` | `&QTextEdit` | typed signal connection | `connectors::q_text_edit_selection_changed` |
 | `QTextEdit` | `cursor_position_changed` | `&QTextEdit` | typed signal connection | `connectors::q_text_edit_cursor_position_changed` |
 | `QTimer` | `timeout` | `&QTimer` | typed signal connection | `connectors::q_timer_timeout` |
+| `QToolButton` | `triggered` | `&QToolButton` | typed signal connection | `connectors::q_tool_button_triggered` |
 | `QWidget` | `window_title_changed` | `&QWidget` | typed signal connection | `connectors::q_widget_window_title_changed` |
 | `QWidget` | `window_icon_changed` | `&QWidget` | typed signal connection | `connectors::q_widget_window_icon_changed` |
 | `QWidget` | `window_icon_text_changed` | `&QWidget` | typed signal connection | `connectors::q_widget_window_icon_text_changed` |
 | `QWidget` | `custom_context_menu_requested` | `&QWidget` | typed signal connection | `connectors::q_widget_custom_context_menu_requested` |
 
-CXX-Qt imported items audited: **349**.
+CXX-Qt imported items audited: **378**.

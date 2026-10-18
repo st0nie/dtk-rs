@@ -23,6 +23,8 @@ pub mod ffi {
         type QUrl = cxx_qt_lib::QUrl;
         include!("cxx-qt-lib/core/qlist/qlist_QUrl.h");
         type QList_QUrl = cxx_qt_lib::QList<QUrl>;
+        include!("cxx-qt-lib/core/qlist/qlist_bool.h");
+        type QList_bool = cxx_qt_lib::QList<bool>;
         include!("cxx-qt-lib/core/qlist/qlist_i32.h");
         type QList_i32 = cxx_qt_lib::QList<i32>;
         #[namespace = "Dtk::Gui"]
@@ -34,8 +36,53 @@ pub mod ffi {
         type QModelIndex;
         type QPainterPath;
         type QVariant;
+        type QStandardItem;
+        type QTableWidgetItem;
+        #[namespace = "dtkrs_cxxqt"]
+        type QModelIndexList;
+        #[namespace = "dtkrs_cxxqt"]
+        type QPersistentModelIndexList;
+        #[namespace = "dtkrs_cxxqt"]
+        type Int_Qt_MouseButtons;
         #[namespace = "dtkrs_cxxqt"]
         type QPersistentModelIndex;
+        /// # Safety
+        /// `p` is null or the live argument of a signal emission on this thread.
+        #[namespace = "dtkrs_cxxqt"]
+        unsafe fn signal_object_QAbstractButton(p: *const QAbstractButton) -> *const QObject;
+        /// # Safety
+        /// `p` is null or the live argument of a signal emission on this thread.
+        #[namespace = "dtkrs_cxxqt"]
+        unsafe fn signal_object_QAction(p: *const QAction) -> *const QObject;
+        /// # Safety
+        /// `p` is null or the live argument of a signal emission on this thread.
+        #[namespace = "dtkrs_cxxqt"]
+        unsafe fn signal_object_QWidget(p: *const QWidget) -> *const QObject;
+        /// # Safety
+        /// `item` is null or the live argument of a signal emission on this thread.
+        #[namespace = "dtkrs_cxxqt"]
+        unsafe fn standard_item_index(item: *const QStandardItem) -> *mut QPersistentModelIndex;
+        /// # Safety
+        /// `item` is null or the live argument of a signal emission on this thread.
+        #[namespace = "dtkrs_cxxqt"]
+        unsafe fn table_item_row(item: *const QTableWidgetItem) -> i32;
+        /// # Safety
+        /// `item` is null or the live argument of a signal emission on this thread.
+        #[namespace = "dtkrs_cxxqt"]
+        unsafe fn table_item_column(item: *const QTableWidgetItem) -> i32;
+        #[namespace = "dtkrs_cxxqt"]
+        fn q_model_index_list_len(list: &QModelIndexList) -> isize;
+        #[namespace = "dtkrs_cxxqt"]
+        fn q_model_index_list_at(list: &QModelIndexList, i: isize) -> *mut QPersistentModelIndex;
+        #[namespace = "dtkrs_cxxqt"]
+        fn q_persistent_model_index_list_len(list: &QPersistentModelIndexList) -> isize;
+        #[namespace = "dtkrs_cxxqt"]
+        fn q_persistent_model_index_list_at(
+            list: &QPersistentModelIndexList,
+            i: isize,
+        ) -> *mut QPersistentModelIndex;
+        #[namespace = "dtkrs_cxxqt"]
+        fn int_Qt_MouseButtons(value: &Int_Qt_MouseButtons) -> i32;
         #[namespace = "dtkrs_cxxqt"]
         fn clone_DPalette(value: &DPalette) -> *mut DPalette;
         #[namespace = "dtkrs_cxxqt"]
@@ -100,6 +147,10 @@ pub mod ffi {
         /// `object` is null or a live QObject on its owner thread.
         #[namespace = "dtkrs_cxxqt"]
         unsafe fn as_DBoxWidget(object: *const QObject) -> *const DBoxWidget;
+        /// # Safety
+        /// `object` is null or a live QObject on its owner thread.
+        #[namespace = "dtkrs_cxxqt"]
+        unsafe fn as_DButtonBox(object: *const QObject) -> *const DButtonBox;
         /// # Safety
         /// `object` is null or a live QObject on its owner thread.
         #[namespace = "dtkrs_cxxqt"]
@@ -361,6 +412,10 @@ pub mod ffi {
         /// # Safety
         /// `object` is null or a live QObject on its owner thread.
         #[namespace = "dtkrs_cxxqt"]
+        unsafe fn as_QListView(object: *const QObject) -> *const QListView;
+        /// # Safety
+        /// `object` is null or a live QObject on its owner thread.
+        #[namespace = "dtkrs_cxxqt"]
         unsafe fn as_QMainWindow(object: *const QObject) -> *const QMainWindow;
         /// # Safety
         /// `object` is null or a live QObject on its owner thread.
@@ -369,11 +424,19 @@ pub mod ffi {
         /// # Safety
         /// `object` is null or a live QObject on its owner thread.
         #[namespace = "dtkrs_cxxqt"]
+        unsafe fn as_QMessageBox(object: *const QObject) -> *const QMessageBox;
+        /// # Safety
+        /// `object` is null or a live QObject on its owner thread.
+        #[namespace = "dtkrs_cxxqt"]
         unsafe fn as_QProgressBar(object: *const QObject) -> *const QProgressBar;
         /// # Safety
         /// `object` is null or a live QObject on its owner thread.
         #[namespace = "dtkrs_cxxqt"]
         unsafe fn as_QSpinBox(object: *const QObject) -> *const QSpinBox;
+        /// # Safety
+        /// `object` is null or a live QObject on its owner thread.
+        #[namespace = "dtkrs_cxxqt"]
+        unsafe fn as_QStandardItemModel(object: *const QObject) -> *const QStandardItemModel;
         /// # Safety
         /// `object` is null or a live QObject on its owner thread.
         #[namespace = "dtkrs_cxxqt"]
@@ -386,6 +449,10 @@ pub mod ffi {
         /// `object` is null or a live QObject on its owner thread.
         #[namespace = "dtkrs_cxxqt"]
         unsafe fn as_QTimer(object: *const QObject) -> *const QTimer;
+        /// # Safety
+        /// `object` is null or a live QObject on its owner thread.
+        #[namespace = "dtkrs_cxxqt"]
+        unsafe fn as_QToolButton(object: *const QObject) -> *const QToolButton;
         /// # Safety
         /// `object` is null or a live QObject on its owner thread.
         #[namespace = "dtkrs_cxxqt"]
@@ -462,6 +529,14 @@ pub mod ffi {
         #[qsignal]
         #[cxx_name = "enabledChanged"]
         pub(self) fn enabled_changed(self: &DAnchorsBase, a0: bool);
+        /// `void fillChanged(QWidget *fill)`
+        #[qsignal]
+        #[cxx_name = "fillChanged"]
+        pub(self) unsafe fn fill_changed(self: &DAnchorsBase, a0: *mut QWidget);
+        /// `void centerInChanged(QWidget *centerIn)`
+        #[qsignal]
+        #[cxx_name = "centerInChanged"]
+        pub(self) unsafe fn center_in_changed(self: &DAnchorsBase, a0: *mut QWidget);
         /// `void marginsChanged(int margins)`
         #[qsignal]
         #[cxx_name = "marginsChanged"]
@@ -631,6 +706,28 @@ pub mod ffi {
     unsafe extern "C++Qt" {
         #[namespace = "Dtk::Widget"]
         #[qobject]
+        type DButtonBox;
+        /// `void buttonClicked(QAbstractButton *)`
+        #[qsignal]
+        #[cxx_name = "buttonClicked"]
+        pub(self) unsafe fn button_clicked(self: &DButtonBox, a0: *mut QAbstractButton);
+        /// `void buttonPressed(QAbstractButton *)`
+        #[qsignal]
+        #[cxx_name = "buttonPressed"]
+        pub(self) unsafe fn button_pressed(self: &DButtonBox, a0: *mut QAbstractButton);
+        /// `void buttonReleased(QAbstractButton *)`
+        #[qsignal]
+        #[cxx_name = "buttonReleased"]
+        pub(self) unsafe fn button_released(self: &DButtonBox, a0: *mut QAbstractButton);
+        /// `void buttonToggled(QAbstractButton *, bool)`
+        #[qsignal]
+        #[cxx_name = "buttonToggled"]
+        pub(self) unsafe fn button_toggled(self: &DButtonBox, a0: *mut QAbstractButton, a1: bool);
+    }
+
+    unsafe extern "C++Qt" {
+        #[namespace = "Dtk::Widget"]
+        #[qobject]
         type DCircleProgress;
         /// `void clicked()`
         #[qsignal]
@@ -782,6 +879,10 @@ pub mod ffi {
         #[qsignal]
         #[cxx_name = "sizeChanged"]
         pub(self) fn size_changed(self: &DEnhancedWidget, a0: &QSize);
+        /// `void targetChanged(QWidget *target)`
+        #[qsignal]
+        #[cxx_name = "targetChanged"]
+        pub(self) unsafe fn target_changed(self: &DEnhancedWidget, a0: *mut QWidget);
         /// `void enabledChanged(bool enabled)`
         #[qsignal]
         #[cxx_name = "enabledChanged"]
@@ -906,6 +1007,10 @@ pub mod ffi {
         #[qsignal]
         #[cxx_name = "countChanged"]
         pub(self) fn count_changed(self: &DFlowLayout, a0: i32);
+        /// `void flowChanged(Flow flow)`
+        #[qsignal]
+        #[cxx_name = "flowChanged"]
+        pub(self) fn flow_changed(self: &DFlowLayout, a0: i32);
         /// `void sizeHintChanged(QSize sizeHint) const`
         #[qsignal]
         #[cxx_name = "sizeHintChanged"]
@@ -1514,6 +1619,15 @@ pub mod ffi {
         #[namespace = "Dtk::Widget"]
         #[qobject]
         type DSimpleListView;
+        /// `void changeColumnVisible(int index, bool visible, QList<bool> columnVisibles)`
+        #[qsignal]
+        #[cxx_name = "changeColumnVisible"]
+        pub(self) fn change_column_visible(
+            self: &DSimpleListView,
+            a0: i32,
+            a1: bool,
+            a2: &QList_bool,
+        );
         /// `void changeSortingStatus(int index, bool sortingOrder)`
         #[qsignal]
         #[cxx_name = "changeSortingStatus"]
@@ -1580,6 +1694,14 @@ pub mod ffi {
         #[qsignal]
         #[cxx_name = "currentIndexChanged"]
         pub(self) fn current_index_changed(self: &DStackWidget, a0: i32);
+        /// `void currentWidgetChanged(QWidget* currentWidget)`
+        #[qsignal]
+        #[cxx_name = "currentWidgetChanged"]
+        pub(self) unsafe fn current_widget_changed(self: &DStackWidget, a0: *mut QWidget);
+        /// `void widgetDepthChanged(QWidget *widget, int depth)`
+        #[qsignal]
+        #[cxx_name = "widgetDepthChanged"]
+        pub(self) unsafe fn widget_depth_changed(self: &DStackWidget, a0: *mut QWidget, a1: i32);
         /// `void switchWidgetFinished()`
         #[qsignal]
         #[cxx_name = "switchWidgetFinished"]
@@ -1696,6 +1818,10 @@ pub mod ffi {
         #[qsignal]
         #[cxx_name = "doubleClicked"]
         pub(self) fn double_clicked(self: &DTitlebar);
+        /// `void mousePressed(Qt::MouseButtons buttons)`
+        #[qsignal]
+        #[cxx_name = "mousePressed"]
+        pub(self) fn mouse_pressed(self: &DTitlebar, a0: &Int_Qt_MouseButtons);
         /// `void mouseMoving(Qt::MouseButton button)`
         #[qsignal]
         #[cxx_name = "mouseMoving"]
@@ -1782,6 +1908,14 @@ pub mod ffi {
     unsafe extern "C++Qt" {
         #[qobject]
         type QAbstractItemDelegate;
+        /// `void commitData(QWidget *editor)`
+        #[qsignal]
+        #[cxx_name = "commitData"]
+        pub(self) unsafe fn commit_data(self: &QAbstractItemDelegate, a0: *mut QWidget);
+        /// `void closeEditor(QWidget *editor, QAbstractItemDelegate::EndEditHint hint = NoHint)`
+        #[qsignal]
+        #[cxx_name = "closeEditor"]
+        pub(self) unsafe fn close_editor(self: &QAbstractItemDelegate, a0: *mut QWidget, a1: i32);
         /// `void sizeHintChanged(const QModelIndex &)`
         #[qsignal]
         #[cxx_name = "sizeHintChanged"]
@@ -1804,6 +1938,22 @@ pub mod ffi {
         #[qsignal]
         #[cxx_name = "headerDataChanged"]
         pub(self) fn header_data_changed(self: &QAbstractItemModel, a0: i32, a1: i32, a2: i32);
+        /// `void layoutChanged(const QList<QPersistentModelIndex> &parents = QList<QPersistentModelIndex>(), QAbstractItemModel::LayoutChangeHint hint = QAbstractItemModel::NoLayoutChangeHint)`
+        #[qsignal]
+        #[cxx_name = "layoutChanged"]
+        pub(self) fn layout_changed(
+            self: &QAbstractItemModel,
+            a0: &QPersistentModelIndexList,
+            a1: i32,
+        );
+        /// `void layoutAboutToBeChanged(const QList<QPersistentModelIndex> &parents = QList<QPersistentModelIndex>(), QAbstractItemModel::LayoutChangeHint hint = QAbstractItemModel::NoLayoutChangeHint)`
+        #[qsignal]
+        #[cxx_name = "layoutAboutToBeChanged"]
+        pub(self) fn layout_about_to_be_changed(
+            self: &QAbstractItemModel,
+            a0: &QPersistentModelIndexList,
+            a1: i32,
+        );
         /// `void rowsAboutToBeInserted(const QModelIndex &parent, int first, int last, QPrivateSignal)`
         #[qsignal]
         #[cxx_name = "rowsAboutToBeInserted"]
@@ -2194,6 +2344,15 @@ pub mod ffi {
 
     unsafe extern "C++Qt" {
         #[qobject]
+        type QListView;
+        /// `void indexesMoved(const QModelIndexList &indexes)`
+        #[qsignal]
+        #[cxx_name = "indexesMoved"]
+        pub(self) fn indexes_moved(self: &QListView, a0: &QModelIndexList);
+    }
+
+    unsafe extern "C++Qt" {
+        #[qobject]
         type QMainWindow;
         /// `void iconSizeChanged(const QSize &iconSize)`
         #[qsignal]
@@ -2216,6 +2375,23 @@ pub mod ffi {
         #[qsignal]
         #[cxx_name = "aboutToHide"]
         pub(self) fn about_to_hide(self: &QMenu);
+        /// `void triggered(QAction *action)`
+        #[qsignal]
+        #[cxx_name = "triggered"]
+        pub(self) unsafe fn triggered(self: &QMenu, a0: *mut QAction);
+        /// `void hovered(QAction *action)`
+        #[qsignal]
+        #[cxx_name = "hovered"]
+        pub(self) unsafe fn hovered(self: &QMenu, a0: *mut QAction);
+    }
+
+    unsafe extern "C++Qt" {
+        #[qobject]
+        type QMessageBox;
+        /// `void buttonClicked(QAbstractButton *button)`
+        #[qsignal]
+        #[cxx_name = "buttonClicked"]
+        pub(self) unsafe fn button_clicked(self: &QMessageBox, a0: *mut QAbstractButton);
     }
 
     unsafe extern "C++Qt" {
@@ -2242,7 +2418,48 @@ pub mod ffi {
 
     unsafe extern "C++Qt" {
         #[qobject]
+        type QStandardItemModel;
+        /// `void itemChanged(QStandardItem *item)`
+        #[qsignal]
+        #[cxx_name = "itemChanged"]
+        pub(self) unsafe fn item_changed(self: &QStandardItemModel, a0: *mut QStandardItem);
+    }
+
+    unsafe extern "C++Qt" {
+        #[qobject]
         type QTableWidget;
+        /// `void itemPressed(QTableWidgetItem *item)`
+        #[qsignal]
+        #[cxx_name = "itemPressed"]
+        pub(self) unsafe fn item_pressed(self: &QTableWidget, a0: *mut QTableWidgetItem);
+        /// `void itemClicked(QTableWidgetItem *item)`
+        #[qsignal]
+        #[cxx_name = "itemClicked"]
+        pub(self) unsafe fn item_clicked(self: &QTableWidget, a0: *mut QTableWidgetItem);
+        /// `void itemDoubleClicked(QTableWidgetItem *item)`
+        #[qsignal]
+        #[cxx_name = "itemDoubleClicked"]
+        pub(self) unsafe fn item_double_clicked(self: &QTableWidget, a0: *mut QTableWidgetItem);
+        /// `void itemActivated(QTableWidgetItem *item)`
+        #[qsignal]
+        #[cxx_name = "itemActivated"]
+        pub(self) unsafe fn item_activated(self: &QTableWidget, a0: *mut QTableWidgetItem);
+        /// `void itemEntered(QTableWidgetItem *item)`
+        #[qsignal]
+        #[cxx_name = "itemEntered"]
+        pub(self) unsafe fn item_entered(self: &QTableWidget, a0: *mut QTableWidgetItem);
+        /// `void itemChanged(QTableWidgetItem *item)`
+        #[qsignal]
+        #[cxx_name = "itemChanged"]
+        pub(self) unsafe fn item_changed(self: &QTableWidget, a0: *mut QTableWidgetItem);
+        /// `void currentItemChanged(QTableWidgetItem *current, QTableWidgetItem *previous)`
+        #[qsignal]
+        #[cxx_name = "currentItemChanged"]
+        pub(self) unsafe fn current_item_changed(
+            self: &QTableWidget,
+            a0: *mut QTableWidgetItem,
+            a1: *mut QTableWidgetItem,
+        );
         /// `void itemSelectionChanged()`
         #[qsignal]
         #[cxx_name = "itemSelectionChanged"]
@@ -2313,6 +2530,15 @@ pub mod ffi {
         #[qsignal]
         #[cxx_name = "timeout"]
         pub(self) fn timeout(self: &QTimer);
+    }
+
+    unsafe extern "C++Qt" {
+        #[qobject]
+        type QToolButton;
+        /// `void triggered(QAction *)`
+        #[qsignal]
+        #[cxx_name = "triggered"]
+        pub(self) unsafe fn triggered(self: &QToolButton, a0: *mut QAction);
     }
 
     unsafe extern "C++Qt" {

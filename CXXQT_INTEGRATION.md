@@ -151,8 +151,8 @@ overrides with synchronous borrows, not signals.
   today). cxx-qt-lib value types (`QColor`, `QPoint`, `QSize`, `QRect`, `QUrl`,
   `QVariant`, …) are the intended next signal argument types.
 - Pointer arguments (e.g. `DButtonBox::buttonClicked(QAbstractButton*)`) are
-  **not** imported yet: converting them requires creating a guarded view inside
-  the emission and an explicit borrowed-pointer contract per signal.
+  imported only with an explicit per-signal borrowed-pointer contract; the
+  guarded view is created inside the emission (section 8).
 
 ### Interaction with existing systems
 
@@ -197,7 +197,7 @@ Workaround strategy:
 | 1 (done) | `dtk-cxxqt` bridge, typed signals for DSwitchButton, DLineEdit, DSearchEdit, DSlider, DTabBar, DDialog; `Connection`; audit; selfcheck | `tools/check.sh` Debug + Release |
 | 2 (done) | `tools/signals.py` (run by `tools/gen.py`) emits the bridge, connectors, cast header and `dtk/src/signals_gen.rs` from `Q_SIGNALS:` of every class reachable from a wrapper; per-signal audit rows; `GEN_SIGNAL_REPORT.md` | generated files in check.sh reproducibility manifest |
 | 3 (done) | Value-type signal arguments; hand heap wrappers for trivially copyable values replaced by cxx-qt-lib by-value types (section 8) | per-type audit table in `OWNERSHIP_HAND_REPORT.md`; `signal_values_selfcheck` |
-| 4 (partly done) | QtCore/QtGui/QtWidgets QObjects imported for typed signals (`QTimer`, `QAction`, `QAbstractItemModel`, `QWidget`, `QAbstractButton`, ...). Pointer-valued signals via guarded-view conversion remain | per-type borrowed-pointer contract |
+| 4 (done for signals) | QtCore/QtGui/QtWidgets QObjects imported for typed signals (`QTimer`, `QAction`, `QAbstractItemModel`, `QWidget`, `QAbstractButton`, ...). Pointer-valued signals via guarded-view conversion; QFlags/scoped enums; model index lists | per-signal `POINTER_CONTRACTS` in `tools/signals.py`, quoted in `GEN_SIGNAL_REPORT.md`; `signal_pointer_selfcheck` |
 | 5 (resolved differently) | Rust-defined models/delegates. `extern "RustQt"` is **not** used: its invokables take `Pin<&mut T>` for Rust state embedded in the QObject, which reentrant Qt queries would alias. Instead `ListModel<T>` (C++ `RustListModel` with only a callback id; Rust items in `Rc<RefCell<Vec<T>>>`; hooks under `SynchronousBorrow`) and `PaintDelegate::new_styled` | `paint_model_selfcheck`; ARCHITECTURE.md "Painting and model APIs" |
 
 Throughout: no public API exposes CXX-Qt types except `QString` re-exported from
@@ -254,12 +254,33 @@ a native lambda (no `DtkRelay` QObject per connection).
   `dtk_sys::native_signal::OwnedValue` (matching dtk-sys deleter; deleted if the
   event is cancelled) then adopted by the dtk wrapper; `QModelIndex` →
   `QPersistentModelIndex` copy (`dtk::PersistentModelIndex`), because a plain
-  index is only valid until the model changes.
-- Not generated (listed with reasons in `GEN_SIGNAL_REPORT.md`): pointer
-  arguments (need per-signal guarded-view contracts), QFlags and scoped enums
-  (no implicit int conversion), other containers, overloaded names,
-  `QObject::destroyed` (emitted during destruction), QSocketNotifier
-  `activated` (level-triggered hand relay).
+  index is only valid until the model changes. `QModelIndexList` and
+  `QList<QPersistentModelIndex>` → `Vec<dtk::PersistentModelIndex>` (one
+  persistent copy per element); `QList<bool>` → `Vec<bool>`.
+- QFlags and scoped enums have no implicit int conversion, so the bridge names
+  each C++ type through a `dtkrs_cxxqt::Int_<Scope>_<Name>` alias and a
+  generated helper reads its integer value in the emission (`i32`, matching the
+  `dtk::qt` constants). Class typedefs of enums (`typedef QListView::Flow Flow`)
+  resolve to the target enum.
+- Pointer arguments are generated only for signals listed in
+  `POINTER_CONTRACTS` (fail closed); the report quotes each contract (who
+  emits the pointer and why it is live). Conversions, all inside the emission:
+  - `QWidget*`, `QAbstractButton*`, `QAction*`: a C++ helper accepts the
+    object only if it lives on the current thread and has not entered
+    `~QObject` (`QObjectData::wasDeleted`, read through a pointer-to-member,
+    no private headers); then `dtk_sys::native_signal::GuardedArg` takes a
+    QPointer guard. An object still in a subclass destructor (`~QWidget`) can
+    be guarded: `~QObject` clears that QPointer before any queued delivery.
+    At delivery the closure gets `Option<View>`: `None` if the pointer was
+    null, unguardable, or Qt destroyed the object before the callback ran.
+    The view never owns the object.
+  - `QTableWidgetItem*` → `Option<(row, column)>` and `QStandardItem*` →
+    `Option<PersistentModelIndex>`: items are never exposed as pointers.
+- Not generated (listed with reasons in `GEN_SIGNAL_REPORT.md`): non-QObject
+  pointers without an owned conversion (`DAnchorInfo*`, `DSimpleListItem*`),
+  `QObject*`/`QDockWidget*` (no view), `DPrinter*` (only usable synchronously),
+  other containers, overloaded names, `QObject::destroyed` (emitted during
+  destruction), QSocketNotifier `activated` (level-triggered hand relay).
 - String-based relay helpers that duplicated generated signals were removed
   (`on_clicked`, `on_timeout`, `on_triggered`, `on_current_index_changed` now
   return `Connection` with the full typed argument list).

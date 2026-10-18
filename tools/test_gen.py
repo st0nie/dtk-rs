@@ -407,11 +407,50 @@ class ByValueAndSignalTests(unittest.TestCase):
                 self.assertEqual(mapped[4], kind)
         self.assertEqual(map_param("SliderAction action", "QAbstractSlider", [], enums)[0][4], "enum")
         self.assertEqual(map_param("Qt::DropAction a", "X", [], enums)[0][4], "enum")
-        for raw in ("QAction *action", "QIcon::Mode mode", "Qt::MouseButtons b", "const QTextCharFormat &f"):
+        for raw in ("QAction *action", "Qt::MouseButtons b", "const QTextCharFormat &f",
+                    "QList<DSimpleListItem*> items"):
             with self.subTest(raw=raw):
                 mapped, why = map_param(raw, "X", [], enums)
                 self.assertIsNone(mapped)
                 self.assertTrue(why)
+        # Scoped enums and QFlags cross as their integer value through an alias.
+        self.assertEqual(map_param("QIcon::Mode mode", "X", [], enums)[0][4], "scoped")
+        flags = {**enums, ("Qt", "MouseButtons"): "flags"}
+        self.assertEqual(map_param("Qt::MouseButtons b", "X", [], flags)[0][:3],
+                         ("&Int_Qt_MouseButtons", "&Int_Qt_MouseButtons", "i32"))
+        typedef = {**enums, ("DFlowLayout", "Flow"): ("typedef", "QListView::Flow"),
+                                 ("QListView", "Flow"): "unscoped"}
+        self.assertEqual(map_param("Flow flow", "DFlowLayout", [], typedef)[0][4], "enum")
+        # Pointers need a per-signal contract; then QObjects become guarded
+        # views and table/standard items owned positions, never raw items.
+        contract = "audited"
+        self.assertEqual(map_param("QAction *action", "QMenu", [], enums, contract)[0][2:5],
+                         ("Option<crate::QAction>", "QAction", "qptr"))
+        self.assertEqual(map_param("QTableWidgetItem *item", "QTableWidget", [], enums, contract)[0][4], "cell")
+        self.assertEqual(map_param("QStandardItem *item", "QStandardItemModel", [], enums, contract)[0][4],
+                         "item_index")
+        for raw in ("DSimpleListItem* item", "QObject *target", "const DAnchorInfo *top"):
+            with self.subTest(raw=raw):
+                self.assertIsNone(map_param(raw, "X", [], enums)[0])
+                self.assertIsNone(map_param(raw, "X", [], enums, contract)[0])
+        self.assertEqual(map_param("const QModelIndexList &indexes", "QListView", [], enums)[0][2],
+                         "Vec<crate::PersistentModelIndex>")
+        self.assertEqual(map_param("QList<bool> v", "X", [], enums)[0][2], "Vec<bool>")
+
+    def test_pointer_signals_are_contracted_and_guarded(self):
+        from tools.signals import POINTER_CONTRACTS
+        root = Path(REPO)
+        report = (root / "GEN_SIGNAL_REPORT.md").read_text()
+        connectors = (root / "dtk-cxxqt/src/connectors.rs").read_text()
+        casts = (root / "dtk-cxxqt/include/dtk_cxxqt_casts.h").read_text()
+        # Every generated pointer signal names its contract in the report.
+        for (cls, sig), contract in POINTER_CONTRACTS.items():
+            with self.subTest(signal=f"{cls}::{sig}"):
+                self.assertIn(f"(pointer contract: {contract})", report)
+        # The guard is taken in the emission, and never for a dying object.
+        self.assertIn("GuardedArg::capture(", connectors)
+        self.assertIn("wasDeleted", casts)
+        self.assertNotIn("QTableWidgetItem>", connectors)
 
     def test_generated_signals_cover_inherited_and_values(self):
         root = Path(REPO)
@@ -429,7 +468,7 @@ class ByValueAndSignalTests(unittest.TestCase):
         code = "\n".join(line.split("//")[0] for line in bridge.splitlines())
         self.assertNotIn("Pin<", code)
         self.assertNotIn("&mut", code)
-        self.assertEqual(len(re.findall(r"#\[qsignal\]", bridge)), len(re.findall(r"pub\(self\) fn", bridge)))
+        self.assertEqual(len(re.findall(r"#\[qsignal\]", bridge)), len(re.findall(r"pub\(self\) (?:unsafe )?fn", bridge)))
 
 
 

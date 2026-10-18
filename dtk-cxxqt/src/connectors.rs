@@ -5,7 +5,8 @@
 use crate::ffi;
 #[allow(unused_imports)]
 use crate::ffi::*;
-use dtk_sys::native_signal::{OwnedValue, SignalToken};
+#[allow(unused_imports)]
+use dtk_sys::native_signal::{GuardedArg, OwnedValue, SignalToken};
 use std::any::Any;
 
 /// `ColorButton::selectColorButton`
@@ -156,6 +157,54 @@ pub unsafe fn d_anchors_base_enabled_changed(
     let sender = unsafe { &*sender };
     Some(Box::new(sender.on_enabled_changed(
         move |_sender, a0: bool| token.emit((a0,)),
+    )))
+}
+
+/// `DAnchorsBase::fillChanged`
+/// # Safety
+/// See module header.
+pub unsafe fn d_anchors_base_fill_changed(
+    sender: *const ffi::QObject,
+    token: SignalToken<(Option<GuardedArg<dtk_sys::ffi::QWidget>>,)>,
+) -> Option<Box<dyn Any>> {
+    let sender = unsafe { ffi::as_DAnchorsBase(sender) };
+    if sender.is_null() {
+        return None;
+    }
+    let sender = unsafe { &*sender };
+    Some(Box::new(sender.on_fill_changed(
+        move |_sender, a0: *mut QWidget| {
+            token.emit((unsafe {
+                GuardedArg::capture(
+                    a0 as *mut dtk_sys::ffi::QWidget,
+                    ffi::signal_object_QWidget(a0) as *mut dtk_sys::ffi::QObject,
+                )
+            },))
+        },
+    )))
+}
+
+/// `DAnchorsBase::centerInChanged`
+/// # Safety
+/// See module header.
+pub unsafe fn d_anchors_base_center_in_changed(
+    sender: *const ffi::QObject,
+    token: SignalToken<(Option<GuardedArg<dtk_sys::ffi::QWidget>>,)>,
+) -> Option<Box<dyn Any>> {
+    let sender = unsafe { ffi::as_DAnchorsBase(sender) };
+    if sender.is_null() {
+        return None;
+    }
+    let sender = unsafe { &*sender };
+    Some(Box::new(sender.on_center_in_changed(
+        move |_sender, a0: *mut QWidget| {
+            token.emit((unsafe {
+                GuardedArg::capture(
+                    a0 as *mut dtk_sys::ffi::QWidget,
+                    ffi::signal_object_QWidget(a0) as *mut dtk_sys::ffi::QObject,
+                )
+            },))
+        },
     )))
 }
 
@@ -703,6 +752,105 @@ pub unsafe fn d_box_widget_direction_changed(
     )))
 }
 
+/// `DButtonBox::buttonClicked`
+/// # Safety
+/// See module header.
+pub unsafe fn d_button_box_button_clicked(
+    sender: *const ffi::QObject,
+    token: SignalToken<(Option<GuardedArg<dtk_sys::ffi::QAbstractButton>>,)>,
+) -> Option<Box<dyn Any>> {
+    let sender = unsafe { ffi::as_DButtonBox(sender) };
+    if sender.is_null() {
+        return None;
+    }
+    let sender = unsafe { &*sender };
+    Some(Box::new(sender.on_button_clicked(
+        move |_sender, a0: *mut QAbstractButton| {
+            token.emit((unsafe {
+                GuardedArg::capture(
+                    a0 as *mut dtk_sys::ffi::QAbstractButton,
+                    ffi::signal_object_QAbstractButton(a0) as *mut dtk_sys::ffi::QObject,
+                )
+            },))
+        },
+    )))
+}
+
+/// `DButtonBox::buttonPressed`
+/// # Safety
+/// See module header.
+pub unsafe fn d_button_box_button_pressed(
+    sender: *const ffi::QObject,
+    token: SignalToken<(Option<GuardedArg<dtk_sys::ffi::QAbstractButton>>,)>,
+) -> Option<Box<dyn Any>> {
+    let sender = unsafe { ffi::as_DButtonBox(sender) };
+    if sender.is_null() {
+        return None;
+    }
+    let sender = unsafe { &*sender };
+    Some(Box::new(sender.on_button_pressed(
+        move |_sender, a0: *mut QAbstractButton| {
+            token.emit((unsafe {
+                GuardedArg::capture(
+                    a0 as *mut dtk_sys::ffi::QAbstractButton,
+                    ffi::signal_object_QAbstractButton(a0) as *mut dtk_sys::ffi::QObject,
+                )
+            },))
+        },
+    )))
+}
+
+/// `DButtonBox::buttonReleased`
+/// # Safety
+/// See module header.
+pub unsafe fn d_button_box_button_released(
+    sender: *const ffi::QObject,
+    token: SignalToken<(Option<GuardedArg<dtk_sys::ffi::QAbstractButton>>,)>,
+) -> Option<Box<dyn Any>> {
+    let sender = unsafe { ffi::as_DButtonBox(sender) };
+    if sender.is_null() {
+        return None;
+    }
+    let sender = unsafe { &*sender };
+    Some(Box::new(sender.on_button_released(
+        move |_sender, a0: *mut QAbstractButton| {
+            token.emit((unsafe {
+                GuardedArg::capture(
+                    a0 as *mut dtk_sys::ffi::QAbstractButton,
+                    ffi::signal_object_QAbstractButton(a0) as *mut dtk_sys::ffi::QObject,
+                )
+            },))
+        },
+    )))
+}
+
+/// `DButtonBox::buttonToggled`
+/// # Safety
+/// See module header.
+pub unsafe fn d_button_box_button_toggled(
+    sender: *const ffi::QObject,
+    token: SignalToken<(Option<GuardedArg<dtk_sys::ffi::QAbstractButton>>, bool)>,
+) -> Option<Box<dyn Any>> {
+    let sender = unsafe { ffi::as_DButtonBox(sender) };
+    if sender.is_null() {
+        return None;
+    }
+    let sender = unsafe { &*sender };
+    Some(Box::new(sender.on_button_toggled(
+        move |_sender, a0: *mut QAbstractButton, a1: bool| {
+            token.emit((
+                unsafe {
+                    GuardedArg::capture(
+                        a0 as *mut dtk_sys::ffi::QAbstractButton,
+                        ffi::signal_object_QAbstractButton(a0) as *mut dtk_sys::ffi::QObject,
+                    )
+                },
+                a1,
+            ))
+        },
+    )))
+}
+
 /// `DCircleProgress::clicked`
 /// # Safety
 /// See module header.
@@ -1165,6 +1313,30 @@ pub unsafe fn d_enhanced_widget_size_changed(
     )))
 }
 
+/// `DEnhancedWidget::targetChanged`
+/// # Safety
+/// See module header.
+pub unsafe fn d_enhanced_widget_target_changed(
+    sender: *const ffi::QObject,
+    token: SignalToken<(Option<GuardedArg<dtk_sys::ffi::QWidget>>,)>,
+) -> Option<Box<dyn Any>> {
+    let sender = unsafe { ffi::as_DEnhancedWidget(sender) };
+    if sender.is_null() {
+        return None;
+    }
+    let sender = unsafe { &*sender };
+    Some(Box::new(sender.on_target_changed(
+        move |_sender, a0: *mut QWidget| {
+            token.emit((unsafe {
+                GuardedArg::capture(
+                    a0 as *mut dtk_sys::ffi::QWidget,
+                    ffi::signal_object_QWidget(a0) as *mut dtk_sys::ffi::QObject,
+                )
+            },))
+        },
+    )))
+}
+
 /// `DEnhancedWidget::enabledChanged`
 /// # Safety
 /// See module header.
@@ -1541,6 +1713,23 @@ pub unsafe fn d_flow_layout_count_changed(
     let sender = unsafe { &*sender };
     Some(Box::new(
         sender.on_count_changed(move |_sender, a0: i32| token.emit((a0,))),
+    ))
+}
+
+/// `DFlowLayout::flowChanged`
+/// # Safety
+/// See module header.
+pub unsafe fn d_flow_layout_flow_changed(
+    sender: *const ffi::QObject,
+    token: SignalToken<(i32,)>,
+) -> Option<Box<dyn Any>> {
+    let sender = unsafe { ffi::as_DFlowLayout(sender) };
+    if sender.is_null() {
+        return None;
+    }
+    let sender = unsafe { &*sender };
+    Some(Box::new(
+        sender.on_flow_changed(move |_sender, a0: i32| token.emit((a0,))),
     ))
 }
 
@@ -3586,6 +3775,25 @@ pub unsafe fn d_shortcut_edit_label_color_setting_change(
     ))
 }
 
+/// `DSimpleListView::changeColumnVisible`
+/// # Safety
+/// See module header.
+pub unsafe fn d_simple_list_view_change_column_visible(
+    sender: *const ffi::QObject,
+    token: SignalToken<(i32, bool, Vec<bool>)>,
+) -> Option<Box<dyn Any>> {
+    let sender = unsafe { ffi::as_DSimpleListView(sender) };
+    if sender.is_null() {
+        return None;
+    }
+    let sender = unsafe { &*sender };
+    Some(Box::new(sender.on_change_column_visible(
+        move |_sender, a0: i32, a1: bool, a2: &QList_bool| {
+            token.emit((a0, a1, a2.iter().copied().collect::<Vec<_>>()))
+        },
+    )))
+}
+
 /// `DSimpleListView::changeSortingStatus`
 /// # Safety
 /// See module header.
@@ -3787,6 +3995,57 @@ pub unsafe fn d_stack_widget_current_index_changed(
     let sender = unsafe { &*sender };
     Some(Box::new(sender.on_current_index_changed(
         move |_sender, a0: i32| token.emit((a0,)),
+    )))
+}
+
+/// `DStackWidget::currentWidgetChanged`
+/// # Safety
+/// See module header.
+pub unsafe fn d_stack_widget_current_widget_changed(
+    sender: *const ffi::QObject,
+    token: SignalToken<(Option<GuardedArg<dtk_sys::ffi::QWidget>>,)>,
+) -> Option<Box<dyn Any>> {
+    let sender = unsafe { ffi::as_DStackWidget(sender) };
+    if sender.is_null() {
+        return None;
+    }
+    let sender = unsafe { &*sender };
+    Some(Box::new(sender.on_current_widget_changed(
+        move |_sender, a0: *mut QWidget| {
+            token.emit((unsafe {
+                GuardedArg::capture(
+                    a0 as *mut dtk_sys::ffi::QWidget,
+                    ffi::signal_object_QWidget(a0) as *mut dtk_sys::ffi::QObject,
+                )
+            },))
+        },
+    )))
+}
+
+/// `DStackWidget::widgetDepthChanged`
+/// # Safety
+/// See module header.
+pub unsafe fn d_stack_widget_widget_depth_changed(
+    sender: *const ffi::QObject,
+    token: SignalToken<(Option<GuardedArg<dtk_sys::ffi::QWidget>>, i32)>,
+) -> Option<Box<dyn Any>> {
+    let sender = unsafe { ffi::as_DStackWidget(sender) };
+    if sender.is_null() {
+        return None;
+    }
+    let sender = unsafe { &*sender };
+    Some(Box::new(sender.on_widget_depth_changed(
+        move |_sender, a0: *mut QWidget, a1: i32| {
+            token.emit((
+                unsafe {
+                    GuardedArg::capture(
+                        a0 as *mut dtk_sys::ffi::QWidget,
+                        ffi::signal_object_QWidget(a0) as *mut dtk_sys::ffi::QObject,
+                    )
+                },
+                a1,
+            ))
+        },
     )))
 }
 
@@ -4126,6 +4385,23 @@ pub unsafe fn d_titlebar_double_clicked(
     ))
 }
 
+/// `DTitlebar::mousePressed`
+/// # Safety
+/// See module header.
+pub unsafe fn d_titlebar_mouse_pressed(
+    sender: *const ffi::QObject,
+    token: SignalToken<(i32,)>,
+) -> Option<Box<dyn Any>> {
+    let sender = unsafe { ffi::as_DTitlebar(sender) };
+    if sender.is_null() {
+        return None;
+    }
+    let sender = unsafe { &*sender };
+    Some(Box::new(sender.on_mouse_pressed(
+        move |_sender, a0: &Int_Qt_MouseButtons| token.emit((ffi::int_Qt_MouseButtons(a0),)),
+    )))
+}
+
 /// `DTitlebar::mouseMoving`
 /// # Safety
 /// See module header.
@@ -4368,6 +4644,57 @@ pub unsafe fn q_abstract_button_is_checked(object: *const ffi::QObject) -> Optio
     (!object.is_null()).then(|| unsafe { &*object }.is_checked())
 }
 
+/// `QAbstractItemDelegate::commitData`
+/// # Safety
+/// See module header.
+pub unsafe fn q_abstract_item_delegate_commit_data(
+    sender: *const ffi::QObject,
+    token: SignalToken<(Option<GuardedArg<dtk_sys::ffi::QWidget>>,)>,
+) -> Option<Box<dyn Any>> {
+    let sender = unsafe { ffi::as_QAbstractItemDelegate(sender) };
+    if sender.is_null() {
+        return None;
+    }
+    let sender = unsafe { &*sender };
+    Some(Box::new(sender.on_commit_data(
+        move |_sender, a0: *mut QWidget| {
+            token.emit((unsafe {
+                GuardedArg::capture(
+                    a0 as *mut dtk_sys::ffi::QWidget,
+                    ffi::signal_object_QWidget(a0) as *mut dtk_sys::ffi::QObject,
+                )
+            },))
+        },
+    )))
+}
+
+/// `QAbstractItemDelegate::closeEditor`
+/// # Safety
+/// See module header.
+pub unsafe fn q_abstract_item_delegate_close_editor(
+    sender: *const ffi::QObject,
+    token: SignalToken<(Option<GuardedArg<dtk_sys::ffi::QWidget>>, i32)>,
+) -> Option<Box<dyn Any>> {
+    let sender = unsafe { ffi::as_QAbstractItemDelegate(sender) };
+    if sender.is_null() {
+        return None;
+    }
+    let sender = unsafe { &*sender };
+    Some(Box::new(sender.on_close_editor(
+        move |_sender, a0: *mut QWidget, a1: i32| {
+            token.emit((
+                unsafe {
+                    GuardedArg::capture(
+                        a0 as *mut dtk_sys::ffi::QWidget,
+                        ffi::signal_object_QWidget(a0) as *mut dtk_sys::ffi::QObject,
+                    )
+                },
+                a1,
+            ))
+        },
+    )))
+}
+
 /// `QAbstractItemDelegate::sizeHintChanged`
 /// # Safety
 /// See module header.
@@ -4443,6 +4770,66 @@ pub unsafe fn q_abstract_item_model_header_data_changed(
     let sender = unsafe { &*sender };
     Some(Box::new(sender.on_header_data_changed(
         move |_sender, a0: i32, a1: i32, a2: i32| token.emit((a0, a1, a2)),
+    )))
+}
+
+/// `QAbstractItemModel::layoutChanged`
+/// # Safety
+/// See module header.
+pub unsafe fn q_abstract_item_model_layout_changed(
+    sender: *const ffi::QObject,
+    token: SignalToken<(Vec<OwnedValue<dtk_sys::ffi::QPersistentModelIndex>>, i32)>,
+) -> Option<Box<dyn Any>> {
+    let sender = unsafe { ffi::as_QAbstractItemModel(sender) };
+    if sender.is_null() {
+        return None;
+    }
+    let sender = unsafe { &*sender };
+    Some(Box::new(sender.on_layout_changed(
+        move |_sender, a0: &QPersistentModelIndexList, a1: i32| {
+            token.emit((
+                (0..ffi::q_persistent_model_index_list_len(a0))
+                    .map(|i| unsafe {
+                        OwnedValue::new(
+                            ffi::q_persistent_model_index_list_at(a0, i)
+                                as *mut dtk_sys::ffi::QPersistentModelIndex,
+                            dtk_sys::ffi::persistent_index_delete,
+                        )
+                    })
+                    .collect::<Vec<_>>(),
+                a1,
+            ))
+        },
+    )))
+}
+
+/// `QAbstractItemModel::layoutAboutToBeChanged`
+/// # Safety
+/// See module header.
+pub unsafe fn q_abstract_item_model_layout_about_to_be_changed(
+    sender: *const ffi::QObject,
+    token: SignalToken<(Vec<OwnedValue<dtk_sys::ffi::QPersistentModelIndex>>, i32)>,
+) -> Option<Box<dyn Any>> {
+    let sender = unsafe { ffi::as_QAbstractItemModel(sender) };
+    if sender.is_null() {
+        return None;
+    }
+    let sender = unsafe { &*sender };
+    Some(Box::new(sender.on_layout_about_to_be_changed(
+        move |_sender, a0: &QPersistentModelIndexList, a1: i32| {
+            token.emit((
+                (0..ffi::q_persistent_model_index_list_len(a0))
+                    .map(|i| unsafe {
+                        OwnedValue::new(
+                            ffi::q_persistent_model_index_list_at(a0, i)
+                                as *mut dtk_sys::ffi::QPersistentModelIndex,
+                            dtk_sys::ffi::persistent_index_delete,
+                        )
+                    })
+                    .collect::<Vec<_>>(),
+                a1,
+            ))
+        },
     )))
 }
 
@@ -5800,6 +6187,33 @@ pub unsafe fn q_line_edit_input_rejected(
     ))
 }
 
+/// `QListView::indexesMoved`
+/// # Safety
+/// See module header.
+pub unsafe fn q_list_view_indexes_moved(
+    sender: *const ffi::QObject,
+    token: SignalToken<(Vec<OwnedValue<dtk_sys::ffi::QPersistentModelIndex>>,)>,
+) -> Option<Box<dyn Any>> {
+    let sender = unsafe { ffi::as_QListView(sender) };
+    if sender.is_null() {
+        return None;
+    }
+    let sender = unsafe { &*sender };
+    Some(Box::new(sender.on_indexes_moved(
+        move |_sender, a0: &QModelIndexList| {
+            token.emit(((0..ffi::q_model_index_list_len(a0))
+                .map(|i| unsafe {
+                    OwnedValue::new(
+                        ffi::q_model_index_list_at(a0, i)
+                            as *mut dtk_sys::ffi::QPersistentModelIndex,
+                        dtk_sys::ffi::persistent_index_delete,
+                    )
+                })
+                .collect::<Vec<_>>(),))
+        },
+    )))
+}
+
 /// `QMainWindow::iconSizeChanged`
 /// # Safety
 /// See module header.
@@ -5868,6 +6282,78 @@ pub unsafe fn q_menu_about_to_hide(
     ))
 }
 
+/// `QMenu::triggered`
+/// # Safety
+/// See module header.
+pub unsafe fn q_menu_triggered(
+    sender: *const ffi::QObject,
+    token: SignalToken<(Option<GuardedArg<dtk_sys::ffi::QAction>>,)>,
+) -> Option<Box<dyn Any>> {
+    let sender = unsafe { ffi::as_QMenu(sender) };
+    if sender.is_null() {
+        return None;
+    }
+    let sender = unsafe { &*sender };
+    Some(Box::new(sender.on_triggered(
+        move |_sender, a0: *mut QAction| {
+            token.emit((unsafe {
+                GuardedArg::capture(
+                    a0 as *mut dtk_sys::ffi::QAction,
+                    ffi::signal_object_QAction(a0) as *mut dtk_sys::ffi::QObject,
+                )
+            },))
+        },
+    )))
+}
+
+/// `QMenu::hovered`
+/// # Safety
+/// See module header.
+pub unsafe fn q_menu_hovered(
+    sender: *const ffi::QObject,
+    token: SignalToken<(Option<GuardedArg<dtk_sys::ffi::QAction>>,)>,
+) -> Option<Box<dyn Any>> {
+    let sender = unsafe { ffi::as_QMenu(sender) };
+    if sender.is_null() {
+        return None;
+    }
+    let sender = unsafe { &*sender };
+    Some(Box::new(sender.on_hovered(
+        move |_sender, a0: *mut QAction| {
+            token.emit((unsafe {
+                GuardedArg::capture(
+                    a0 as *mut dtk_sys::ffi::QAction,
+                    ffi::signal_object_QAction(a0) as *mut dtk_sys::ffi::QObject,
+                )
+            },))
+        },
+    )))
+}
+
+/// `QMessageBox::buttonClicked`
+/// # Safety
+/// See module header.
+pub unsafe fn q_message_box_button_clicked(
+    sender: *const ffi::QObject,
+    token: SignalToken<(Option<GuardedArg<dtk_sys::ffi::QAbstractButton>>,)>,
+) -> Option<Box<dyn Any>> {
+    let sender = unsafe { ffi::as_QMessageBox(sender) };
+    if sender.is_null() {
+        return None;
+    }
+    let sender = unsafe { &*sender };
+    Some(Box::new(sender.on_button_clicked(
+        move |_sender, a0: *mut QAbstractButton| {
+            token.emit((unsafe {
+                GuardedArg::capture(
+                    a0 as *mut dtk_sys::ffi::QAbstractButton,
+                    ffi::signal_object_QAbstractButton(a0) as *mut dtk_sys::ffi::QObject,
+                )
+            },))
+        },
+    )))
+}
+
 /// `QProgressBar::valueChanged`
 /// # Safety
 /// See module header.
@@ -5916,6 +6402,201 @@ pub unsafe fn q_spin_box_text_changed(
     let sender = unsafe { &*sender };
     Some(Box::new(sender.on_text_changed(
         move |_sender, a0: &QString| token.emit((String::from(a0),)),
+    )))
+}
+
+/// `QStandardItemModel::itemChanged`
+/// # Safety
+/// See module header.
+pub unsafe fn q_standard_item_model_item_changed(
+    sender: *const ffi::QObject,
+    token: SignalToken<(Option<OwnedValue<dtk_sys::ffi::QPersistentModelIndex>>,)>,
+) -> Option<Box<dyn Any>> {
+    let sender = unsafe { ffi::as_QStandardItemModel(sender) };
+    if sender.is_null() {
+        return None;
+    }
+    let sender = unsafe { &*sender };
+    Some(Box::new(sender.on_item_changed(
+        move |_sender, a0: *mut QStandardItem| {
+            token.emit(({
+                let index = unsafe { ffi::standard_item_index(a0) };
+                (!index.is_null()).then(|| unsafe {
+                    OwnedValue::new(
+                        index as *mut dtk_sys::ffi::QPersistentModelIndex,
+                        dtk_sys::ffi::persistent_index_delete,
+                    )
+                })
+            },))
+        },
+    )))
+}
+
+/// `QTableWidget::itemPressed`
+/// # Safety
+/// See module header.
+pub unsafe fn q_table_widget_item_pressed(
+    sender: *const ffi::QObject,
+    token: SignalToken<(Option<(i32, i32)>,)>,
+) -> Option<Box<dyn Any>> {
+    let sender = unsafe { ffi::as_QTableWidget(sender) };
+    if sender.is_null() {
+        return None;
+    }
+    let sender = unsafe { &*sender };
+    Some(Box::new(sender.on_item_pressed(
+        move |_sender, a0: *mut QTableWidgetItem| {
+            token.emit(({
+                let (row, column) =
+                    unsafe { (ffi::table_item_row(a0), ffi::table_item_column(a0)) };
+                (row >= 0 && column >= 0).then_some((row, column))
+            },))
+        },
+    )))
+}
+
+/// `QTableWidget::itemClicked`
+/// # Safety
+/// See module header.
+pub unsafe fn q_table_widget_item_clicked(
+    sender: *const ffi::QObject,
+    token: SignalToken<(Option<(i32, i32)>,)>,
+) -> Option<Box<dyn Any>> {
+    let sender = unsafe { ffi::as_QTableWidget(sender) };
+    if sender.is_null() {
+        return None;
+    }
+    let sender = unsafe { &*sender };
+    Some(Box::new(sender.on_item_clicked(
+        move |_sender, a0: *mut QTableWidgetItem| {
+            token.emit(({
+                let (row, column) =
+                    unsafe { (ffi::table_item_row(a0), ffi::table_item_column(a0)) };
+                (row >= 0 && column >= 0).then_some((row, column))
+            },))
+        },
+    )))
+}
+
+/// `QTableWidget::itemDoubleClicked`
+/// # Safety
+/// See module header.
+pub unsafe fn q_table_widget_item_double_clicked(
+    sender: *const ffi::QObject,
+    token: SignalToken<(Option<(i32, i32)>,)>,
+) -> Option<Box<dyn Any>> {
+    let sender = unsafe { ffi::as_QTableWidget(sender) };
+    if sender.is_null() {
+        return None;
+    }
+    let sender = unsafe { &*sender };
+    Some(Box::new(sender.on_item_double_clicked(
+        move |_sender, a0: *mut QTableWidgetItem| {
+            token.emit(({
+                let (row, column) =
+                    unsafe { (ffi::table_item_row(a0), ffi::table_item_column(a0)) };
+                (row >= 0 && column >= 0).then_some((row, column))
+            },))
+        },
+    )))
+}
+
+/// `QTableWidget::itemActivated`
+/// # Safety
+/// See module header.
+pub unsafe fn q_table_widget_item_activated(
+    sender: *const ffi::QObject,
+    token: SignalToken<(Option<(i32, i32)>,)>,
+) -> Option<Box<dyn Any>> {
+    let sender = unsafe { ffi::as_QTableWidget(sender) };
+    if sender.is_null() {
+        return None;
+    }
+    let sender = unsafe { &*sender };
+    Some(Box::new(sender.on_item_activated(
+        move |_sender, a0: *mut QTableWidgetItem| {
+            token.emit(({
+                let (row, column) =
+                    unsafe { (ffi::table_item_row(a0), ffi::table_item_column(a0)) };
+                (row >= 0 && column >= 0).then_some((row, column))
+            },))
+        },
+    )))
+}
+
+/// `QTableWidget::itemEntered`
+/// # Safety
+/// See module header.
+pub unsafe fn q_table_widget_item_entered(
+    sender: *const ffi::QObject,
+    token: SignalToken<(Option<(i32, i32)>,)>,
+) -> Option<Box<dyn Any>> {
+    let sender = unsafe { ffi::as_QTableWidget(sender) };
+    if sender.is_null() {
+        return None;
+    }
+    let sender = unsafe { &*sender };
+    Some(Box::new(sender.on_item_entered(
+        move |_sender, a0: *mut QTableWidgetItem| {
+            token.emit(({
+                let (row, column) =
+                    unsafe { (ffi::table_item_row(a0), ffi::table_item_column(a0)) };
+                (row >= 0 && column >= 0).then_some((row, column))
+            },))
+        },
+    )))
+}
+
+/// `QTableWidget::itemChanged`
+/// # Safety
+/// See module header.
+pub unsafe fn q_table_widget_item_changed(
+    sender: *const ffi::QObject,
+    token: SignalToken<(Option<(i32, i32)>,)>,
+) -> Option<Box<dyn Any>> {
+    let sender = unsafe { ffi::as_QTableWidget(sender) };
+    if sender.is_null() {
+        return None;
+    }
+    let sender = unsafe { &*sender };
+    Some(Box::new(sender.on_item_changed(
+        move |_sender, a0: *mut QTableWidgetItem| {
+            token.emit(({
+                let (row, column) =
+                    unsafe { (ffi::table_item_row(a0), ffi::table_item_column(a0)) };
+                (row >= 0 && column >= 0).then_some((row, column))
+            },))
+        },
+    )))
+}
+
+/// `QTableWidget::currentItemChanged`
+/// # Safety
+/// See module header.
+pub unsafe fn q_table_widget_current_item_changed(
+    sender: *const ffi::QObject,
+    token: SignalToken<(Option<(i32, i32)>, Option<(i32, i32)>)>,
+) -> Option<Box<dyn Any>> {
+    let sender = unsafe { ffi::as_QTableWidget(sender) };
+    if sender.is_null() {
+        return None;
+    }
+    let sender = unsafe { &*sender };
+    Some(Box::new(sender.on_current_item_changed(
+        move |_sender, a0: *mut QTableWidgetItem, a1: *mut QTableWidgetItem| {
+            token.emit((
+                {
+                    let (row, column) =
+                        unsafe { (ffi::table_item_row(a0), ffi::table_item_column(a0)) };
+                    (row >= 0 && column >= 0).then_some((row, column))
+                },
+                {
+                    let (row, column) =
+                        unsafe { (ffi::table_item_row(a1), ffi::table_item_column(a1)) };
+                    (row >= 0 && column >= 0).then_some((row, column))
+                },
+            ))
+        },
     )))
 }
 
@@ -6170,6 +6851,30 @@ pub unsafe fn q_timer_timeout(
     }
     let sender = unsafe { &*sender };
     Some(Box::new(sender.on_timeout(move |_sender| token.emit(()))))
+}
+
+/// `QToolButton::triggered`
+/// # Safety
+/// See module header.
+pub unsafe fn q_tool_button_triggered(
+    sender: *const ffi::QObject,
+    token: SignalToken<(Option<GuardedArg<dtk_sys::ffi::QAction>>,)>,
+) -> Option<Box<dyn Any>> {
+    let sender = unsafe { ffi::as_QToolButton(sender) };
+    if sender.is_null() {
+        return None;
+    }
+    let sender = unsafe { &*sender };
+    Some(Box::new(sender.on_triggered(
+        move |_sender, a0: *mut QAction| {
+            token.emit((unsafe {
+                GuardedArg::capture(
+                    a0 as *mut dtk_sys::ffi::QAction,
+                    ffi::signal_object_QAction(a0) as *mut dtk_sys::ffi::QObject,
+                )
+            },))
+        },
+    )))
 }
 
 /// `QWidget::windowTitleChanged`

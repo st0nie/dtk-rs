@@ -13,6 +13,12 @@
 //!   `QImage`/..., and `QModelIndex` -> [`crate::PersistentModelIndex`]); the
 //!   closure runs later, after every native frame has returned, and is never
 //!   re-entered (nested emissions queue FIFO).
+//! - QObject pointer arguments (only for signals with an audited contract)
+//!   are guarded inside the emission and arrive as `Option<View>`, e.g.
+//!   `DMenu::on_triggered(|action: Option<QAction>| ..)`; `None` means the
+//!   pointer was null or Qt destroyed the object before delivery. Table and
+//!   standard items arrive as `(row, column)` / [`crate::PersistentModelIndex`],
+//!   QFlags and scoped enums as their `i32` value.
 //! - The closure never receives the sender. Capture a clone of the handle if
 //!   needed; its calls go through the ordinary guarded wrappers.
 //! - Qt destroying the sender cancels the callback and releases its captures

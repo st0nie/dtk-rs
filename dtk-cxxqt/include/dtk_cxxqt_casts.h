@@ -2,6 +2,7 @@
 #pragma once
 #include <QtCore/QObject>
 #include <QtCore/QPersistentModelIndex>
+#include <QtCore/QThread>
 #include <QtCore/QModelIndex>
 #include <QtCore/QVariant>
 #include <QtCore/qabstractitemmodel.h>
@@ -11,7 +12,11 @@
 #include <QtGui/QImage>
 #include <QtGui/QKeySequence>
 #include <QtGui/QPainterPath>
+#include <QtGui/QStandardItem>
 #include <QtGui/qaction.h>
+#include <QtGui/qstandarditemmodel.h>
+#include <QtWidgets/QTableWidgetItem>
+#include <QtWidgets/QWidget>
 #include <QtWidgets/qabstractbutton.h>
 #include <QtWidgets/qabstractitemdelegate.h>
 #include <QtWidgets/qabstractitemview.h>
@@ -24,12 +29,15 @@
 #include <QtWidgets/qgraphicsview.h>
 #include <QtWidgets/qlabel.h>
 #include <QtWidgets/qlineedit.h>
+#include <QtWidgets/qlistview.h>
 #include <QtWidgets/qmainwindow.h>
 #include <QtWidgets/qmenu.h>
+#include <QtWidgets/qmessagebox.h>
 #include <QtWidgets/qprogressbar.h>
 #include <QtWidgets/qspinbox.h>
 #include <QtWidgets/qtablewidget.h>
 #include <QtWidgets/qtextedit.h>
+#include <QtWidgets/qtoolbutton.h>
 #include <QtWidgets/qwidget.h>
 #include <daboutdialog.h>
 #include <dabstractdialog.h>
@@ -41,6 +49,7 @@
 #include <dbasefilewatcher.h>
 #include <dblureffectwidget.h>
 #include <dboxwidget.h>
+#include <dbuttonbox.h>
 #include <dcircleprogress.h>
 #include <dclipeffectwidget.h>
 #include <dconfig.h>
@@ -114,6 +123,37 @@ inline ::QKeySequence *clone_QKeySequence(const ::QKeySequence &value) { return 
 inline ::QPersistentModelIndex *clone_QModelIndex(const ::QModelIndex &value) { return new ::QPersistentModelIndex(value); }
 inline ::QPainterPath *clone_QPainterPath(const ::QPainterPath &value) { return new ::QPainterPath(value); }
 inline ::QVariant *clone_QVariant(const ::QVariant &value) { return new ::QVariant(value); }
+namespace detail {
+struct ObjectData : ::QObject {
+    static const ::QObjectData *of(const ::QObject *o) { return (o->*(&ObjectData::d_ptr)).data(); }
+};
+} // namespace detail
+// Null unless `o` can be guarded now: same thread, ~QObject not entered.
+inline const ::QObject *signal_object(const ::QObject *o) {
+    if (!o || o->thread() != ::QThread::currentThread() || detail::ObjectData::of(o)->wasDeleted)
+        return nullptr;
+    return o;
+}
+inline const ::QObject *signal_object_QAbstractButton(const ::QAbstractButton *p) { return signal_object(p); }
+inline const ::QObject *signal_object_QAction(const ::QAction *p) { return signal_object(p); }
+inline const ::QObject *signal_object_QWidget(const ::QWidget *p) { return signal_object(p); }
+inline ::QPersistentModelIndex *standard_item_index(const ::QStandardItem *i) {
+    return i ? new ::QPersistentModelIndex(i->index()) : nullptr;
+}
+inline int table_item_row(const ::QTableWidgetItem *i) { return i && i->tableWidget() ? i->row() : -1; }
+inline int table_item_column(const ::QTableWidgetItem *i) { return i && i->tableWidget() ? i->column() : -1; }
+using QModelIndexList = ::QList<::QModelIndex>;
+inline ::rust::isize q_model_index_list_len(const QModelIndexList &l) { return l.size(); }
+inline ::QPersistentModelIndex *q_model_index_list_at(const QModelIndexList &l, ::rust::isize i) {
+    return new ::QPersistentModelIndex(l.at(i));
+}
+using QPersistentModelIndexList = ::QList<::QPersistentModelIndex>;
+inline ::rust::isize q_persistent_model_index_list_len(const QPersistentModelIndexList &l) { return l.size(); }
+inline ::QPersistentModelIndex *q_persistent_model_index_list_at(const QPersistentModelIndexList &l, ::rust::isize i) {
+    return new ::QPersistentModelIndex(l.at(i));
+}
+using Int_Qt_MouseButtons = ::Qt::MouseButtons;
+inline int int_Qt_MouseButtons(const Int_Qt_MouseButtons &v) { return static_cast<int>(v.toInt()); }
 inline const ::Dtk::Widget::ColorButton *as_ColorButton(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::ColorButton *>(object); }
 inline const ::Dtk::Widget::ColorLabel *as_ColorLabel(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::ColorLabel *>(object); }
 inline const ::Dtk::Widget::DAboutDialog *as_DAboutDialog(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DAboutDialog *>(object); }
@@ -126,6 +166,7 @@ inline const ::Dtk::Widget::DBackgroundGroup *as_DBackgroundGroup(const ::QObjec
 inline const ::Dtk::Core::DBaseFileWatcher *as_DBaseFileWatcher(const ::QObject *object) { return dynamic_cast<const ::Dtk::Core::DBaseFileWatcher *>(object); }
 inline const ::Dtk::Widget::DBlurEffectWidget *as_DBlurEffectWidget(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DBlurEffectWidget *>(object); }
 inline const ::Dtk::Widget::DBoxWidget *as_DBoxWidget(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DBoxWidget *>(object); }
+inline const ::Dtk::Widget::DButtonBox *as_DButtonBox(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DButtonBox *>(object); }
 inline const ::Dtk::Widget::DCircleProgress *as_DCircleProgress(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DCircleProgress *>(object); }
 inline const ::Dtk::Widget::DClipEffectWidget *as_DClipEffectWidget(const ::QObject *object) { return dynamic_cast<const ::Dtk::Widget::DClipEffectWidget *>(object); }
 inline const ::Dtk::Core::DConfig *as_DConfig(const ::QObject *object) { return dynamic_cast<const ::Dtk::Core::DConfig *>(object); }
@@ -190,13 +231,17 @@ inline const ::QGraphicsEffect *as_QGraphicsEffect(const ::QObject *object) { re
 inline const ::QGraphicsView *as_QGraphicsView(const ::QObject *object) { return dynamic_cast<const ::QGraphicsView *>(object); }
 inline const ::QLabel *as_QLabel(const ::QObject *object) { return dynamic_cast<const ::QLabel *>(object); }
 inline const ::QLineEdit *as_QLineEdit(const ::QObject *object) { return dynamic_cast<const ::QLineEdit *>(object); }
+inline const ::QListView *as_QListView(const ::QObject *object) { return dynamic_cast<const ::QListView *>(object); }
 inline const ::QMainWindow *as_QMainWindow(const ::QObject *object) { return dynamic_cast<const ::QMainWindow *>(object); }
 inline const ::QMenu *as_QMenu(const ::QObject *object) { return dynamic_cast<const ::QMenu *>(object); }
+inline const ::QMessageBox *as_QMessageBox(const ::QObject *object) { return dynamic_cast<const ::QMessageBox *>(object); }
 inline const ::QProgressBar *as_QProgressBar(const ::QObject *object) { return dynamic_cast<const ::QProgressBar *>(object); }
 inline const ::QSpinBox *as_QSpinBox(const ::QObject *object) { return dynamic_cast<const ::QSpinBox *>(object); }
+inline const ::QStandardItemModel *as_QStandardItemModel(const ::QObject *object) { return dynamic_cast<const ::QStandardItemModel *>(object); }
 inline const ::QTableWidget *as_QTableWidget(const ::QObject *object) { return dynamic_cast<const ::QTableWidget *>(object); }
 inline const ::QTextEdit *as_QTextEdit(const ::QObject *object) { return dynamic_cast<const ::QTextEdit *>(object); }
 inline const ::QTimer *as_QTimer(const ::QObject *object) { return dynamic_cast<const ::QTimer *>(object); }
+inline const ::QToolButton *as_QToolButton(const ::QObject *object) { return dynamic_cast<const ::QToolButton *>(object); }
 inline const ::QWidget *as_QWidget(const ::QObject *object) { return dynamic_cast<const ::QWidget *>(object); }
 using QPersistentModelIndex = ::QPersistentModelIndex;
 } // namespace dtkrs_cxxqt
