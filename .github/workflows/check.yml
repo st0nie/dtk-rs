@@ -1,0 +1,78 @@
+name: check
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  DTK_TAG: "6.7.47"
+
+jobs:
+  check:
+    # The real target: deepin 25 (Qt 6.8.0). DTK itself is built from the
+    # pinned tag so generated bindings stay reproducible when deepin ships a
+    # newer DTK.
+    runs-on: ubuntu-24.04
+    container: linuxdeepin/deepin:crimson
+    timeout-minutes: 150
+    steps:
+      - name: Install Qt6 and DTK build dependencies
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            build-essential cmake ninja-build pkg-config git ca-certificates curl \
+            python3 python3-pip clang libclang-dev \
+            qt6-base-dev qt6-base-dev-tools qt6-base-private-dev \
+            qt6-tools-dev qt6-tools-dev-tools qt6-svg-dev \
+            qt6-wayland-dev qt6-wayland-dev-tools qt6-wayland-private-dev \
+            libgtest-dev libgmock-dev libicu-dev libuchardet-dev libdbus-1-dev \
+            libspdlog-dev libsystemd-dev librsvg2-dev libfreeimage-dev libraw-dev \
+            extra-cmake-modules libudev-dev libxext-dev x11proto-xext-dev \
+            libxcb-util0-dev libstartup-notification0-dev libmtdev-dev \
+            libegl1-mesa-dev libfontconfig1-dev libfreetype-dev libglib2.0-dev \
+            libxrender-dev libxi-dev libcups2-dev
+
+      - uses: actions/checkout@v4
+
+      - name: Cache DTK ${{ env.DTK_TAG }}
+        id: dtk-cache
+        uses: actions/cache@v4
+        with:
+          path: /opt/dtk
+          key: dtk-${{ env.DTK_TAG }}-deepin-crimson-${{ hashFiles('tools/ci/build-dtk.sh') }}
+
+      - name: Build DTK ${{ env.DTK_TAG }}
+        if: steps.dtk-cache.outputs.cache-hit != 'true'
+        run: bash tools/ci/build-dtk.sh /opt/dtk
+
+      - name: Use DTK ${{ env.DTK_TAG }}
+        run: |
+          cp -a /opt/dtk/. /usr/
+          ldconfig
+          pkg-config --modversion dtk6widget dtk6gui dtk6core
+
+      - name: Install Rust and uv
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | \
+            sh -s -- -y --profile minimal --component rustfmt,clippy
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+          pip install --break-system-packages uv || pip install uv
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: cargo-${{ hashFiles('Cargo.lock') }}-${{ github.sha }}
+          restore-keys: cargo-${{ hashFiles('Cargo.lock') }}-
+
+      - name: Full regression (tools/check.sh)
+        run: bash tools/check.sh
