@@ -380,6 +380,26 @@ class QtAncestryTests(unittest.TestCase):
 
 
 class ByValueAndSignalTests(unittest.TestCase):
+    def test_scalar_and_string_containers_are_owned_copies(self):
+        ctx = Ctx(set())
+        self.assertEqual(ctx.map_type("QList<int>", True)[:3], ("Vec<i32>", "rust::Vec<int32_t>", "intlist"))
+        self.assertEqual(ctx.map_type("const QVector<int> &", False)[:3],
+                         ("&[i32]", "rust::Slice<const int32_t>", "intlist"))
+        self.assertEqual(ctx.map_type("QVector<quint32>", True)[2], "u32list")
+        self.assertEqual(ctx.map_type("const QList<QString> &", False)[2], "strlist")
+        # Outputs through non-const references and unreviewed element types stay unmapped.
+        self.assertIsNone(ctx.map_type("QList<int> &", False))
+        self.assertIsNone(ctx.map_type("QVector<quint32>", False))
+        self.assertIsNone(ctx.map_type("QList<QWidget *>", True))
+        root = Path(REPO)
+        gui = (root / "dtk/src/gui.rs").read_text()
+        # Later-mapped overloads never renumber established generated names.
+        self.assertIn("pub fn trash_2(url: &QUrl) -> bool", gui)
+        self.assertIn("pub fn trash_3(localFilePaths: Vec<String>) -> bool", gui)
+        widgets = (root / "dtk/src/widgets.rs").read_text()
+        self.assertIn("pub fn set_page_range(&self, from: i32, to: i32)", widgets)
+        self.assertIn("pub fn set_page_range_2(&self, rangePages: &[i32])", widgets)
+
     def test_cxxqt_trivial_values_cross_by_value(self):
         root = Path(REPO)
         generated = (root / "dtk/src/widgets.rs").read_text()

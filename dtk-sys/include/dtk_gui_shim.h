@@ -239,12 +239,17 @@ bool gen_d_window_manager_helper_has_no_titlebar(DWindowManagerHelper *self);
 bool gen_d_window_manager_helper_has_wallpaper_effect(DWindowManagerHelper *self);
 rust::String gen_d_window_manager_helper_window_manager_name_string(DWindowManagerHelper *self);
 int32_t gen_d_window_manager_helper_window_manager_name(DWindowManagerHelper *self);
+rust::Vec<uint32_t> gen_d_window_manager_helper_all_window_id_list(DWindowManagerHelper *self);
+rust::Vec<uint32_t> gen_d_window_manager_helper_current_workspace_window_id_list(DWindowManagerHelper *self);
 uint32_t gen_d_window_manager_helper_window_from_point(DWindowManagerHelper *self, const QPoint &p);
 bool gen_d_desktop_services_show_folder(rust::Str localFilePath, rust::Str startupId);
+bool gen_d_desktop_services_show_folders(rust::Vec<rust::String> localFilePaths, rust::Str startupId);
 bool gen_d_desktop_services_show_folder_2(const QUrl &url, rust::Str startupId);
 bool gen_d_desktop_services_show_file_item_property(rust::Str localFilePath, rust::Str startupId);
+bool gen_d_desktop_services_show_file_item_properties(rust::Vec<rust::String> localFilePaths, rust::Str startupId);
 bool gen_d_desktop_services_show_file_item_property_2(const QUrl &url, rust::Str startupId);
 bool gen_d_desktop_services_show_file_item(rust::Str localFilePath, rust::Str startupId);
+bool gen_d_desktop_services_show_file_items(rust::Vec<rust::String> localFilePaths, rust::Str startupId);
 bool gen_d_desktop_services_show_file_item_2(const QUrl &url, rust::Str startupId);
 bool gen_d_desktop_services_trash(rust::Str localFilePath);
 bool gen_d_desktop_services_trash_2(const QUrl &url);
@@ -254,5 +259,6 @@ bool gen_d_desktop_services_preview_system_sound_effect(int32_t effect);
 bool gen_d_desktop_services_preview_system_sound_effect_2(rust::Str name);
 rust::String gen_d_desktop_services_get_name_by_effect_type(int32_t effect);
 rust::String gen_d_desktop_services_error_message();
+bool gen_d_desktop_services_trash_3(rust::Vec<rust::String> localFilePaths);
 
 } // namespace dtkrs

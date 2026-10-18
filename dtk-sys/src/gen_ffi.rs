@@ -718,6 +718,9 @@ pub mod genffi {
             self_: *mut DColoredProgressBar,
             threshold: i32,
         );
+        unsafe fn gen_d_colored_progress_bar_thresholds(
+            self_: *mut DColoredProgressBar,
+        ) -> Vec<i32>;
         unsafe fn gen_d_combo_box_new() -> *mut DComboBox;
         unsafe fn gen_d_combo_box_as_qobject(self_: *mut DComboBox) -> *mut QObject;
         unsafe fn gen_d_combo_box_as_widget(self_: *mut DComboBox) -> *mut QWidget;
@@ -1487,6 +1490,7 @@ pub mod genffi {
             self_: *mut DLoadingIndicator,
         ) -> *mut QPixmap;
         unsafe fn gen_d_loading_indicator_ani_duration(self_: *mut DLoadingIndicator) -> i32;
+        unsafe fn gen_d_loading_indicator_ani_easing_type(self_: *mut DLoadingIndicator) -> i32;
         unsafe fn gen_d_loading_indicator_size_hint(self_: *mut DLoadingIndicator) -> QSize;
         unsafe fn gen_d_loading_indicator_smooth(self_: *mut DLoadingIndicator) -> bool;
         unsafe fn gen_d_loading_indicator_direction(self_: *mut DLoadingIndicator) -> i32;
@@ -1513,6 +1517,10 @@ pub mod genffi {
         unsafe fn gen_d_loading_indicator_set_image_source(
             self_: *mut DLoadingIndicator,
             imageSource: *mut QPixmap,
+        );
+        unsafe fn gen_d_loading_indicator_set_ani_easing_type(
+            self_: *mut DLoadingIndicator,
+            aniEasingType: i32,
         );
         unsafe fn gen_d_loading_indicator_set_smooth(self_: *mut DLoadingIndicator, smooth: bool);
         unsafe fn gen_d_loading_indicator_set_direction(
@@ -1934,6 +1942,10 @@ pub mod genffi {
             self_: *mut DPrintPreviewWidget,
             isSavedPicture: bool,
         );
+        unsafe fn gen_d_print_preview_widget_set_page_range_2(
+            self_: *mut DPrintPreviewWidget,
+            rangePages: &[i32],
+        );
         unsafe fn gen_d_progress_bar_new() -> *mut DProgressBar;
         unsafe fn gen_d_progress_bar_as_qobject(self_: *mut DProgressBar) -> *mut QObject;
         unsafe fn gen_d_progress_bar_as_widget(self_: *mut DProgressBar) -> *mut QWidget;
@@ -2028,6 +2040,12 @@ pub mod genffi {
         unsafe fn gen_d_simple_list_view_as_qobject(self_: *mut DSimpleListView) -> *mut QObject;
         unsafe fn gen_d_simple_list_view_as_widget(self_: *mut DSimpleListView) -> *mut QWidget;
         unsafe fn gen_d_simple_list_view_set_row_height(self_: *mut DSimpleListView, height: i32);
+        unsafe fn gen_d_simple_list_view_set_column_title_info(
+            self_: *mut DSimpleListView,
+            titles: Vec<String>,
+            widths: &[i32],
+            height: i32,
+        );
         unsafe fn gen_d_simple_list_view_set_clip_radius(self_: *mut DSimpleListView, radius: i32);
         unsafe fn gen_d_simple_list_view_remove_item(
             self_: *mut DSimpleListView,
@@ -2083,8 +2101,10 @@ pub mod genffi {
         unsafe fn gen_d_slider_set_right_ticks(self_: *mut DSlider, info: Vec<String>);
         unsafe fn gen_d_slider_set_above_ticks(self_: *mut DSlider, info: Vec<String>);
         unsafe fn gen_d_slider_set_below_ticks(self_: *mut DSlider, info: Vec<String>);
+        unsafe fn gen_d_slider_set_mark_positions(self_: *mut DSlider, list: &[i32]);
         unsafe fn gen_d_slider_set_mouse_wheel_enabled(self_: *mut DSlider, enabled: bool);
         unsafe fn gen_d_slider_set_tip_value(self_: *mut DSlider, value: &str);
+        unsafe fn gen_d_slider_tick_position(self_: *mut DSlider) -> i32;
         unsafe fn gen_d_slider_size_hint(self_: *mut DSlider) -> QSize;
         unsafe fn gen_d_slider_set_handle_visible(self_: *mut DSlider, b: bool);
         unsafe fn gen_d_slider_handle_visible(self_: *mut DSlider) -> bool;
@@ -2156,6 +2176,7 @@ pub mod genffi {
             self_: *mut DStackWidget,
         ) -> *mut DAbstractStackWidgetTransition;
         unsafe fn gen_d_stack_widget_animation_duration(self_: *mut DStackWidget) -> i32;
+        unsafe fn gen_d_stack_widget_animation_type(self_: *mut DStackWidget) -> i32;
         unsafe fn gen_d_stack_widget_push_widget(
             self_: *mut DStackWidget,
             widget: *mut QWidget,
@@ -2190,6 +2211,10 @@ pub mod genffi {
         unsafe fn gen_d_stack_widget_set_animation_duration(
             self_: *mut DStackWidget,
             animationDuration: i32,
+        );
+        unsafe fn gen_d_stack_widget_set_animation_type(
+            self_: *mut DStackWidget,
+            animationType: i32,
         );
         unsafe fn gen_d_style_new() -> *mut DStyle;
         unsafe fn gen_d_style_as_qobject(self_: *mut DStyle) -> *mut QObject;

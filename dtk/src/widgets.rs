@@ -1445,6 +1445,10 @@ impl DColoredProgressBar {
         let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_colored_progress_bar_remove_threshold(self.live_ptr(), threshold) }
     }
+    pub fn thresholds(&self) -> Vec<i32> {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_colored_progress_bar_thresholds(self.live_ptr()) }
+    }
 }
 
 widget_wrapper!(
@@ -3563,6 +3567,10 @@ impl DLoadingIndicator {
         let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_loading_indicator_ani_duration(self.live_ptr()) }
     }
+    pub fn ani_easing_type(&self) -> i32 {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_loading_indicator_ani_easing_type(self.live_ptr()) }
+    }
     pub fn size_hint(&self) -> QSize {
         let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_loading_indicator_size_hint(self.live_ptr()) }
@@ -3616,6 +3624,12 @@ impl DLoadingIndicator {
         let _call = dtk_sys::NativeCall::new();
         unsafe {
             genffi::gen_d_loading_indicator_set_image_source(self.live_ptr(), imageSource.ptr as _)
+        }
+    }
+    pub fn set_ani_easing_type(&self, aniEasingType: i32) {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe {
+            genffi::gen_d_loading_indicator_set_ani_easing_type(self.live_ptr(), aniEasingType)
         }
     }
     pub fn set_smooth(&self, smooth: bool) {
@@ -4605,6 +4619,10 @@ impl DPrintPreviewWidget {
         let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_print_preview_widget_print(self.live_ptr(), isSavedPicture) }
     }
+    pub fn set_page_range_2(&self, rangePages: &[i32]) {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_print_preview_widget_set_page_range_2(self.live_ptr(), rangePages) }
+    }
 }
 
 widget_wrapper!(
@@ -4878,6 +4896,17 @@ impl DSimpleListView {
         let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_simple_list_view_set_row_height(self.live_ptr(), height) }
     }
+    pub fn set_column_title_info(&self, titles: Vec<String>, widths: &[i32], height: i32) {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe {
+            genffi::gen_d_simple_list_view_set_column_title_info(
+                self.live_ptr(),
+                titles,
+                widths,
+                height,
+            )
+        }
+    }
     pub fn set_clip_radius(&self, radius: i32) {
         let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_simple_list_view_set_clip_radius(self.live_ptr(), radius) }
@@ -5059,6 +5088,10 @@ impl DSlider {
         let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_slider_set_below_ticks(self.live_ptr(), info) }
     }
+    pub fn set_mark_positions(&self, list: &[i32]) {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_slider_set_mark_positions(self.live_ptr(), list) }
+    }
     pub fn set_mouse_wheel_enabled(&self, enabled: bool) {
         let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_slider_set_mouse_wheel_enabled(self.live_ptr(), enabled) }
@@ -5066,6 +5099,10 @@ impl DSlider {
     pub fn set_tip_value(&self, value: &str) {
         let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_slider_set_tip_value(self.live_ptr(), value) }
+    }
+    pub fn tick_position(&self) -> i32 {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_slider_tick_position(self.live_ptr()) }
     }
     pub fn size_hint(&self) -> QSize {
         let _call = dtk_sys::NativeCall::new();
@@ -5285,6 +5322,10 @@ impl DStackWidget {
         let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_stack_widget_animation_duration(self.live_ptr()) }
     }
+    pub fn animation_type(&self) -> i32 {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_stack_widget_animation_type(self.live_ptr()) }
+    }
     pub fn push_widget(&self, widget: &QWidget, enableTransition: bool) -> i32 {
         let _call = dtk_sys::NativeCall::new();
         unsafe {
@@ -5345,6 +5386,10 @@ impl DStackWidget {
         unsafe {
             genffi::gen_d_stack_widget_set_animation_duration(self.live_ptr(), animationDuration)
         }
+    }
+    pub fn set_animation_type(&self, animationType: i32) {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_stack_widget_set_animation_type(self.live_ptr(), animationType) }
     }
 }
 

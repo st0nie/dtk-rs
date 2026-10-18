@@ -199,6 +199,22 @@ rust::String to_rust_string(const QString &s);
 QString from_rust_str(rust::Str s);
 rust::Vec<rust::String> to_rust_string_vec(const QStringList &qsl);
 QStringList to_qstringlist(rust::Vec<rust::String> v);
+// Scalar containers copied across the bridge (generated QList<int>/QVector<quint32> APIs).
+inline QList<int> to_qlist_int(rust::Slice<const int32_t> v) { return QList<int>(v.begin(), v.end()); }
+inline rust::Vec<int32_t> to_rust_i32_vec(const QList<int> &l) {
+    rust::Vec<int32_t> out;
+    out.reserve(l.size());
+    for (int value : l)
+        out.push_back(value);
+    return out;
+}
+inline rust::Vec<uint32_t> to_rust_u32_vec(const QList<quint32> &l) {
+    rust::Vec<uint32_t> out;
+    out.reserve(l.size());
+    for (quint32 value : l)
+        out.push_back(value);
+    return out;
+}
 // Own both halves of each pair (no QObject/value references escape C++).
 rust::Vec<rust::String> to_rust_string_pairs(const QHash<QString, QString> &map);
 

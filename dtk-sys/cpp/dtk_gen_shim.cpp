@@ -299,6 +299,7 @@ QObject *gen_d_colored_progress_bar_as_qobject(DColoredProgressBar *self) { retu
 QWidget *gen_d_colored_progress_bar_as_widget(DColoredProgressBar *self) { return static_cast<QWidget *>(self); }
 void gen_d_colored_progress_bar_add_threshold(DColoredProgressBar *self, int32_t threshold, QBrush * brush) { self->addThreshold(threshold, *brush); }
 void gen_d_colored_progress_bar_remove_threshold(DColoredProgressBar *self, int32_t threshold) { self->removeThreshold(threshold); }
+rust::Vec<int32_t> gen_d_colored_progress_bar_thresholds(DColoredProgressBar *self) { return to_rust_i32_vec(self->thresholds()); }
 DComboBox *gen_d_combo_box_new() { return new DComboBox; }
 QObject *gen_d_combo_box_as_qobject(DComboBox *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_combo_box_as_widget(DComboBox *self) { return static_cast<QWidget *>(self); }
@@ -745,6 +746,7 @@ bool gen_d_loading_indicator_loading(DLoadingIndicator *self) { return self->loa
 QWidget * gen_d_loading_indicator_widget_source(DLoadingIndicator *self) { return loading_indicator_widget(self); }
 QPixmap * gen_d_loading_indicator_image_source(DLoadingIndicator *self) { return new QPixmap(self->imageSource()); }
 int32_t gen_d_loading_indicator_ani_duration(DLoadingIndicator *self) { return self->aniDuration(); }
+int32_t gen_d_loading_indicator_ani_easing_type(DLoadingIndicator *self) { return static_cast<int32_t>(self->aniEasingType()); }
 QSize gen_d_loading_indicator_size_hint(DLoadingIndicator *self) { return self->sizeHint(); }
 bool gen_d_loading_indicator_smooth(DLoadingIndicator *self) { return self->smooth(); }
 int32_t gen_d_loading_indicator_direction(DLoadingIndicator *self) { return static_cast<int32_t>(self->direction()); }
@@ -757,6 +759,7 @@ void gen_d_loading_indicator_set_background_color(DLoadingIndicator *self, const
 void gen_d_loading_indicator_set_rotate(DLoadingIndicator *self, QVariant * angle) { self->setRotate(*angle); }
 void gen_d_loading_indicator_set_widget_source(DLoadingIndicator *self, QWidget * widgetSource) { loading_indicator_set_widget(self, widgetSource); }
 void gen_d_loading_indicator_set_image_source(DLoadingIndicator *self, QPixmap * imageSource) { loading_indicator_set_image(self, *imageSource); }
+void gen_d_loading_indicator_set_ani_easing_type(DLoadingIndicator *self, int32_t aniEasingType) { self->setAniEasingType(static_cast<QEasingCurve::Type>(aniEasingType)); }
 void gen_d_loading_indicator_set_smooth(DLoadingIndicator *self, bool smooth) { self->setSmooth(smooth); }
 void gen_d_loading_indicator_set_direction(DLoadingIndicator *self, int32_t direction) { self->setDirection(static_cast<DLoadingIndicator::RotationDirection>(direction)); }
 QObject *gen_d_message_manager_as_qobject(DMessageManager *self) { return static_cast<QObject *>(self); }
@@ -940,6 +943,7 @@ void gen_d_print_preview_widget_turn_begin(DPrintPreviewWidget *self) { self->tu
 void gen_d_print_preview_widget_turn_end(DPrintPreviewWidget *self) { self->turnEnd(); }
 void gen_d_print_preview_widget_set_current_page(DPrintPreviewWidget *self, int32_t page) { self->setCurrentPage(page); }
 void gen_d_print_preview_widget_print(DPrintPreviewWidget *self, bool isSavedPicture) { self->print(isSavedPicture); }
+void gen_d_print_preview_widget_set_page_range_2(DPrintPreviewWidget *self, rust::Slice<const int32_t> rangePages) { self->setPageRange(to_qlist_int(rangePages)); }
 DProgressBar *gen_d_progress_bar_new() { return new DProgressBar; }
 QObject *gen_d_progress_bar_as_qobject(DProgressBar *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_progress_bar_as_widget(DProgressBar *self) { return static_cast<QWidget *>(self); }
@@ -988,6 +992,7 @@ void gen_d_simple_list_item_draw_foreground(DSimpleListItem *self, const QRect &
 QObject *gen_d_simple_list_view_as_qobject(DSimpleListView *self) { return static_cast<QObject *>(self); }
 QWidget *gen_d_simple_list_view_as_widget(DSimpleListView *self) { return static_cast<QWidget *>(self); }
 void gen_d_simple_list_view_set_row_height(DSimpleListView *self, int32_t height) { self->setRowHeight(height); }
+void gen_d_simple_list_view_set_column_title_info(DSimpleListView *self, rust::Vec<rust::String> titles, rust::Slice<const int32_t> widths, int32_t height) { self->setColumnTitleInfo(to_qstringlist(std::move(titles)), to_qlist_int(widths), height); }
 void gen_d_simple_list_view_set_clip_radius(DSimpleListView *self, int32_t radius) { self->setClipRadius(radius); }
 void gen_d_simple_list_view_remove_item(DSimpleListView *self, DSimpleListItem * item) { self->removeItem(item); }
 void gen_d_simple_list_view_clear_items(DSimpleListView *self) { self->clearItems(); }
@@ -1031,8 +1036,10 @@ void gen_d_slider_set_left_ticks(DSlider *self, rust::Vec<rust::String> info) { 
 void gen_d_slider_set_right_ticks(DSlider *self, rust::Vec<rust::String> info) { self->setRightTicks(to_qstringlist(std::move(info))); }
 void gen_d_slider_set_above_ticks(DSlider *self, rust::Vec<rust::String> info) { self->setAboveTicks(to_qstringlist(std::move(info))); }
 void gen_d_slider_set_below_ticks(DSlider *self, rust::Vec<rust::String> info) { self->setBelowTicks(to_qstringlist(std::move(info))); }
+void gen_d_slider_set_mark_positions(DSlider *self, rust::Slice<const int32_t> list) { self->setMarkPositions(to_qlist_int(list)); }
 void gen_d_slider_set_mouse_wheel_enabled(DSlider *self, bool enabled) { self->setMouseWheelEnabled(enabled); }
 void gen_d_slider_set_tip_value(DSlider *self, rust::Str value) { self->setTipValue(from_rust_str(value)); }
+int32_t gen_d_slider_tick_position(DSlider *self) { return static_cast<int32_t>(self->tickPosition()); }
 QSize gen_d_slider_size_hint(DSlider *self) { return self->sizeHint(); }
 void gen_d_slider_set_handle_visible(DSlider *self, bool b) { self->setHandleVisible(b); }
 bool gen_d_slider_handle_visible(DSlider *self) { return self->handleVisible(); }
@@ -1075,6 +1082,7 @@ int32_t gen_d_stack_widget_current_index(DStackWidget *self) { return self->curr
 QWidget * gen_d_stack_widget_current_widget(DStackWidget *self) { return self->currentWidget(); }
 DAbstractStackWidgetTransition * gen_d_stack_widget_transition(DStackWidget *self) { return const_cast<DAbstractStackWidgetTransition *>(self->transition()); }
 int32_t gen_d_stack_widget_animation_duration(DStackWidget *self) { return self->animationDuration(); }
+int32_t gen_d_stack_widget_animation_type(DStackWidget *self) { return static_cast<int32_t>(self->animationType()); }
 int32_t gen_d_stack_widget_push_widget(DStackWidget *self, QWidget * widget, bool enableTransition) { if (!object_can_adopt(self, widget) || self->indexOf(widget) >= 0) { return -1; } self->transition()->animation()->stop(); object_mark_native_adopted(self, widget); return self->pushWidget(widget, enableTransition); }
 void gen_d_stack_widget_insert_widget(DStackWidget *self, int32_t index, QWidget * widget, bool enableTransition) { if (!object_can_adopt(self, widget) || self->indexOf(widget) >= 0 || index < 0 || index > self->depth()) { return; } self->transition()->animation()->stop(); object_mark_native_adopted(self, widget); self->insertWidget(index, widget, enableTransition); }
 void gen_d_stack_widget_pop_widget(DStackWidget *self, QWidget * widget, bool isDelete, int32_t count, bool enableTransition) { const int start = self->indexOf(widget); if (start < 0 || count <= 0) return; count = std::min(count, self->depth() - start); self->transition()->animation()->stop(); self->popWidget(widget, isDelete, count, enableTransition); }
@@ -1083,6 +1091,7 @@ int32_t gen_d_stack_widget_index_of(DStackWidget *self, QWidget * widget) { retu
 QWidget * gen_d_stack_widget_get_widget_by_index(DStackWidget *self, int32_t index) { if (index < 0 || index >= self->depth()) return nullptr; return self->getWidgetByIndex(index); }
 void gen_d_stack_widget_set_transition(DStackWidget *self, DAbstractStackWidgetTransition * transition) { if (self->transition() == transition || !object_can_adopt(self, transition)) return; self->transition()->animation()->stop(); object_mark_native_adopted(self, transition); self->setTransition(transition); }
 void gen_d_stack_widget_set_animation_duration(DStackWidget *self, int32_t animationDuration) { self->setAnimationDuration(animationDuration); }
+void gen_d_stack_widget_set_animation_type(DStackWidget *self, int32_t animationType) { self->setAnimationType(static_cast<QEasingCurve::Type>(animationType)); }
 DStyle *gen_d_style_new() { return new DStyle; }
 QObject *gen_d_style_as_qobject(DStyle *self) { return static_cast<QObject *>(self); }
 QColor gen_d_style_adjust_color(const QColor &base, int8_t hueFloat, int8_t saturationFloat, int8_t lightnessFloat, int8_t redFloat, int8_t greenFloat, int8_t blueFloat, int8_t alphaFloat) { return DStyle::adjustColor(base, hueFloat, saturationFloat, lightnessFloat, redFloat, greenFloat, blueFloat, alphaFloat); }

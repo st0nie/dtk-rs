@@ -110,6 +110,7 @@ EXT_VALUE_TYPES = {"DDciIcon": ("Dtk::Gui", "DDciIcon"),
                    "DPalette": ("Dtk::Gui", "DPalette")}
 # Qt-class enums usable as i32 (header pulled in via the DTK widget headers)
 QT_ENUMS = {"QLineEdit::EchoMode", "QTabBar::Shape", "QTabBar::ButtonPosition",
+            "QEasingCurve::Type", "QSlider::TickPosition",
             "QTabBar::SelectionBehavior", "QStandardPaths::StandardLocation",
             # Style/painting enums: out-of-range values hit the switch
             # default of QCommonStyle/DStyle (no-op/0), like other widget enums.
@@ -268,6 +269,17 @@ class Ctx:
         t = re.sub(r"\bconst\s+", "", t).replace("&", "").strip()
         if is_return and re.fullmatch(r"QHash\s*<\s*QString\s*,\s*QString\s*>", t):
             return ("Vec<String>", "rust::Vec<rust::String>", "strmap", None)
+        # Owned scalar/string containers, copied in the shim. Non-const
+        # references would be outputs; none is mapped.
+        container = re.sub(r"\s+", "", t)
+        mutable_ref = not is_return and "&" in cpp and not re.search(r"\bconst\b", cpp)
+        if container == "QList<QString>" and not mutable_ref:
+            return ("Vec<String>", "rust::Vec<rust::String>", "strlist", "QList<QString>")
+        if container in ("QList<int>", "QVector<int>") and not mutable_ref:
+            return (("Vec<i32>", "rust::Vec<int32_t>", "intlist", None) if is_return
+                    else ("&[i32]", "rust::Slice<const int32_t>", "intlist", None))
+        if container in ("QList<quint32>", "QVector<quint32>", "QList<uint>", "QVector<uint>") and is_return:
+            return ("Vec<u32>", "rust::Vec<uint32_t>", "u32list", None)
         if "<" in t:
             return None
         ptr = t.endswith("*")
@@ -549,7 +561,10 @@ def gen_method(ctx, cls, is_static, ret, name, params):
             args.append((f"{pname}: &str", f"rust::Str {pname}", f"from_rust_str({pname})", "str", None))
         elif pkind == "strlist":
             args.append((f"{pname}: Vec<String>", f"rust::Vec<rust::String> {pname}",
-                         f"to_qstringlist(std::move({pname}))", "strlist", None))
+                         f"to_qstringlist(std::move({pname}))", "strlist", pcls))
+        elif pkind == "intlist":
+            args.append((f"{pname}: &[i32]", f"rust::Slice<const int32_t> {pname}",
+                         f"to_qlist_int({pname})", "intlist", None))
         elif pkind == "qba":
             args.append((f"{pname}: &str", f"rust::Str {pname}", f"QByteArray(from_rust_str({pname}).toUtf8())", "qba", None))
         elif pkind in ("ptr", "qtptr"):
@@ -634,6 +649,12 @@ def collect_models(headers, excluded=(), included=None):
                 if any(a[3] in ("ptr", "qtptr", "valref") for a in g[6]):
                     pointer_input_contract(c["name"], g[5])
                 gen_methods.append(g)
+        # Overloads that became bindable with later container mappings are
+        # numbered after the established ones, so existing generated names
+        # (`trash_2`, `set_page_range`, ...) keep their meaning.
+        late = lambda g: any(a[3] == "intlist" or a[4] == "QList<QString>" for a in g[6])
+        overloads = {g[5]: sum(m[5] == g[5] for m in gen_methods) for g in gen_methods}
+        gen_methods.sort(key=lambda g: late(g) and overloads[g[5]] > 1)
         if c["name"] in REQUIRED_PARENT_CONSTRUCTORS:
             source, reason = REQUIRED_PARENT_CONSTRUCTORS[c["name"]]
             skipped.append((f"{c['name']}(parent = nullptr)", f"required native parent: {source}: {reason}"))
@@ -868,7 +889,7 @@ def emit(classes, domain="widget"):
                 contract, source, evidence = pointer_return_contract(name, meth)
                 ownership_report.append(f"| `{name}::{meth}` | `{ret_cls}*` | `{contract}` | `{source}`: {evidence} |\n")
             else:
-                contract = "owned heap copy" if ret_kind in ("val", "valcopy") else "by-value copy (cxx-qt-lib trivial type)" if ret_kind == "qval" else "owned Rust strings/container" if ret_kind in ("str", "strlist", "strmap", "qba") else "copied scalar / no result"
+                contract = "owned heap copy" if ret_kind in ("val", "valcopy") else "by-value copy (cxx-qt-lib trivial type)" if ret_kind == "qval" else "owned Rust strings/container" if ret_kind in ("str", "strlist", "strmap", "qba", "intlist", "u32list") else "copied scalar / no result"
                 ownership_report.append(f"| `{name}::{meth}` | `{ret_rs}` | {contract} | shim conversion; `{c['header']}` |\n")
             pointer_args = [a for a in args if a[3] in ("ptr", "qtptr", "valref")]
             if pointer_args:
@@ -902,6 +923,10 @@ def emit(classes, domain="widget"):
                 call = f"to_rust_string_vec({call})"
             elif ret_kind == "strmap":
                 call = f"to_rust_string_pairs({call})"
+            elif ret_kind == "intlist":
+                call = f"to_rust_i32_vec({call})"
+            elif ret_kind == "u32list":
+                call = f"to_rust_u32_vec({call})"
             elif ret_kind == "qba":
                 call = f"to_rust_string(QString({call}))"
             elif ret_kind in ("val", "valcopy"):
