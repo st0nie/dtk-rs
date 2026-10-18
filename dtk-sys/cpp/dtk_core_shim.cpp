@@ -127,5 +127,12 @@ DFileWatcher * gen_d_file_watcher_manager_add(DFileWatcherManager *self, rust::S
 void gen_d_file_watcher_manager_remove(DFileWatcherManager *self, rust::Str filePath) { self->remove(from_rust_str(filePath)); }
 void gen_d_file_watcher_manager_remove_all(DFileWatcherManager *self) { self->removeAll(); }
 rust::Vec<rust::String> gen_d_file_watcher_manager_watched_files(DFileWatcherManager *self) { return to_rust_string_vec(self->watchedFiles()); }
+QObject *gen_d_trash_manager_as_qobject(DTrashManager *self) { return static_cast<QObject *>(self); }
+DTrashManager * gen_d_trash_manager_instance() { return const_cast<DTrashManager *>(DTrashManager::instance()); }
+bool gen_d_trash_manager_trash_is_empty(DTrashManager *self) { return self->trashIsEmpty(); }
+bool gen_d_trash_manager_clean_trash(DTrashManager *self) { return self->cleanTrash(); }
+bool gen_d_trash_manager_move_to_trash(DTrashManager *self, rust::Str filePath, bool followSymlink) { return self->moveToTrash(from_rust_str(filePath), followSymlink); }
+rust::String gen_d_s_g_application_id() { return to_rust_string(QString(DSGApplication::id())); }
+rust::String gen_d_s_g_application_get_id(int64_t pid) { return to_rust_string(QString(DSGApplication::getId(pid))); }
 
 } // namespace dtkrs

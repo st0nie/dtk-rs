@@ -6,9 +6,11 @@
 #include <DFileSystemWatcher>
 #include <DFileWatcher>
 #include <DFileWatcherManager>
+#include <DSGApplication>
 #include <DSettings>
 #include <DStandardPaths>
 #include <DSysInfo>
+#include <DTrashManager>
 #include <LogManager.h>
 #include <DSettingsOption>
 #include <DDciIcon>
@@ -56,6 +58,8 @@ using Dtk::Core::DFileSystemWatcher;
 using Dtk::Core::DBaseFileWatcher;
 using Dtk::Core::DFileWatcher;
 using Dtk::Core::DFileWatcherManager;
+using Dtk::Core::DTrashManager;
+using Dtk::Core::DSGApplication;
 int32_t gen_enum_d_standard_paths_x_d_g_data_home();
 int32_t gen_enum_d_standard_paths_x_d_g_config_home();
 int32_t gen_enum_d_standard_paths_x_d_g_cache_home();
@@ -178,5 +182,12 @@ DFileWatcher * gen_d_file_watcher_manager_add(DFileWatcherManager *self, rust::S
 void gen_d_file_watcher_manager_remove(DFileWatcherManager *self, rust::Str filePath);
 void gen_d_file_watcher_manager_remove_all(DFileWatcherManager *self);
 rust::Vec<rust::String> gen_d_file_watcher_manager_watched_files(DFileWatcherManager *self);
+QObject *gen_d_trash_manager_as_qobject(DTrashManager *self);
+DTrashManager * gen_d_trash_manager_instance();
+bool gen_d_trash_manager_trash_is_empty(DTrashManager *self);
+bool gen_d_trash_manager_clean_trash(DTrashManager *self);
+bool gen_d_trash_manager_move_to_trash(DTrashManager *self, rust::Str filePath, bool followSymlink);
+rust::String gen_d_s_g_application_id();
+rust::String gen_d_s_g_application_get_id(int64_t pid);
 
 } // namespace dtkrs

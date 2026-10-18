@@ -59,6 +59,8 @@ pub mod genffi {
         type DBaseFileWatcher;
         type DFileWatcher;
         type DFileWatcherManager;
+        type DTrashManager;
+        type DSGApplication;
         fn gen_enum_d_standard_paths_x_d_g_data_home() -> i32;
         fn gen_enum_d_standard_paths_x_d_g_config_home() -> i32;
         fn gen_enum_d_standard_paths_x_d_g_cache_home() -> i32;
@@ -229,5 +231,16 @@ pub mod genffi {
         unsafe fn gen_d_file_watcher_manager_watched_files(
             self_: *mut DFileWatcherManager,
         ) -> Vec<String>;
+        unsafe fn gen_d_trash_manager_as_qobject(self_: *mut DTrashManager) -> *mut QObject;
+        unsafe fn gen_d_trash_manager_instance() -> *mut DTrashManager;
+        unsafe fn gen_d_trash_manager_trash_is_empty(self_: *mut DTrashManager) -> bool;
+        unsafe fn gen_d_trash_manager_clean_trash(self_: *mut DTrashManager) -> bool;
+        unsafe fn gen_d_trash_manager_move_to_trash(
+            self_: *mut DTrashManager,
+            filePath: &str,
+            followSymlink: bool,
+        ) -> bool;
+        unsafe fn gen_d_s_g_application_id() -> String;
+        unsafe fn gen_d_s_g_application_get_id(pid: i64) -> String;
     }
 }

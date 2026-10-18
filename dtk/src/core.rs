@@ -652,4 +652,50 @@ impl DFileWatcherManager {
     }
 }
 
+core_object_wrapper!(
+    DTrashManager,
+    genffi::DTrashManager,
+    genffi::gen_d_trash_manager_as_qobject
+);
+impl DTrashManager {
+    /// Native ownership: `object_borrow`.
+    /// Evidence: `dtkcore/src/filesystem/dtrashmanager_linux.cpp`: returns Q_GLOBAL_STATIC(DTrashManager_, globalTrashManager); never deleted by callers.
+    pub fn instance() -> Option<DTrashManager> {
+        crate::require_core_application();
+        let _call = dtk_sys::NativeCall::new();
+        {
+            let ptr = unsafe { genffi::gen_d_trash_manager_instance() };
+            (!ptr.is_null()).then(|| DTrashManager::from_raw(ptr))
+        }
+    }
+    pub fn trash_is_empty(&self) -> bool {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_trash_manager_trash_is_empty(self.live_ptr()) }
+    }
+    pub fn clean_trash(&self) -> bool {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_trash_manager_clean_trash(self.live_ptr()) }
+    }
+    pub fn move_to_trash(&self, filePath: &str, followSymlink: bool) -> bool {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe {
+            genffi::gen_d_trash_manager_move_to_trash(self.live_ptr(), filePath, followSymlink)
+        }
+    }
+}
+
+opaque_wrapper!(DSGApplication, genffi::DSGApplication);
+impl DSGApplication {
+    pub fn id() -> String {
+        dtk_sys::assert_not_closing();
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_s_g_application_id() }
+    }
+    pub fn get_id(pid: i64) -> String {
+        dtk_sys::assert_not_closing();
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_s_g_application_get_id(pid) }
+    }
+}
+
 crate::impl_default_owned!(DSettings, DFileSystemWatcher, DFileWatcherManager);

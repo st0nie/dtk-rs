@@ -350,6 +350,10 @@ class Ctx:
                 return None
             return (r, CPP_OF_RUST[r], "prim", None)
         if base == "QString":
+            # A non-const QString& parameter is an in/out value: a converted
+            # temporary cannot bind to it (and would discard the output).
+            if not is_return and "&" in cpp and not const:
+                return None
             return ("String", CPP_OF_RUST["String"], "str", None) if is_return else ("&str", "rust::Str", "str", None)
         if base == "QStringList":
             # by value both ways; shim converts via to_qstringlist / to_rust_string_vec
@@ -685,10 +689,12 @@ def main():
         "/usr/include/dtk6/DCore/dbasefilewatcher.h",
         "/usr/include/dtk6/DCore/dfilewatcher.h",
         "/usr/include/dtk6/DCore/dfilewatchermanager.h",
+        "/usr/include/dtk6/DCore/dtrashmanager.h",
+        "/usr/include/dtk6/DCore/dsgapplication.h",
     ]
     domains["core"] = collect_models(core_headers, included={
         "DStandardPaths", "DSysInfo", "DConfig", "DSettings", "DLogManager", "DFileSystemWatcher",
-        "DBaseFileWatcher", "DFileWatcher", "DFileWatcherManager"})
+        "DBaseFileWatcher", "DFileWatcher", "DFileWatcherManager", "DTrashManager", "DSGApplication"})
     gui_headers = [
         "/usr/include/dtk6/DGui/dguiapplicationhelper.h",
         "/usr/include/dtk6/DGui/dimagehandler.h",

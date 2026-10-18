@@ -93,3 +93,9 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DFileWatcherManager::remove` | `()` | copied scalar / no result | shim conversion; `dfilewatchermanager.h` |
 | `DFileWatcherManager::removeAll` | `()` | copied scalar / no result | shim conversion; `dfilewatchermanager.h` |
 | `DFileWatcherManager::watchedFiles` | `Vec<String>` | owned Rust strings/container | shim conversion; `dfilewatchermanager.h` |
+| `DTrashManager::instance` | `DTrashManager*` | `object_borrow` | `dtkcore/src/filesystem/dtrashmanager_linux.cpp`: returns Q_GLOBAL_STATIC(DTrashManager_, globalTrashManager); never deleted by callers |
+| `DTrashManager::trashIsEmpty` | `bool` | copied scalar / no result | shim conversion; `dtrashmanager.h` |
+| `DTrashManager::cleanTrash` | `bool` | copied scalar / no result | shim conversion; `dtrashmanager.h` |
+| `DTrashManager::moveToTrash` | `bool` | copied scalar / no result | shim conversion; `dtrashmanager.h` |
+| `DSGApplication::id` | `String` | owned Rust strings/container | shim conversion; `dsgapplication.h` |
+| `DSGApplication::getId` | `String` | owned Rust strings/container | shim conversion; `dsgapplication.h` |

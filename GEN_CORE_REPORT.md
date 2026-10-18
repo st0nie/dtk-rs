@@ -1,8 +1,8 @@
 # DTK6 core (selected classes) binding coverage report
 
-classes: 9, methods generated: 80, skipped: 23
+classes: 11, methods generated: 86, skipped: 23
 
-Qt ancestry: 0 widgets, 6 QObjects, 3 opaque types
+Qt ancestry: 0 widgets, 7 QObjects, 4 opaque types
 
 ## skip reasons
 - unsupported param type: 12
@@ -50,3 +50,7 @@ Qt ancestry: 0 widgets, 6 QObjects, 3 opaque types
 ## DFileWatcher — 0 methods generated, 0 skipped
 
 ## DFileWatcherManager — 4 methods generated, 0 skipped
+
+## DTrashManager — 4 methods generated, 0 skipped
+
+## DSGApplication — 2 methods generated, 0 skipped
