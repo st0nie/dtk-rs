@@ -168,7 +168,7 @@ def render_cxxqt():
     current = None
     count = 0
     items = re.finditer(
-        r"type (\w+);|(#\[qsignal\][^;]*?)?(pub\(self\) )?fn (\w+)\(\s*self: (&\w+)[^;]*;", code, re.S)
+        r"type (\w+);|(#\[qsignal\][^;]*?)?(pub\(self\) )?(?:unsafe )?fn (\w+)\(\s*self: (&\w+)[^;]*;", code, re.S)
     for item in items:
         if item.group(1):
             current = item.group(1)

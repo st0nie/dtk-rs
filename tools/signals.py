@@ -22,7 +22,17 @@ emission; the user closure runs later from the dtk-sys callback pump):
   hand heap value types      C++ copy into a dtk-sys OwnedValue, then the dtk
                              wrapper (QVariant, QFont, QImage, QKeySequence, ...)
   QModelIndex                copied into dtk::PersistentModelIndex (QPersistentModelIndex)
-  pointers / QFlags / scoped enums / other types  skipped and reported
+  QModelIndexList / QList<QPersistentModelIndex>  Vec<dtk::PersistentModelIndex>
+  QFlags / scoped enums      their integer value (i32), read in the emission
+  QObject pointers           only for signals with an audited POINTER_CONTRACTS
+                             entry: a QPointer guard is taken inside the
+                             emission (rejecting objects already in
+                             ~QObject); the closure gets `Option<View>`,
+                             None if the pointer was null or Qt destroyed the
+                             object before delivery
+  QTableWidgetItem* / QStandardItem*  never exposed: converted in the emission
+                             to the item's (row, column) / PersistentModelIndex
+  other pointers / other types  skipped and reported
 """
 import os
 import re
@@ -47,6 +57,55 @@ LISTS = {
     "QList<int>": ("QList_i32", "i32", "qlist_i32.h", "copy"),
     "QVector<int>": ("QList_i32", "i32", "qlist_i32.h", "copy"),
     "QList<QUrl>": ("QList_QUrl", "QUrl", "qlist_QUrl.h", "clone"),
+    "QList<bool>": ("QList_bool", "bool", "qlist_bool.h", "copy"),
+}
+# Qt model index lists: C++ spelling -> generated dtkrs_cxxqt alias. Every
+# element is copied into an owned QPersistentModelIndex inside the emission.
+INDEX_LISTS = {
+    "QModelIndexList": "QModelIndexList",
+    "QList<QModelIndex>": "QModelIndexList",
+    "QList<QPersistentModelIndex>": "QPersistentModelIndexList",
+}
+# QObject pointer arguments with a guarded Rust view: C++ class -> dtk view.
+# The view is built from a QPointer taken inside the emission.
+POINTER_VIEWS = {"QWidget": "QWidget", "QAbstractButton": "QAbstractButton", "QAction": "QAction"}
+# Non-QObject item pointers converted to owned positions inside the emission.
+ITEM_POINTERS = {"QTableWidgetItem": "cell", "QStandardItem": "item_index"}
+# Per-signal borrowed-pointer contracts: a pointer-valued signal is generated
+# only when it is listed here (fail closed). Each entry records why the
+# pointer is a live QObject (or item) of this thread while Qt emits it.
+POINTER_CONTRACTS = {
+    ("DAnchorsBase", "fillChanged"): "declared only: DTK 6.7.47 never emits it; a QWidget anchor target if a later DTK does",
+    ("DAnchorsBase", "centerInChanged"): "declared only: DTK 6.7.47 never emits it; a QWidget anchor target if a later DTK does",
+    ("DButtonBox", "buttonClicked"): "relayed from its QButtonGroup for a live member button",
+    ("DButtonBox", "buttonPressed"): "relayed from its QButtonGroup for a live member button",
+    ("DButtonBox", "buttonReleased"): "relayed from its QButtonGroup for a live member button",
+    ("DButtonBox", "buttonToggled"): "relayed from its QButtonGroup for a live member button",
+    ("DEnhancedWidget", "targetChanged"): "setTarget(QWidget*) emits the caller's widget after installing its event filter",
+    ("DStackWidget", "currentWidgetChanged"): "page from the stack's list (popped pages use deleteLater); null when empty",
+    ("DStackWidget", "widgetDepthChanged"): "declared only: DTK 6.7.47 never emits it; a stack page if a later DTK does",
+    ("QAbstractItemDelegate", "commitData"): "the view's live editor widget; Qt deletes editors later with deleteLater()",
+    ("QAbstractItemDelegate", "closeEditor"): "the view's live editor widget; Qt deletes editors later with deleteLater()",
+    ("QMenu", "triggered"): "the action that was triggered, alive during emission",
+    ("QMenu", "hovered"): "the action under the cursor, alive during emission",
+    ("QMessageBox", "buttonClicked"): "the clicked button, still a child of the message box",
+    ("QToolButton", "triggered"): "the action that was triggered, alive during emission",
+    ("QTableWidget", "itemPressed"): "item owned by the table; converted to (row, column) in the emission",
+    ("QTableWidget", "itemClicked"): "item owned by the table; converted to (row, column) in the emission",
+    ("QTableWidget", "itemDoubleClicked"): "item owned by the table; converted to (row, column) in the emission",
+    ("QTableWidget", "itemActivated"): "item owned by the table; converted to (row, column) in the emission",
+    ("QTableWidget", "itemEntered"): "item owned by the table; converted to (row, column) in the emission",
+    ("QTableWidget", "itemChanged"): "item owned by the table; converted to (row, column) in the emission",
+    ("QTableWidget", "currentItemChanged"): "items owned by the table (either may be null); converted to (row, column)",
+    ("QStandardItemModel", "itemChanged"): "item owned by the model; converted to its persistent index in the emission",
+}
+# Pointer arguments that stay unbound, with the reason shown in the report.
+POINTER_REJECTED = {
+    "DAnchorInfo": "internal non-QObject anchor record owned by DAnchorsBase; no Rust view",
+    "DSimpleListItem": "non-QObject item owned by DSimpleListView; no guard can witness its deletion",
+    "DPrinter": "paint target only valid synchronously inside the emission; typed signals queue",
+    "QObject": "no generic QObject view in dtk (target could be any class)",
+    "QDockWidget": "no QDockWidget wrapper in dtk",
 }
 # Hand-written dtk heap value wrappers: C++ type -> (namespace, include, dtk-sys deleter).
 HEAP_VALUES = {
@@ -198,6 +257,8 @@ def parse_class(path, name, enums):
     depth_prev = body[0][0]
     for depth, line in body[1:]:
         s = line.strip()
+        if depth_prev == 1:
+            _record_flags_and_typedefs(name, line, enums)
         if s in ("{", "};", "}") or (depth_prev == 1 and depth == 1
                                      and re.fullmatch(r"[A-Z][A-Z0-9_]*(\(.*\))?", s)):
             depth_prev = depth
@@ -215,7 +276,8 @@ def parse_class(path, name, enums):
         if depth_prev == 1 or depth == 1:
             statement += " " + s
             if depth == 1 and (s.endswith(";") or s.endswith("}")):
-                decl = statement.split("{", 1)[0].strip()
+                # `QPrivateSignal = {}` defaults must not end the declaration.
+                decl = re.sub(r"=\s*\{\s*\}", "", statement).split("{", 1)[0].strip()
                 fm = re.search(r"(~?\w+)\s*\(", decl)
                 if fm and not decl.startswith(("Q_", "using", "friend", "typedef")):
                     names[fm.group(1)] = names.get(fm.group(1), 0) + 1
@@ -226,6 +288,16 @@ def parse_class(path, name, enums):
     return signals, names
 
 
+def _record_flags_and_typedefs(scope, line, enums):
+    """`Q_DECLARE_FLAGS(Fs, F)` -> flags; `typedef Cls::Enum Name;` -> enum alias."""
+    fm = re.match(r"^\s*Q_DECLARE_FLAGS\s*\(\s*(\w+)\s*,\s*(\w+)\s*\)", line)
+    if fm:
+        enums[(scope, fm.group(1))] = "flags"
+    tm = re.match(r"^\s*typedef\s+(\w+::\w+)\s+(\w+)\s*;", line)
+    if tm and (scope, tm.group(2)) not in enums:
+        enums[(scope, tm.group(2))] = ("typedef", tm.group(1))
+
+
 def index_namespace_enums(enums):
     """Unscoped enums in namespace Qt (qnamespace.h) and DTK namespace-level enums."""
     qt_root = subprocess.check_output(["pkg-config", "--variable=includedir", "Qt6Core"], text=True).strip()
@@ -234,6 +306,7 @@ def index_namespace_enums(enums):
             em = re.match(r"^\s*enum\s+(class\s+|struct\s+)?(\w+)", line)
             if em:
                 enums[(scope, em.group(2))] = "scoped" if em.group(1) else "unscoped"
+            _record_flags_and_typedefs(scope, line, enums)
 
 
 def split_params(text):
@@ -253,8 +326,12 @@ def split_params(text):
     return out
 
 
-def map_param(raw, owner, ancestors, enums):
-    """-> (bridge_type, closure_type, rust_value_type, convert_expr_fmt, kind) or (None, reason)."""
+def map_param(raw, owner, ancestors, enums, contract=None):
+    """-> (bridge_type, closure_type, rust_value_type, convert_expr_fmt, kind) or (None, reason).
+
+    `contract` is the signal's POINTER_CONTRACTS entry; without one every
+    pointer argument is rejected.
+    """
     p = raw.split("=", 1)[0].strip()
     p = re.sub(r"\b(Q_DECL_\w+)\b", "", p).strip()
     m = re.match(r"^(.*?)(\b[A-Za-z_]\w*)?$", p)
@@ -266,11 +343,28 @@ def map_param(raw, owner, ancestors, enums):
     is_ref = t.endswith("&")
     t = t.rstrip("&").strip()
     if t.endswith("*"):
-        return None, f"pointer argument `{ptype}` (guarded-view conversion not audited)"
+        pointee = re.sub(r"\s+", "", t.rstrip("*")).split("::")[-1]
+        pointee = ALIASES.get(pointee, pointee)
+        if contract is None:
+            if pointee in POINTER_REJECTED:
+                return None, f"pointer argument `{ptype}` ({POINTER_REJECTED[pointee]})"
+            return None, f"pointer argument `{ptype}` (no audited per-signal pointer contract)"
+        if pointee in POINTER_VIEWS:
+            view = POINTER_VIEWS[pointee]
+            return (f"*mut {pointee}", f"*mut {pointee}", f"Option<crate::{view}>", pointee, "qptr"), None
+        if ITEM_POINTERS.get(pointee) == "cell":
+            return (f"*mut {pointee}", f"*mut {pointee}", "Option<(i32, i32)>", pointee, "cell"), None
+        if ITEM_POINTERS.get(pointee) == "item_index":
+            return (f"*mut {pointee}", f"*mut {pointee}", "Option<crate::PersistentModelIndex>", pointee,
+                    "item_index"), None
+        return None, f"pointer argument `{ptype}` (contract lists no Rust conversion for `{pointee}`)"
     if t == "QPrivateSignal":
         return "private", None
     base = t.replace("DTK_GUI_NAMESPACE::", "").replace("DTK_CORE_NAMESPACE::", "").replace("DGUI_NAMESPACE::", "")
     compact = re.sub(r"\s+", "", base)
+    if compact in INDEX_LISTS:
+        alias = INDEX_LISTS[compact]
+        return (f"&{alias}", f"&{alias}", "Vec<crate::PersistentModelIndex>", alias, "index_list"), None
     if compact in LISTS:
         alias, elem, _h, how = LISTS[compact]
         conv = "{}.iter().copied().collect::<Vec<_>>()" if how == "copy" else "{}.iter().cloned().collect::<Vec<_>>()"
@@ -294,10 +388,16 @@ def map_param(raw, owner, ancestors, enums):
     ename = parts[-1]
     for scope in scopes:
         kind = enums.get((scope, ename))
+        if isinstance(kind, tuple) and kind[0] == "typedef":
+            target = kind[1].split("::")
+            kind = enums.get((target[0], target[1])) if len(target) == 2 else None
         if kind == "unscoped":
             return ("i32", "i32", "i32", "{}", "enum"), None
-        if kind == "scoped":
-            return None, f"scoped enum `{ptype}` (no implicit int conversion)"
+        if kind in ("scoped", "flags"):
+            # No implicit int conversion: the bridge names the C++ type through
+            # a dtkrs_cxxqt alias and reads its integer value in the emission.
+            alias = f"Int_{scope}_{ename}"
+            return (f"&{alias}", f"&{alias}", "i32", (scope, ename), kind), None
     return None, f"unsupported argument type `{ptype}`"
 
 
@@ -321,11 +421,17 @@ def collect(wrappers):
         path = index[cls][0]
         parsed[cls] = parse_class(path, cls, enums)
 
+    # `typedef QListView::Flow Flow;`: parse the target class for its enums.
+    for kind in [k for k in enums.values() if isinstance(k, tuple)]:
+        target = kind[1].split("::")[0]
+        if target in index and target not in parsed:
+            parse_class(index[target][0], target, enums)
+
     imports, report = {}, {}
     for cls, (signals, names) in sorted(parsed.items()):
         anc = ancestry(cls)[1:]
         for decl in signals:
-            m = re.match(r"^(?:Q_SIGNAL\s+|Q_DECL_\w+\s+)*void\s+(\w+)\s*\((.*)\)\s*(?:const)?\s*(?:Q_DECL_\w+)?$", decl, re.S)
+            m = re.match(r"^(?:Q_SIGNAL\s+|Q_DECL_\w+\s+|QT_MOC_COMPAT\s+)*void\s+(\w+)\s*\((.*)\)\s*(?:const)?\s*(?:Q_DECL_\w+)?$", decl, re.S)
             if not m:
                 report.setdefault(cls, []).append((decl, None, "signature parse failed"))
                 continue
@@ -338,7 +444,7 @@ def collect(wrappers):
                 continue
             mapped, reason = [], None
             for i, raw in enumerate(params):
-                r, why = map_param(raw, cls, anc, enums)
+                r, why = map_param(raw, cls, anc, enums, POINTER_CONTRACTS.get((cls, sig)))
                 if r == "private":
                     if i != len(params) - 1:
                         reason = "QPrivateSignal not last"
@@ -405,9 +511,26 @@ def emit(domain_wrappers):
         if ns:
             bridge.append(f"        #[namespace = \"{ns}\"]\n")
         bridge.append(f"        type {v};\n")
+    used = [m for sigs in imports.values() for _, ms, _ in sigs for m in ms]
+    qptr_used = sorted({m[3] for m in used if m[4] == "qptr"})
+    item_used = sorted({(m[3], m[4]) for m in used if m[4] in ("cell", "item_index")})
+    list_used = sorted({m[3] for m in used if m[4] == "index_list"})
+    int_used = sorted({(m[3], m[4]) for m in used if m[4] in ("scoped", "flags")})
+    persistent_used = "QModelIndex" in heap_used or list_used or any(k == "item_index" for _, k in item_used)
+    for cls in qptr_used:
+        assert cls in imports, f"pointer view {cls} must be an imported #[qobject] type"
+    for item, _kind in item_used:
+        bridge.append(f"        type {item};\n")
+    for alias in list_used:
+        bridge.append(f"        #[namespace = \"dtkrs_cxxqt\"]\n        type {alias};\n")
+    for (scope, ename), _kind in int_used:
+        bridge.append(f"        #[namespace = \"dtkrs_cxxqt\"]\n        type Int_{scope}_{ename};\n")
     casts_h = ["// auto-generated by tools/signals.py, do not edit\n#pragma once\n",
-               "#include <QtCore/QObject>\n#include <QtCore/QPersistentModelIndex>\n"]
-    includes = sorted({index[c][3] for c in imports} | {HEAP_VALUES[v][1] for v in heap_used})
+               "#include <QtCore/QObject>\n#include <QtCore/QPersistentModelIndex>\n#include <QtCore/QThread>\n"]
+    item_includes = {"QTableWidgetItem": "<QtWidgets/QTableWidgetItem>", "QStandardItem": "<QtGui/QStandardItem>"}
+    includes = sorted({index[c][3] for c in imports} | {HEAP_VALUES[v][1] for v in heap_used}
+                      | {item_includes[i] for i, _k in item_used}
+                      | ({"<QtWidgets/QWidget>"} if qptr_used else set()))
     casts_h += [f"#include {inc}\n" for inc in includes]
     casts_h.append("#include \"rust/cxx.h\"\n#include \"cxx-qt-lib/qstring.h\"\n#include \"cxx-qt-lib/qstringlist.h\"\n"
                    "#include \"cxx-qt-lib/qbytearray.h\"\n")
@@ -422,7 +545,58 @@ def emit(domain_wrappers):
             casts_h.append(f"inline ::QPersistentModelIndex *clone_{v}(const {q} &value) {{ return new ::QPersistentModelIndex(value); }}\n")
         else:
             casts_h.append(f"inline {q} *clone_{v}(const {q} &value) {{ return new {q}(value); }}\n")
-    bridge.append("        #[namespace = \"dtkrs_cxxqt\"]\n        type QPersistentModelIndex;\n" if "QModelIndex" in heap_used else "")
+    bridge.append("        #[namespace = \"dtkrs_cxxqt\"]\n        type QPersistentModelIndex;\n" if persistent_used else "")
+    if qptr_used:
+        # Pointer arguments: a QObject that already entered ~QObject must not
+        # get a new QPointer (Qt has already cleared its weak references).
+        # During ~QWidget (before ~QObject) a new QPointer is still cleared by
+        # ~QObject, i.e. before any queued delivery, so it needs no check.
+        casts_h.append(
+            "namespace detail {\n"
+            "struct ObjectData : ::QObject {\n"
+            "    static const ::QObjectData *of(const ::QObject *o) { return (o->*(&ObjectData::d_ptr)).data(); }\n"
+            "};\n"
+            "} // namespace detail\n"
+            "// Null unless `o` can be guarded now: same thread, ~QObject not entered.\n"
+            "inline const ::QObject *signal_object(const ::QObject *o) {\n"
+            "    if (!o || o->thread() != ::QThread::currentThread() || detail::ObjectData::of(o)->wasDeleted)\n"
+            "        return nullptr;\n"
+            "    return o;\n"
+            "}\n")
+    for cls in qptr_used:
+        ns = index[cls][1]
+        q = f"::{ns}::{cls}" if ns else f"::{cls}"
+        casts_h.append(f"inline const ::QObject *signal_object_{cls}(const {q} *p) {{ return signal_object(p); }}\n")
+        bridge.append(f"        /// # Safety\n        /// `p` is null or the live argument of a signal emission on this thread.\n"
+                      f"        #[namespace = \"dtkrs_cxxqt\"]\n        unsafe fn signal_object_{cls}(p: *const {cls}) -> *const QObject;\n")
+    for item, kind in item_used:
+        if kind == "cell":
+            casts_h.append(f"inline int table_item_row(const ::{item} *i) {{ return i && i->tableWidget() ? i->row() : -1; }}\n"
+                           f"inline int table_item_column(const ::{item} *i) {{ return i && i->tableWidget() ? i->column() : -1; }}\n")
+            for fn in ("row", "column"):
+                bridge.append(f"        /// # Safety\n        /// `item` is null or the live argument of a signal emission on this thread.\n"
+                              f"        #[namespace = \"dtkrs_cxxqt\"]\n        unsafe fn table_item_{fn}(item: *const {item}) -> i32;\n")
+        else:
+            casts_h.append(f"inline ::QPersistentModelIndex *standard_item_index(const ::{item} *i) {{\n"
+                           f"    return i ? new ::QPersistentModelIndex(i->index()) : nullptr;\n}}\n")
+            bridge.append(f"        /// # Safety\n        /// `item` is null or the live argument of a signal emission on this thread.\n"
+                          f"        #[namespace = \"dtkrs_cxxqt\"]\n        unsafe fn standard_item_index(item: *const {item}) -> *mut QPersistentModelIndex;\n")
+    for alias in list_used:
+        elem = "QModelIndex" if alias == "QModelIndexList" else "QPersistentModelIndex"
+        fn = snake(alias)
+        casts_h.append(f"using {alias} = ::QList<::{elem}>;\n"
+                       f"inline ::rust::isize {fn}_len(const {alias} &l) {{ return l.size(); }}\n"
+                       f"inline ::QPersistentModelIndex *{fn}_at(const {alias} &l, ::rust::isize i) {{\n"
+                       f"    return new ::QPersistentModelIndex(l.at(i));\n}}\n")
+        bridge.append(f"        #[namespace = \"dtkrs_cxxqt\"]\n        fn {fn}_len(list: &{alias}) -> isize;\n"
+                      f"        #[namespace = \"dtkrs_cxxqt\"]\n        fn {fn}_at(list: &{alias}, i: isize) -> *mut QPersistentModelIndex;\n")
+    for (scope, ename), kind in int_used:
+        ns = index[scope][1] if scope in index else ""
+        q = f"::{ns}::{scope}::{ename}" if ns else f"::{scope}::{ename}"
+        value = "static_cast<int>(v.toInt())" if kind == "flags" else "static_cast<int>(v)"
+        casts_h.append(f"using Int_{scope}_{ename} = {q};\n"
+                       f"inline int int_{scope}_{ename}(const Int_{scope}_{ename} &v) {{ return {value}; }}\n")
+        bridge.append(f"        #[namespace = \"dtkrs_cxxqt\"]\n        fn int_{scope}_{ename}(value: &Int_{scope}_{ename}) -> i32;\n")
     for v in heap_used:
         out = "QPersistentModelIndex" if v == "QModelIndex" else v
         bridge.append(f"        #[namespace = \"dtkrs_cxxqt\"]\n        fn clone_{v}(value: &{v}) -> *mut {out};\n")
@@ -433,7 +607,7 @@ def emit(domain_wrappers):
         # dynamic QMetaObject on valid platforms whose chain lacks the static one.
         casts_h.append(f"inline const {q} *as_{cls}(const ::QObject *object) {{ return dynamic_cast<const {q} *>(object); }}\n")
         bridge.append(f"        /// # Safety\n        /// `object` is null or a live QObject on its owner thread.\n        #[namespace = \"dtkrs_cxxqt\"]\n        unsafe fn as_{cls}(object: *const QObject) -> *const {cls};\n")
-    if "QModelIndex" in heap_used:
+    if persistent_used:
         casts_h.append("using QPersistentModelIndex = ::QPersistentModelIndex;\n")
     casts_h.append("} // namespace dtkrs_cxxqt\n")
     bridge.append("    }\n")
@@ -442,7 +616,7 @@ def emit(domain_wrappers):
                   "#![allow(clippy::type_complexity)]\n",
                   "// Every connector: `sender` is a live QObject on its owner thread inside a\n",
                   "// dtk-sys NativeCall; a failed dynamic_cast returns None (no connection).\n",
-                  "use crate::ffi;\n#[allow(unused_imports)]\nuse crate::ffi::*;\nuse dtk_sys::native_signal::{OwnedValue, SignalToken};\nuse std::any::Any;\n\n"]
+                  "use crate::ffi;\n#[allow(unused_imports)]\nuse crate::ffi::*;\n#[allow(unused_imports)]\nuse dtk_sys::native_signal::{GuardedArg, OwnedValue, SignalToken};\nuse std::any::Any;\n\n"]
     total = 0
     for cls in sorted(imports):
         ns = index[cls][1]
@@ -452,8 +626,9 @@ def emit(domain_wrappers):
         bridge.append(f"        #[qobject]\n        type {cls};\n")
         for sig, mapped, decl in imports[cls]:
             params = "".join(f", a{i}: {m[0]}" for i, m in enumerate(mapped))
+            unsafe_kw = "unsafe " if any(m[0].startswith("*") for m in mapped) else ""
             bridge.append(f"        /// `{' '.join(decl.split())}`\n        #[qsignal]\n        #[cxx_name = \"{sig}\"]\n"
-                          f"        pub(self) fn {snake(sig)}(self: &{cls}{params});\n")
+                          f"        pub(self) {unsafe_kw}fn {snake(sig)}(self: &{cls}{params});\n")
             fn = f"{snake(cls)}_{snake(sig)}"
             arg_ty = "(" + "".join(f"{rust_payload(m)}, " for m in mapped) + ")"
             closure = "".join(f", a{i}: {m[1]}" for i, m in enumerate(mapped))
@@ -480,7 +655,7 @@ def emit(domain_wrappers):
                 "//! Typed `on_*` signal connections for every wrapper, including signals\n",
                 "//! inherited from Qt/DTK base classes. See dtk/src/signals.rs.\n",
                 "#![allow(clippy::all, unused_imports)]\n",
-                "use crate::signals::{Connection, connect_typed};\nuse dtk_sys::native_signal::OwnedValue;\n\n"]
+                "use crate::signals::{Connection, connect_typed};\nuse dtk_sys::native_signal::{GuardedArg, OwnedValue};\n\n"]
     for rust in sorted(plans):
         methods = plans[rust]
         if not methods:
@@ -517,7 +692,12 @@ def emit(domain_wrappers):
         rep.append(f"## {cls} — {ok} generated, {len(rows) - ok} skipped\n")
         for decl, fn, why in rows:
             d = " ".join(decl.split())
-            rep.append(f"- `{d}` → `{fn}`\n" if fn else f"- `{d}` ← {why}\n")
+            if not fn:
+                rep.append(f"- `{d}` ← {why}\n")
+                continue
+            sig = re.search(r"(\w+)\s*\(", d.replace("QT_MOC_COMPAT", "")).group(1)
+            contract = POINTER_CONTRACTS.get((cls, sig)) if any(t in d for t in ("*",)) else None
+            rep.append(f"- `{d}` → `{fn}`" + (f" (pointer contract: {contract})" if contract else "") + "\n")
         rep.append("\n")
     outputs = {
         "dtk-cxxqt/src/bridge.rs": rustfmt("".join(bridge)),
@@ -539,6 +719,16 @@ def emit(domain_wrappers):
 def rust_payload(m):
     """Owned type queued by the token (built in the emission frame)."""
     kind, value = m[4], m[2]
+    if kind == "qptr":
+        return f"Option<GuardedArg<dtk_sys::ffi::{m[3]}>>"
+    if kind == "cell":
+        return "Option<(i32, i32)>"
+    if kind == "item_index":
+        return "Option<OwnedValue<dtk_sys::ffi::QPersistentModelIndex>>"
+    if kind == "index_list":
+        return "Vec<OwnedValue<dtk_sys::ffi::QPersistentModelIndex>>"
+    if kind in ("scoped", "flags"):
+        return "i32"
     if kind == "heap":
         target = "QPersistentModelIndex" if value == "QModelIndex" else value
         return f"OwnedValue<dtk_sys::ffi::{target}>"
@@ -552,6 +742,23 @@ def rust_payload(m):
 
 def convert_payload(m, name):
     kind, value = m[4], m[2]
+    if kind == "qptr":
+        # SAFETY (connector contract): `name` is the emission's pointer argument.
+        return (f"unsafe {{ GuardedArg::capture({name} as *mut dtk_sys::ffi::{m[3]}, "
+                f"ffi::signal_object_{m[3]}({name}) as *mut dtk_sys::ffi::QObject) }}")
+    if kind == "cell":
+        return (f"{{ let (row, column) = unsafe {{ (ffi::table_item_row({name}), ffi::table_item_column({name})) }}; "
+                f"(row >= 0 && column >= 0).then_some((row, column)) }}")
+    if kind == "item_index":
+        return (f"{{ let index = unsafe {{ ffi::standard_item_index({name}) }}; (!index.is_null()).then(|| unsafe {{ "
+                f"OwnedValue::new(index as *mut dtk_sys::ffi::QPersistentModelIndex, dtk_sys::ffi::persistent_index_delete) }}) }}")
+    if kind == "index_list":
+        fn = snake(m[3])
+        return (f"(0..ffi::{fn}_len({name})).map(|i| unsafe {{ OwnedValue::new(ffi::{fn}_at({name}, i) "
+                f"as *mut dtk_sys::ffi::QPersistentModelIndex, dtk_sys::ffi::persistent_index_delete) }}).collect::<Vec<_>>()")
+    if kind in ("scoped", "flags"):
+        scope, ename = m[3]
+        return f"ffi::int_{scope}_{ename}({name})"
     if kind == "heap":
         ns_value = value
         _ns, _inc, deleter = HEAP_VALUES[ns_value]
@@ -563,6 +770,13 @@ def convert_payload(m, name):
 
 def rust_unpack(m, name):
     kind, value = m[4], m[2]
+    if kind == "qptr":
+        view = POINTER_VIEWS[m[3]]
+        return f"{name}.and_then(|arg| crate::{view}::from_signal_arg(arg))"
+    if kind == "item_index":
+        return f"{name}.map(|v| crate::PersistentModelIndex::from_raw(v.into_raw()))"
+    if kind == "index_list":
+        return f"{name}.into_iter().map(|v| crate::PersistentModelIndex::from_raw(v.into_raw())).collect()"
     if kind == "heap":
         target = "PersistentModelIndex" if value == "QModelIndex" else value
         return f"crate::{target}::from_raw({name}.into_raw())"

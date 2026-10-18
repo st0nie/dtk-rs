@@ -106,9 +106,16 @@ Known gaps in dtk-rs, roughly in priority order.
       owned heap copies, `PersistentModelIndex`, `QList<int>`/`QList<QUrl>`);
       `signal_values_selfcheck`. QColor/QPoint(F)/QSize(F)/QRect(F)/
       QMargins(F)/QUrl are now cxx-qt-lib by-value types everywhere.
-- [ ] Pointer-valued signals (`QAction*`, `QAbstractButton*`, `QWidget*`, ...)
-      via guarded-view conversion with per-signal borrowed-pointer contracts;
-      QFlags/scoped-enum signal arguments (see GEN_SIGNAL_REPORT.md).
+- [x] Pointer-valued signals (`QAction*`, `QAbstractButton*`, `QWidget*`) via
+      guarded-view conversion with per-signal borrowed-pointer contracts
+      (`POINTER_CONTRACTS`, quoted in GEN_SIGNAL_REPORT.md); the QPointer is
+      taken in the emission and rejects objects already in ~QObject.
+      `QTableWidgetItem*`/`QStandardItem*` become (row, column)/persistent
+      indexes; QFlags/scoped enums/enum typedefs become `i32`; model index
+      lists become `Vec<PersistentModelIndex>` (`signal_pointer_selfcheck`).
+      Still skipped with reasons: non-QObject `DAnchorInfo*`/`DSimpleListItem*`,
+      `QObject*`/`QDockWidget*` (no view), synchronous `DPrinter*` paint
+      requests, overloaded names, `QTextCharFormat`.
 - [ ] Re-evaluate CxxQtThread for imported QObjects when KDAB/cxx-qt#1155
       lands; `GuiSender` stays the worker→GUI path until then.
 - [ ] Build a coherent QObject/QtWidgets API (action, menu, model/view, layout,

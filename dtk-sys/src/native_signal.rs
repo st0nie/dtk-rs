@@ -84,6 +84,39 @@ impl<T> Drop for OwnedValue<T> {
     }
 }
 
+/// A QObject pointer argument guarded inside a signal emission.
+///
+/// The generated connector takes the QPointer while Qt is still emitting,
+/// only for objects on this thread that have not entered their destructor
+/// (C++ `dtkrs_cxxqt::signal_object`). The safe layer turns it into a guarded
+/// view at delivery time, or into `None` if Qt destroyed the object first.
+/// It never owns the object.
+pub struct GuardedArg<T> {
+    ptr: *mut T,
+    guard: crate::ObjectGuard,
+}
+
+impl<T> GuardedArg<T> {
+    /// `object` is the guardable QObject base of `ptr`, or null when the
+    /// argument was null or cannot be guarded; null yields `None`.
+    ///
+    /// # Safety
+    /// Call only inside the emission that passed `ptr`; a non-null `object`
+    /// must be `ptr`'s live QObject base on the current thread.
+    pub unsafe fn capture(ptr: *mut T, object: *mut crate::ffi::QObject) -> Option<Self> {
+        if ptr.is_null() || object.is_null() {
+            return None;
+        }
+        let guard = unsafe { crate::ObjectGuard::from_object(object) };
+        Some(Self { ptr, guard })
+    }
+    /// The pointer and its guard; the pointer may be dereferenced only while
+    /// the guard reports the object alive, on this thread.
+    pub fn into_parts(self) -> (*mut T, crate::ObjectGuard) {
+        (self.ptr, self.guard)
+    }
+}
+
 /// Register `f` and let `connect` create the native connection owning the
 /// token. `connect` returns an RAII guard whose Drop disconnects, or `None`
 /// on failure. Returns the callback id for `unregister_cb`; 0 = failed.

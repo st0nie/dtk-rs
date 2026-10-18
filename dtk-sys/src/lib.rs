@@ -385,6 +385,7 @@ pub mod ffi {
         ) -> bool;
         unsafe fn model_insert_rows(model: *mut QAbstractItemModel, row: i32, count: i32) -> bool;
         unsafe fn model_remove_rows(model: *mut QAbstractItemModel, row: i32, count: i32) -> bool;
+        unsafe fn model_sort(model: *mut QAbstractItemModel, column: i32, descending: bool);
         unsafe fn model_index(
             model: *mut QAbstractItemModel,
             row: i32,

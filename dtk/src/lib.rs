@@ -509,6 +509,22 @@ macro_rules! object_wrapper_impl {
                     _not_send: PhantomData,
                 }
             }
+            /// View of a typed signal's pointer argument; `None` once Qt has
+            /// destroyed the object (the guard was taken inside the emission).
+            #[allow(dead_code)]
+            pub(crate) fn from_signal_arg(arg: dtk_sys::native_signal::GuardedArg<$ffi>) -> Option<Self> {
+                let (ptr, guard) = arg.into_parts();
+                if !guard.is_alive() {
+                    return None;
+                }
+                Some(Self {
+                    ptr,
+                    qobject: qt_object_base!(ptr $(, $object_cast)?),
+                    _widget: qt_widget_base!($kind, ptr $(, $widget_cast)?),
+                    guard: std::rc::Rc::new(guard),
+                    _not_send: PhantomData,
+                })
+            }
             pub fn is_alive(&self) -> bool {
                 self.guard.is_alive()
             }
@@ -596,6 +612,17 @@ impl QWidget {
             guard,
             _not_send: PhantomData,
         }
+    }
+
+    /// View of a typed signal's pointer argument; `None` once Qt has
+    /// destroyed the widget (the guard was taken inside the emission).
+    pub(crate) fn from_signal_arg(
+        arg: dtk_sys::native_signal::GuardedArg<ffi::QWidget>,
+    ) -> Option<Self> {
+        let (ptr, guard) = arg.into_parts();
+        guard
+            .is_alive()
+            .then(|| Self::from_guarded(ptr, Rc::new(guard)))
     }
 
     pub fn is_alive(&self) -> bool {
@@ -2149,6 +2176,12 @@ impl QAbstractItemModel {
     pub fn remove_rows(&self, row: i32, count: i32) -> bool {
         let _call = dtk_sys::NativeCall::new();
         unsafe { ffi::model_remove_rows(self.live_ptr(), row, count) }
+    }
+    /// `QAbstractItemModel::sort(column, order)`. Models that do not
+    /// implement sorting ignore it; sorting models emit `layoutChanged`.
+    pub fn sort(&self, column: i32, descending: bool) {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { ffi::model_sort(self.live_ptr(), column, descending) }
     }
     /// `QAbstractItemModel::index(row, col, parent)` as a persistent index.
     /// An out-of-range position (or a parent of another model) gives an

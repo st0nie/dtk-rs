@@ -845,6 +845,9 @@ bool model_insert_rows(QAbstractItemModel *model, int32_t row, int32_t count) {
 bool model_remove_rows(QAbstractItemModel *model, int32_t row, int32_t count) {
     return model->removeRows(row, count);
 }
+void model_sort(QAbstractItemModel *model, int32_t column, bool descending) {
+    model->sort(column, descending ? Qt::DescendingOrder : Qt::AscendingOrder);
+}
 QPersistentModelIndex *model_index(QAbstractItemModel *model, int32_t row, int32_t col, QPersistentModelIndex *parent) {
     const QModelIndex p = parent ? QModelIndex(*parent) : QModelIndex();
     if (p.isValid() && p.model() != model)

@@ -387,6 +387,7 @@ QVariant *model_data(QAbstractItemModel *model, int32_t row, int32_t col, int32_
 bool model_set_data(QAbstractItemModel *model, int32_t row, int32_t col, QVariant *data, int32_t role);
 bool model_insert_rows(QAbstractItemModel *model, int32_t row, int32_t count);
 bool model_remove_rows(QAbstractItemModel *model, int32_t row, int32_t count);
+void model_sort(QAbstractItemModel *model, int32_t column, bool descending);
 // parent may be null (top level). A foreign model's index is rejected (invalid result).
 QPersistentModelIndex *model_index(QAbstractItemModel *model, int32_t row, int32_t col, QPersistentModelIndex *parent);
 bool model_set_index_data(QAbstractItemModel *model, QPersistentModelIndex *index, QVariant *data, int32_t role);

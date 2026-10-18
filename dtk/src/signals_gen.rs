@@ -3,7 +3,7 @@
 //! inherited from Qt/DTK base classes. See dtk/src/signals.rs.
 #![allow(clippy::all, unused_imports)]
 use crate::signals::{Connection, connect_typed};
-use dtk_sys::native_signal::OwnedValue;
+use dtk_sys::native_signal::{GuardedArg, OwnedValue};
 
 impl crate::DLabel {
     /// `void linkActivated(const QString& link)` (declared in `QLabel`).
@@ -265,6 +265,26 @@ impl crate::DMenu {
             dtk_cxxqt::connectors::q_menu_about_to_hide,
         )
     }
+    /// `void triggered(QAction *action)` (declared in `QMenu`).
+    pub fn on_triggered(&self, mut f: impl FnMut(Option<crate::QAction>) + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (Option<GuardedArg<dtk_sys::ffi::QAction>>,)| {
+                f(a0.and_then(|arg| crate::QAction::from_signal_arg(arg)))
+            },
+            dtk_cxxqt::connectors::q_menu_triggered,
+        )
+    }
+    /// `void hovered(QAction *action)` (declared in `QMenu`).
+    pub fn on_hovered(&self, mut f: impl FnMut(Option<crate::QAction>) + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (Option<GuardedArg<dtk_sys::ffi::QAction>>,)| {
+                f(a0.and_then(|arg| crate::QAction::from_signal_arg(arg)))
+            },
+            dtk_cxxqt::connectors::q_menu_hovered,
+        )
+    }
     /// `void windowTitleChanged(const QString &title)` (declared in `QWidget`).
     pub fn on_window_title_changed(&self, mut f: impl FnMut(String) + 'static) -> Connection {
         connect_typed(
@@ -305,6 +325,19 @@ impl crate::DMenu {
 }
 
 impl crate::DMessageBox {
+    /// `void buttonClicked(QAbstractButton *button)` (declared in `QMessageBox`).
+    pub fn on_button_clicked(
+        &self,
+        mut f: impl FnMut(Option<crate::QAbstractButton>) + 'static,
+    ) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (Option<GuardedArg<dtk_sys::ffi::QAbstractButton>>,)| {
+                f(a0.and_then(|arg| crate::QAbstractButton::from_signal_arg(arg)))
+            },
+            dtk_cxxqt::connectors::q_message_box_button_clicked,
+        )
+    }
     /// `void finished(int result)` (declared in `QDialog`).
     pub fn on_finished(&self, mut f: impl FnMut(i32) + 'static) -> Connection {
         connect_typed(
@@ -529,6 +562,14 @@ impl crate::DTitlebar {
             dtk_cxxqt::connectors::d_titlebar_double_clicked,
         )
     }
+    /// `void mousePressed(Qt::MouseButtons buttons)` (declared in `DTitlebar`).
+    pub fn on_mouse_pressed(&self, mut f: impl FnMut(i32) + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (i32,)| f(a0),
+            dtk_cxxqt::connectors::d_titlebar_mouse_pressed,
+        )
+    }
     /// `void mouseMoving(Qt::MouseButton button)` (declared in `DTitlebar`).
     pub fn on_mouse_moving(&self, mut f: impl FnMut(i32) + 'static) -> Connection {
         connect_typed(
@@ -577,6 +618,32 @@ impl crate::DTitlebar {
 }
 
 impl crate::PaintDelegate {
+    /// `void commitData(QWidget *editor)` (declared in `QAbstractItemDelegate`).
+    pub fn on_commit_data(
+        &self,
+        mut f: impl FnMut(Option<crate::QWidget>) + 'static,
+    ) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (Option<GuardedArg<dtk_sys::ffi::QWidget>>,)| {
+                f(a0.and_then(|arg| crate::QWidget::from_signal_arg(arg)))
+            },
+            dtk_cxxqt::connectors::q_abstract_item_delegate_commit_data,
+        )
+    }
+    /// `void closeEditor(QWidget *editor, QAbstractItemDelegate::EndEditHint hint = NoHint)` (declared in `QAbstractItemDelegate`).
+    pub fn on_close_editor(
+        &self,
+        mut f: impl FnMut(Option<crate::QWidget>, i32) + 'static,
+    ) -> Connection {
+        connect_typed(
+            self,
+            move |(a0, a1): (Option<GuardedArg<dtk_sys::ffi::QWidget>>, i32)| {
+                f(a0.and_then(|arg| crate::QWidget::from_signal_arg(arg)), a1)
+            },
+            dtk_cxxqt::connectors::q_abstract_item_delegate_close_editor,
+        )
+    }
     /// `void sizeHintChanged(const QModelIndex &)` (declared in `QAbstractItemDelegate`).
     pub fn on_size_hint_changed(
         &self,
@@ -732,6 +799,42 @@ impl crate::QAbstractItemModel {
             self,
             move |(a0, a1, a2): (i32, i32, i32)| f(a0, a1, a2),
             dtk_cxxqt::connectors::q_abstract_item_model_header_data_changed,
+        )
+    }
+    /// `void layoutChanged(const QList<QPersistentModelIndex> &parents = QList<QPersistentModelIndex>(), QAbstractItemModel::LayoutChangeHint hint = QAbstractItemModel::NoLayoutChangeHint)` (declared in `QAbstractItemModel`).
+    pub fn on_layout_changed(
+        &self,
+        mut f: impl FnMut(Vec<crate::PersistentModelIndex>, i32) + 'static,
+    ) -> Connection {
+        connect_typed(
+            self,
+            move |(a0, a1): (Vec<OwnedValue<dtk_sys::ffi::QPersistentModelIndex>>, i32)| {
+                f(
+                    a0.into_iter()
+                        .map(|v| crate::PersistentModelIndex::from_raw(v.into_raw()))
+                        .collect(),
+                    a1,
+                )
+            },
+            dtk_cxxqt::connectors::q_abstract_item_model_layout_changed,
+        )
+    }
+    /// `void layoutAboutToBeChanged(const QList<QPersistentModelIndex> &parents = QList<QPersistentModelIndex>(), QAbstractItemModel::LayoutChangeHint hint = QAbstractItemModel::NoLayoutChangeHint)` (declared in `QAbstractItemModel`).
+    pub fn on_layout_about_to_be_changed(
+        &self,
+        mut f: impl FnMut(Vec<crate::PersistentModelIndex>, i32) + 'static,
+    ) -> Connection {
+        connect_typed(
+            self,
+            move |(a0, a1): (Vec<OwnedValue<dtk_sys::ffi::QPersistentModelIndex>>, i32)| {
+                f(
+                    a0.into_iter()
+                        .map(|v| crate::PersistentModelIndex::from_raw(v.into_raw()))
+                        .collect(),
+                    a1,
+                )
+            },
+            dtk_cxxqt::connectors::q_abstract_item_model_layout_about_to_be_changed,
         )
     }
     /// `void rowsAboutToBeInserted(const QModelIndex &parent, int first, int last, QPrivateSignal)` (declared in `QAbstractItemModel`).
@@ -1020,6 +1123,19 @@ impl crate::QAction {
 }
 
 impl crate::QStandardItemModel {
+    /// `void itemChanged(QStandardItem *item)` (declared in `QStandardItemModel`).
+    pub fn on_item_changed(
+        &self,
+        mut f: impl FnMut(Option<crate::PersistentModelIndex>) + 'static,
+    ) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (Option<OwnedValue<dtk_sys::ffi::QPersistentModelIndex>>,)| {
+                f(a0.map(|v| crate::PersistentModelIndex::from_raw(v.into_raw())))
+            },
+            dtk_cxxqt::connectors::q_standard_item_model_item_changed,
+        )
+    }
     /// `void dataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QList<int> &roles = QList<int>())` (declared in `QAbstractItemModel`).
     pub fn on_data_changed(
         &self,
@@ -1047,6 +1163,42 @@ impl crate::QStandardItemModel {
             self,
             move |(a0, a1, a2): (i32, i32, i32)| f(a0, a1, a2),
             dtk_cxxqt::connectors::q_abstract_item_model_header_data_changed,
+        )
+    }
+    /// `void layoutChanged(const QList<QPersistentModelIndex> &parents = QList<QPersistentModelIndex>(), QAbstractItemModel::LayoutChangeHint hint = QAbstractItemModel::NoLayoutChangeHint)` (declared in `QAbstractItemModel`).
+    pub fn on_layout_changed(
+        &self,
+        mut f: impl FnMut(Vec<crate::PersistentModelIndex>, i32) + 'static,
+    ) -> Connection {
+        connect_typed(
+            self,
+            move |(a0, a1): (Vec<OwnedValue<dtk_sys::ffi::QPersistentModelIndex>>, i32)| {
+                f(
+                    a0.into_iter()
+                        .map(|v| crate::PersistentModelIndex::from_raw(v.into_raw()))
+                        .collect(),
+                    a1,
+                )
+            },
+            dtk_cxxqt::connectors::q_abstract_item_model_layout_changed,
+        )
+    }
+    /// `void layoutAboutToBeChanged(const QList<QPersistentModelIndex> &parents = QList<QPersistentModelIndex>(), QAbstractItemModel::LayoutChangeHint hint = QAbstractItemModel::NoLayoutChangeHint)` (declared in `QAbstractItemModel`).
+    pub fn on_layout_about_to_be_changed(
+        &self,
+        mut f: impl FnMut(Vec<crate::PersistentModelIndex>, i32) + 'static,
+    ) -> Connection {
+        connect_typed(
+            self,
+            move |(a0, a1): (Vec<OwnedValue<dtk_sys::ffi::QPersistentModelIndex>>, i32)| {
+                f(
+                    a0.into_iter()
+                        .map(|v| crate::PersistentModelIndex::from_raw(v.into_raw()))
+                        .collect(),
+                    a1,
+                )
+            },
+            dtk_cxxqt::connectors::q_abstract_item_model_layout_about_to_be_changed,
         )
     }
     /// `void rowsAboutToBeInserted(const QModelIndex &parent, int first, int last, QPrivateSignal)` (declared in `QAbstractItemModel`).
@@ -1276,6 +1428,68 @@ impl crate::QStandardItemModel {
 }
 
 impl crate::QTableWidget {
+    /// `void itemPressed(QTableWidgetItem *item)` (declared in `QTableWidget`).
+    pub fn on_item_pressed(&self, mut f: impl FnMut(Option<(i32, i32)>) + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (Option<(i32, i32)>,)| f(a0),
+            dtk_cxxqt::connectors::q_table_widget_item_pressed,
+        )
+    }
+    /// `void itemClicked(QTableWidgetItem *item)` (declared in `QTableWidget`).
+    pub fn on_item_clicked(&self, mut f: impl FnMut(Option<(i32, i32)>) + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (Option<(i32, i32)>,)| f(a0),
+            dtk_cxxqt::connectors::q_table_widget_item_clicked,
+        )
+    }
+    /// `void itemDoubleClicked(QTableWidgetItem *item)` (declared in `QTableWidget`).
+    pub fn on_item_double_clicked(
+        &self,
+        mut f: impl FnMut(Option<(i32, i32)>) + 'static,
+    ) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (Option<(i32, i32)>,)| f(a0),
+            dtk_cxxqt::connectors::q_table_widget_item_double_clicked,
+        )
+    }
+    /// `void itemActivated(QTableWidgetItem *item)` (declared in `QTableWidget`).
+    pub fn on_item_activated(&self, mut f: impl FnMut(Option<(i32, i32)>) + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (Option<(i32, i32)>,)| f(a0),
+            dtk_cxxqt::connectors::q_table_widget_item_activated,
+        )
+    }
+    /// `void itemEntered(QTableWidgetItem *item)` (declared in `QTableWidget`).
+    pub fn on_item_entered(&self, mut f: impl FnMut(Option<(i32, i32)>) + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (Option<(i32, i32)>,)| f(a0),
+            dtk_cxxqt::connectors::q_table_widget_item_entered,
+        )
+    }
+    /// `void itemChanged(QTableWidgetItem *item)` (declared in `QTableWidget`).
+    pub fn on_item_changed(&self, mut f: impl FnMut(Option<(i32, i32)>) + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (Option<(i32, i32)>,)| f(a0),
+            dtk_cxxqt::connectors::q_table_widget_item_changed,
+        )
+    }
+    /// `void currentItemChanged(QTableWidgetItem *current, QTableWidgetItem *previous)` (declared in `QTableWidget`).
+    pub fn on_current_item_changed(
+        &self,
+        mut f: impl FnMut(Option<(i32, i32)>, Option<(i32, i32)>) + 'static,
+    ) -> Connection {
+        connect_typed(
+            self,
+            move |(a0, a1): (Option<(i32, i32)>, Option<(i32, i32)>)| f(a0, a1),
+            dtk_cxxqt::connectors::q_table_widget_current_item_changed,
+        )
+    }
     /// `void itemSelectionChanged()` (declared in `QTableWidget`).
     pub fn on_item_selection_changed(&self, mut f: impl FnMut() + 'static) -> Connection {
         connect_typed(
@@ -2648,6 +2862,32 @@ impl crate::widgets::DAnchorsBase {
             dtk_cxxqt::connectors::d_anchors_base_enabled_changed,
         )
     }
+    /// `void fillChanged(QWidget *fill)` (declared in `DAnchorsBase`).
+    pub fn on_fill_changed(
+        &self,
+        mut f: impl FnMut(Option<crate::QWidget>) + 'static,
+    ) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (Option<GuardedArg<dtk_sys::ffi::QWidget>>,)| {
+                f(a0.and_then(|arg| crate::QWidget::from_signal_arg(arg)))
+            },
+            dtk_cxxqt::connectors::d_anchors_base_fill_changed,
+        )
+    }
+    /// `void centerInChanged(QWidget *centerIn)` (declared in `DAnchorsBase`).
+    pub fn on_center_in_changed(
+        &self,
+        mut f: impl FnMut(Option<crate::QWidget>) + 'static,
+    ) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (Option<GuardedArg<dtk_sys::ffi::QWidget>>,)| {
+                f(a0.and_then(|arg| crate::QWidget::from_signal_arg(arg)))
+            },
+            dtk_cxxqt::connectors::d_anchors_base_center_in_changed,
+        )
+    }
     /// `void marginsChanged(int margins)` (declared in `DAnchorsBase`).
     pub fn on_margins_changed(&self, mut f: impl FnMut(i32) + 'static) -> Connection {
         connect_typed(
@@ -3316,6 +3556,61 @@ impl crate::widgets::DBoxWidget {
 }
 
 impl crate::widgets::DButtonBox {
+    /// `void buttonClicked(QAbstractButton *)` (declared in `DButtonBox`).
+    pub fn on_button_clicked(
+        &self,
+        mut f: impl FnMut(Option<crate::QAbstractButton>) + 'static,
+    ) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (Option<GuardedArg<dtk_sys::ffi::QAbstractButton>>,)| {
+                f(a0.and_then(|arg| crate::QAbstractButton::from_signal_arg(arg)))
+            },
+            dtk_cxxqt::connectors::d_button_box_button_clicked,
+        )
+    }
+    /// `void buttonPressed(QAbstractButton *)` (declared in `DButtonBox`).
+    pub fn on_button_pressed(
+        &self,
+        mut f: impl FnMut(Option<crate::QAbstractButton>) + 'static,
+    ) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (Option<GuardedArg<dtk_sys::ffi::QAbstractButton>>,)| {
+                f(a0.and_then(|arg| crate::QAbstractButton::from_signal_arg(arg)))
+            },
+            dtk_cxxqt::connectors::d_button_box_button_pressed,
+        )
+    }
+    /// `void buttonReleased(QAbstractButton *)` (declared in `DButtonBox`).
+    pub fn on_button_released(
+        &self,
+        mut f: impl FnMut(Option<crate::QAbstractButton>) + 'static,
+    ) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (Option<GuardedArg<dtk_sys::ffi::QAbstractButton>>,)| {
+                f(a0.and_then(|arg| crate::QAbstractButton::from_signal_arg(arg)))
+            },
+            dtk_cxxqt::connectors::d_button_box_button_released,
+        )
+    }
+    /// `void buttonToggled(QAbstractButton *, bool)` (declared in `DButtonBox`).
+    pub fn on_button_toggled(
+        &self,
+        mut f: impl FnMut(Option<crate::QAbstractButton>, bool) + 'static,
+    ) -> Connection {
+        connect_typed(
+            self,
+            move |(a0, a1): (Option<GuardedArg<dtk_sys::ffi::QAbstractButton>>, bool)| {
+                f(
+                    a0.and_then(|arg| crate::QAbstractButton::from_signal_arg(arg)),
+                    a1,
+                )
+            },
+            dtk_cxxqt::connectors::d_button_box_button_toggled,
+        )
+    }
     /// `void windowTitleChanged(const QString &title)` (declared in `QWidget`).
     pub fn on_window_title_changed(&self, mut f: impl FnMut(String) + 'static) -> Connection {
         connect_typed(
@@ -4265,6 +4560,19 @@ impl crate::widgets::DEnhancedWidget {
             dtk_cxxqt::connectors::d_enhanced_widget_size_changed,
         )
     }
+    /// `void targetChanged(QWidget *target)` (declared in `DEnhancedWidget`).
+    pub fn on_target_changed(
+        &self,
+        mut f: impl FnMut(Option<crate::QWidget>) + 'static,
+    ) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (Option<GuardedArg<dtk_sys::ffi::QWidget>>,)| {
+                f(a0.and_then(|arg| crate::QWidget::from_signal_arg(arg)))
+            },
+            dtk_cxxqt::connectors::d_enhanced_widget_target_changed,
+        )
+    }
     /// `void enabledChanged(bool enabled)` (declared in `DEnhancedWidget`).
     pub fn on_enabled_changed(&self, mut f: impl FnMut(bool) + 'static) -> Connection {
         connect_typed(
@@ -4866,6 +5174,14 @@ impl crate::widgets::DFlowLayout {
             self,
             move |(a0,): (i32,)| f(a0),
             dtk_cxxqt::connectors::d_flow_layout_count_changed,
+        )
+    }
+    /// `void flowChanged(Flow flow)` (declared in `DFlowLayout`).
+    pub fn on_flow_changed(&self, mut f: impl FnMut(i32) + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (i32,)| f(a0),
+            dtk_cxxqt::connectors::d_flow_layout_flow_changed,
         )
     }
     /// `void sizeHintChanged(QSize sizeHint) const` (declared in `DFlowLayout`).
@@ -6083,6 +6399,21 @@ impl crate::widgets::DListView {
                 f(crate::PersistentModelIndex::from_raw(a0.into_raw()))
             },
             dtk_cxxqt::connectors::d_list_view_trigger_edit,
+        )
+    }
+    /// `void indexesMoved(const QModelIndexList &indexes)` (declared in `QListView`).
+    pub fn on_indexes_moved(
+        &self,
+        mut f: impl FnMut(Vec<crate::PersistentModelIndex>) + 'static,
+    ) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (Vec<OwnedValue<dtk_sys::ffi::QPersistentModelIndex>>,)| {
+                f(a0.into_iter()
+                    .map(|v| crate::PersistentModelIndex::from_raw(v.into_raw()))
+                    .collect())
+            },
+            dtk_cxxqt::connectors::q_list_view_indexes_moved,
         )
     }
     /// `void pressed(const QModelIndex &index)` (declared in `QAbstractItemView`).
@@ -7401,6 +7732,17 @@ impl crate::widgets::DShortcutEditLabel {
 }
 
 impl crate::widgets::DSimpleListView {
+    /// `void changeColumnVisible(int index, bool visible, QList<bool> columnVisibles)` (declared in `DSimpleListView`).
+    pub fn on_change_column_visible(
+        &self,
+        mut f: impl FnMut(i32, bool, Vec<bool>) + 'static,
+    ) -> Connection {
+        connect_typed(
+            self,
+            move |(a0, a1, a2): (i32, bool, Vec<bool>)| f(a0, a1, a2),
+            dtk_cxxqt::connectors::d_simple_list_view_change_column_visible,
+        )
+    }
     /// `void changeSortingStatus(int index, bool sortingOrder)` (declared in `DSimpleListView`).
     pub fn on_change_sorting_status(&self, mut f: impl FnMut(i32, bool) + 'static) -> Connection {
         connect_typed(
@@ -7681,6 +8023,32 @@ impl crate::widgets::DStackWidget {
             dtk_cxxqt::connectors::d_stack_widget_current_index_changed,
         )
     }
+    /// `void currentWidgetChanged(QWidget* currentWidget)` (declared in `DStackWidget`).
+    pub fn on_current_widget_changed(
+        &self,
+        mut f: impl FnMut(Option<crate::QWidget>) + 'static,
+    ) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (Option<GuardedArg<dtk_sys::ffi::QWidget>>,)| {
+                f(a0.and_then(|arg| crate::QWidget::from_signal_arg(arg)))
+            },
+            dtk_cxxqt::connectors::d_stack_widget_current_widget_changed,
+        )
+    }
+    /// `void widgetDepthChanged(QWidget *widget, int depth)` (declared in `DStackWidget`).
+    pub fn on_widget_depth_changed(
+        &self,
+        mut f: impl FnMut(Option<crate::QWidget>, i32) + 'static,
+    ) -> Connection {
+        connect_typed(
+            self,
+            move |(a0, a1): (Option<GuardedArg<dtk_sys::ffi::QWidget>>, i32)| {
+                f(a0.and_then(|arg| crate::QWidget::from_signal_arg(arg)), a1)
+            },
+            dtk_cxxqt::connectors::d_stack_widget_widget_depth_changed,
+        )
+    }
     /// `void switchWidgetFinished()` (declared in `DStackWidget`).
     pub fn on_switch_widget_finished(&self, mut f: impl FnMut() + 'static) -> Connection {
         connect_typed(
@@ -7729,6 +8097,32 @@ impl crate::widgets::DStackWidget {
 }
 
 impl crate::widgets::DStyledItemDelegate {
+    /// `void commitData(QWidget *editor)` (declared in `QAbstractItemDelegate`).
+    pub fn on_commit_data(
+        &self,
+        mut f: impl FnMut(Option<crate::QWidget>) + 'static,
+    ) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (Option<GuardedArg<dtk_sys::ffi::QWidget>>,)| {
+                f(a0.and_then(|arg| crate::QWidget::from_signal_arg(arg)))
+            },
+            dtk_cxxqt::connectors::q_abstract_item_delegate_commit_data,
+        )
+    }
+    /// `void closeEditor(QWidget *editor, QAbstractItemDelegate::EndEditHint hint = NoHint)` (declared in `QAbstractItemDelegate`).
+    pub fn on_close_editor(
+        &self,
+        mut f: impl FnMut(Option<crate::QWidget>, i32) + 'static,
+    ) -> Connection {
+        connect_typed(
+            self,
+            move |(a0, a1): (Option<GuardedArg<dtk_sys::ffi::QWidget>>, i32)| {
+                f(a0.and_then(|arg| crate::QWidget::from_signal_arg(arg)), a1)
+            },
+            dtk_cxxqt::connectors::q_abstract_item_delegate_close_editor,
+        )
+    }
     /// `void sizeHintChanged(const QModelIndex &)` (declared in `QAbstractItemDelegate`).
     pub fn on_size_hint_changed(
         &self,
@@ -8335,6 +8729,16 @@ impl crate::widgets::DTitleBarToolInterface {
 }
 
 impl crate::widgets::DToolButton {
+    /// `void triggered(QAction *)` (declared in `QToolButton`).
+    pub fn on_triggered(&self, mut f: impl FnMut(Option<crate::QAction>) + 'static) -> Connection {
+        connect_typed(
+            self,
+            move |(a0,): (Option<GuardedArg<dtk_sys::ffi::QAction>>,)| {
+                f(a0.and_then(|arg| crate::QAction::from_signal_arg(arg)))
+            },
+            dtk_cxxqt::connectors::q_tool_button_triggered,
+        )
+    }
     /// `void pressed()` (declared in `QAbstractButton`).
     pub fn on_pressed(&self, mut f: impl FnMut() + 'static) -> Connection {
         connect_typed(
@@ -8546,6 +8950,42 @@ impl crate::widgets::DVariantListModel {
             self,
             move |(a0, a1, a2): (i32, i32, i32)| f(a0, a1, a2),
             dtk_cxxqt::connectors::q_abstract_item_model_header_data_changed,
+        )
+    }
+    /// `void layoutChanged(const QList<QPersistentModelIndex> &parents = QList<QPersistentModelIndex>(), QAbstractItemModel::LayoutChangeHint hint = QAbstractItemModel::NoLayoutChangeHint)` (declared in `QAbstractItemModel`).
+    pub fn on_layout_changed(
+        &self,
+        mut f: impl FnMut(Vec<crate::PersistentModelIndex>, i32) + 'static,
+    ) -> Connection {
+        connect_typed(
+            self,
+            move |(a0, a1): (Vec<OwnedValue<dtk_sys::ffi::QPersistentModelIndex>>, i32)| {
+                f(
+                    a0.into_iter()
+                        .map(|v| crate::PersistentModelIndex::from_raw(v.into_raw()))
+                        .collect(),
+                    a1,
+                )
+            },
+            dtk_cxxqt::connectors::q_abstract_item_model_layout_changed,
+        )
+    }
+    /// `void layoutAboutToBeChanged(const QList<QPersistentModelIndex> &parents = QList<QPersistentModelIndex>(), QAbstractItemModel::LayoutChangeHint hint = QAbstractItemModel::NoLayoutChangeHint)` (declared in `QAbstractItemModel`).
+    pub fn on_layout_about_to_be_changed(
+        &self,
+        mut f: impl FnMut(Vec<crate::PersistentModelIndex>, i32) + 'static,
+    ) -> Connection {
+        connect_typed(
+            self,
+            move |(a0, a1): (Vec<OwnedValue<dtk_sys::ffi::QPersistentModelIndex>>, i32)| {
+                f(
+                    a0.into_iter()
+                        .map(|v| crate::PersistentModelIndex::from_raw(v.into_raw()))
+                        .collect(),
+                    a1,
+                )
+            },
+            dtk_cxxqt::connectors::q_abstract_item_model_layout_about_to_be_changed,
         )
     }
     /// `void rowsAboutToBeInserted(const QModelIndex &parent, int first, int last, QPrivateSignal)` (declared in `QAbstractItemModel`).
