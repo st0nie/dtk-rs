@@ -448,14 +448,28 @@ pub mod genffi {
         unsafe fn gen_d_window_manager_helper_window_manager_name(
             self_: *mut DWindowManagerHelper,
         ) -> i32;
+        unsafe fn gen_d_window_manager_helper_all_window_id_list(
+            self_: *mut DWindowManagerHelper,
+        ) -> Vec<u32>;
+        unsafe fn gen_d_window_manager_helper_current_workspace_window_id_list(
+            self_: *mut DWindowManagerHelper,
+        ) -> Vec<u32>;
         unsafe fn gen_d_window_manager_helper_window_from_point(
             self_: *mut DWindowManagerHelper,
             p: &QPoint,
         ) -> u32;
         unsafe fn gen_d_desktop_services_show_folder(localFilePath: &str, startupId: &str) -> bool;
+        unsafe fn gen_d_desktop_services_show_folders(
+            localFilePaths: Vec<String>,
+            startupId: &str,
+        ) -> bool;
         unsafe fn gen_d_desktop_services_show_folder_2(url: &QUrl, startupId: &str) -> bool;
         unsafe fn gen_d_desktop_services_show_file_item_property(
             localFilePath: &str,
+            startupId: &str,
+        ) -> bool;
+        unsafe fn gen_d_desktop_services_show_file_item_properties(
+            localFilePaths: Vec<String>,
             startupId: &str,
         ) -> bool;
         unsafe fn gen_d_desktop_services_show_file_item_property_2(
@@ -464,6 +478,10 @@ pub mod genffi {
         ) -> bool;
         unsafe fn gen_d_desktop_services_show_file_item(
             localFilePath: &str,
+            startupId: &str,
+        ) -> bool;
+        unsafe fn gen_d_desktop_services_show_file_items(
+            localFilePaths: Vec<String>,
             startupId: &str,
         ) -> bool;
         unsafe fn gen_d_desktop_services_show_file_item_2(url: &QUrl, startupId: &str) -> bool;
@@ -475,5 +493,6 @@ pub mod genffi {
         unsafe fn gen_d_desktop_services_preview_system_sound_effect_2(name: &str) -> bool;
         unsafe fn gen_d_desktop_services_get_name_by_effect_type(effect: i32) -> String;
         unsafe fn gen_d_desktop_services_error_message() -> String;
+        unsafe fn gen_d_desktop_services_trash_3(localFilePaths: Vec<String>) -> bool;
     }
 }

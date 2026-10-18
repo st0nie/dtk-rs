@@ -193,15 +193,20 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DWindowManagerHelper::hasWallpaperEffect` | `bool` | copied scalar / no result | shim conversion; `dwindowmanagerhelper.h` |
 | `DWindowManagerHelper::windowManagerNameString` | `String` | owned Rust strings/container | shim conversion; `dwindowmanagerhelper.h` |
 | `DWindowManagerHelper::windowManagerName` | `i32` | copied scalar / no result | shim conversion; `dwindowmanagerhelper.h` |
+| `DWindowManagerHelper::allWindowIdList` | `Vec<u32>` | owned Rust strings/container | shim conversion; `dwindowmanagerhelper.h` |
+| `DWindowManagerHelper::currentWorkspaceWindowIdList` | `Vec<u32>` | owned Rust strings/container | shim conversion; `dwindowmanagerhelper.h` |
 | `DWindowManagerHelper::windowFromPoint` | `u32` | copied scalar / no result | shim conversion; `dwindowmanagerhelper.h` |
 | `DWindowManagerHelper::windowFromPoint` Qt value inputs | `const QPoint &p` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `dwindowmanagerhelper.h` native value/reference signature |
 | `DDesktopServices::showFolder` | `bool` | copied scalar / no result | shim conversion; `ddesktopservices.h` |
+| `DDesktopServices::showFolders` | `bool` | copied scalar / no result | shim conversion; `ddesktopservices.h` |
 | `DDesktopServices::showFolder` | `bool` | copied scalar / no result | shim conversion; `ddesktopservices.h` |
 | `DDesktopServices::showFolder` Qt value inputs | `const QUrl &url` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `ddesktopservices.h` native value/reference signature |
 | `DDesktopServices::showFileItemProperty` | `bool` | copied scalar / no result | shim conversion; `ddesktopservices.h` |
+| `DDesktopServices::showFileItemProperties` | `bool` | copied scalar / no result | shim conversion; `ddesktopservices.h` |
 | `DDesktopServices::showFileItemProperty` | `bool` | copied scalar / no result | shim conversion; `ddesktopservices.h` |
 | `DDesktopServices::showFileItemProperty` Qt value inputs | `const QUrl &url` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `ddesktopservices.h` native value/reference signature |
 | `DDesktopServices::showFileItem` | `bool` | copied scalar / no result | shim conversion; `ddesktopservices.h` |
+| `DDesktopServices::showFileItems` | `bool` | copied scalar / no result | shim conversion; `ddesktopservices.h` |
 | `DDesktopServices::showFileItem` | `bool` | copied scalar / no result | shim conversion; `ddesktopservices.h` |
 | `DDesktopServices::showFileItem` Qt value inputs | `const QUrl &url` | call borrow of independently owned Qt value; no QObject ownership transfer | explicit value mapping; `ddesktopservices.h` native value/reference signature |
 | `DDesktopServices::trash` | `bool` | copied scalar / no result | shim conversion; `ddesktopservices.h` |
@@ -213,3 +218,4 @@ All mapped return signatures and emitted constructors appear below. No ownership
 | `DDesktopServices::previewSystemSoundEffect` | `bool` | copied scalar / no result | shim conversion; `ddesktopservices.h` |
 | `DDesktopServices::getNameByEffectType` | `String` | owned Rust strings/container | shim conversion; `ddesktopservices.h` |
 | `DDesktopServices::errorMessage` | `String` | owned Rust strings/container | shim conversion; `ddesktopservices.h` |
+| `DDesktopServices::trash` | `bool` | copied scalar / no result | shim conversion; `ddesktopservices.h` |

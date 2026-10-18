@@ -193,12 +193,17 @@ bool gen_d_window_manager_helper_has_no_titlebar(DWindowManagerHelper *self) { r
 bool gen_d_window_manager_helper_has_wallpaper_effect(DWindowManagerHelper *self) { return self->hasWallpaperEffect(); }
 rust::String gen_d_window_manager_helper_window_manager_name_string(DWindowManagerHelper *self) { return to_rust_string(self->windowManagerNameString()); }
 int32_t gen_d_window_manager_helper_window_manager_name(DWindowManagerHelper *self) { return static_cast<int32_t>(self->windowManagerName()); }
+rust::Vec<uint32_t> gen_d_window_manager_helper_all_window_id_list(DWindowManagerHelper *self) { return to_rust_u32_vec(self->allWindowIdList()); }
+rust::Vec<uint32_t> gen_d_window_manager_helper_current_workspace_window_id_list(DWindowManagerHelper *self) { return to_rust_u32_vec(self->currentWorkspaceWindowIdList()); }
 uint32_t gen_d_window_manager_helper_window_from_point(DWindowManagerHelper *self, const QPoint &p) { return self->windowFromPoint(p); }
 bool gen_d_desktop_services_show_folder(rust::Str localFilePath, rust::Str startupId) { return DDesktopServices::showFolder(from_rust_str(localFilePath), from_rust_str(startupId)); }
+bool gen_d_desktop_services_show_folders(rust::Vec<rust::String> localFilePaths, rust::Str startupId) { return DDesktopServices::showFolders(to_qstringlist(std::move(localFilePaths)), from_rust_str(startupId)); }
 bool gen_d_desktop_services_show_folder_2(const QUrl &url, rust::Str startupId) { return DDesktopServices::showFolder(url, from_rust_str(startupId)); }
 bool gen_d_desktop_services_show_file_item_property(rust::Str localFilePath, rust::Str startupId) { return DDesktopServices::showFileItemProperty(from_rust_str(localFilePath), from_rust_str(startupId)); }
+bool gen_d_desktop_services_show_file_item_properties(rust::Vec<rust::String> localFilePaths, rust::Str startupId) { return DDesktopServices::showFileItemProperties(to_qstringlist(std::move(localFilePaths)), from_rust_str(startupId)); }
 bool gen_d_desktop_services_show_file_item_property_2(const QUrl &url, rust::Str startupId) { return DDesktopServices::showFileItemProperty(url, from_rust_str(startupId)); }
 bool gen_d_desktop_services_show_file_item(rust::Str localFilePath, rust::Str startupId) { return DDesktopServices::showFileItem(from_rust_str(localFilePath), from_rust_str(startupId)); }
+bool gen_d_desktop_services_show_file_items(rust::Vec<rust::String> localFilePaths, rust::Str startupId) { return DDesktopServices::showFileItems(to_qstringlist(std::move(localFilePaths)), from_rust_str(startupId)); }
 bool gen_d_desktop_services_show_file_item_2(const QUrl &url, rust::Str startupId) { return DDesktopServices::showFileItem(url, from_rust_str(startupId)); }
 bool gen_d_desktop_services_trash(rust::Str localFilePath) { return DDesktopServices::trash(from_rust_str(localFilePath)); }
 bool gen_d_desktop_services_trash_2(const QUrl &url) { return DDesktopServices::trash(url); }
@@ -208,5 +213,6 @@ bool gen_d_desktop_services_preview_system_sound_effect(int32_t effect) { return
 bool gen_d_desktop_services_preview_system_sound_effect_2(rust::Str name) { return DDesktopServices::previewSystemSoundEffect(from_rust_str(name)); }
 rust::String gen_d_desktop_services_get_name_by_effect_type(int32_t effect) { return to_rust_string(DDesktopServices::getNameByEffectType(static_cast<DDesktopServices::SystemSoundEffect>(effect))); }
 rust::String gen_d_desktop_services_error_message() { return to_rust_string(DDesktopServices::errorMessage()); }
+bool gen_d_desktop_services_trash_3(rust::Vec<rust::String> localFilePaths) { return DDesktopServices::trash(to_qstringlist(std::move(localFilePaths))); }
 
 } // namespace dtkrs

@@ -1,12 +1,12 @@
 # DTK6 widget binding coverage report
 
-classes: 146, methods generated: 1034, skipped: 155
+classes: 146, methods generated: 1043, skipped: 146
 
 Qt ancestry: 85 widgets, 26 QObjects, 35 opaque types
 
 ## skip reasons
-- unsupported param type: 84
-- unsupported return type: 52
+- unsupported param type: 79
+- unsupported return type: 48
 - retained raw pointer: 18
 - required native parent: 1
 
@@ -75,8 +75,7 @@ Qt ancestry: 85 widgets, 26 QObjects, 35 opaque types
 
 ## DClipEffectWidget — 4 methods generated, 0 skipped
 
-## DColoredProgressBar — 2 methods generated, 1 skipped
-- `QList<int> thresholds() const;` ← unsupported return type: QList<int>
+## DColoredProgressBar — 3 methods generated, 0 skipped
 
 ## DComboBox — 1 methods generated, 1 skipped
 - `virtual bool eventFilter(QObject *watched, QEvent *event) override;` ← unsupported param type: QObject *
@@ -188,10 +187,8 @@ Qt ancestry: 85 widgets, 26 QObjects, 35 opaque types
 - `State state() const;` ← unsupported return type: State
 - `void setOrientation(QListView::Flow flow, bool wrapping);` ← unsupported param type: QListView::Flow
 
-## DLoadingIndicator — 19 methods generated, 3 skipped
-- `QEasingCurve::Type aniEasingType() const;` ← unsupported return type: QEasingCurve::Type
+## DLoadingIndicator — 21 methods generated, 1 skipped
 - `void setAniEasingCurve(const QEasingCurve & easing);` ← unsupported param type: const QEasingCurve &
-- `void setAniEasingType(QEasingCurve::Type aniEasingType);` ← unsupported param type: QEasingCurve::Type
 
 ## DMessageManager — 5 methods generated, 0 skipped
 
@@ -256,8 +253,7 @@ Qt ancestry: 85 widgets, 26 QObjects, 35 opaque types
 ## DPrinter — 1 methods generated, 1 skipped
 - `QList<const QPicture *> getPrinterPages();` ← unsupported return type: QList<const QPicture *>
 
-## DPrintPreviewWidget — 49 methods generated, 4 skipped
-- `void setPageRange(const QVector<int> &rangePages);` ← unsupported param type: const QVector<int> &
+## DPrintPreviewWidget — 50 methods generated, 3 skipped
 - `void setColorMode(const DPrinter::ColorMode &colorMode);` ← unsupported param type: const DPrinter::ColorMode &
 - `DPrinter::ColorMode getColorMode();` ← unsupported return type: DPrinter::ColorMode
 - `void themeTypeChanged(DGuiApplicationHelper::ColorType themeType);` ← unsupported param type: DGuiApplicationHelper::ColorType
@@ -287,8 +283,7 @@ Qt ancestry: 85 widgets, 26 QObjects, 35 opaque types
 
 ## DSimpleListItem — 3 methods generated, 0 skipped
 
-## DSimpleListView — 25 methods generated, 8 skipped
-- `void setColumnTitleInfo(QList<QString> titles, QList<int> widths, int height);` ← unsupported param type: QList<QString>
+## DSimpleListView — 26 methods generated, 7 skipped
 - `void setColumnHideFlags(QList<bool> toggleHideFlags, int alwaysVisibleColumn=-1)` ← unsupported param type: QList<bool>
 - `void setColumnSortingAlgorithms(QList<SortAlgorithm> *algorithms, int sortColumn` ← unsupported param type: QList<SortAlgorithm> *
 - `void setSearchAlgorithm(SearchAlgorithm algorithm);` ← unsupported param type: SearchAlgorithm
@@ -300,10 +295,8 @@ Qt ancestry: 85 widgets, 26 QObjects, 35 opaque types
 ## DSizeModeHelper — 0 methods generated, 1 skipped
 - `static inline T element(const T &t1, const T &t2)` ← unsupported return type: inline T
 
-## DSlider — 22 methods generated, 3 skipped
+## DSlider — 24 methods generated, 1 skipped
 - `QSlider *slider();` ← unsupported return type: QSlider *
-- `void setMarkPositions(QList<int> list);` ← unsupported param type: QList<int>
-- `QSlider::TickPosition tickPosition() const;` ← unsupported return type: QSlider::TickPosition
 
 ## SpecialSlider — 0 methods generated, 1 skipped
 - `void paintEvent(QPaintEvent *ev);` ← unsupported param type: QPaintEvent *
@@ -323,9 +316,7 @@ Qt ancestry: 85 widgets, 26 QObjects, 35 opaque types
 ## DSlideStackWidgetTransition — 0 methods generated, 1 skipped
 - `void beginTransition(const TransitionInfo &info);` ← unsupported param type: const TransitionInfo &
 
-## DStackWidget — 14 methods generated, 2 skipped
-- `QEasingCurve::Type animationType() const;` ← unsupported return type: QEasingCurve::Type
-- `void setAnimationType(QEasingCurve::Type animationType);` ← unsupported param type: QEasingCurve::Type
+## DStackWidget — 16 methods generated, 0 skipped
 
 ## DStyle — 35 methods generated, 12 skipped
 - `static QPair<QIcon::Mode, QIcon::State> toIconModeState(const QStyleOption *opti` ← unsupported return type: QPair<QIcon::Mode, QIcon::State>

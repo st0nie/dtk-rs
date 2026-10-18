@@ -1055,6 +1055,16 @@ impl DWindowManagerHelper {
         let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_window_manager_helper_window_manager_name(self.live_ptr()) }
     }
+    pub fn all_window_id_list(&self) -> Vec<u32> {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_window_manager_helper_all_window_id_list(self.live_ptr()) }
+    }
+    pub fn current_workspace_window_id_list(&self) -> Vec<u32> {
+        let _call = dtk_sys::NativeCall::new();
+        unsafe {
+            genffi::gen_d_window_manager_helper_current_workspace_window_id_list(self.live_ptr())
+        }
+    }
     pub fn window_from_point(&self, p: &QPoint) -> u32 {
         let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_window_manager_helper_window_from_point(self.live_ptr(), p) }
@@ -1068,6 +1078,11 @@ impl DDesktopServices {
         let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_desktop_services_show_folder(localFilePath, startupId) }
     }
+    pub fn show_folders(localFilePaths: Vec<String>, startupId: &str) -> bool {
+        crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_desktop_services_show_folders(localFilePaths, startupId) }
+    }
     pub fn show_folder_2(url: &QUrl, startupId: &str) -> bool {
         crate::require_application();
         let _call = dtk_sys::NativeCall::new();
@@ -1078,6 +1093,13 @@ impl DDesktopServices {
         let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_desktop_services_show_file_item_property(localFilePath, startupId) }
     }
+    pub fn show_file_item_properties(localFilePaths: Vec<String>, startupId: &str) -> bool {
+        crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
+        unsafe {
+            genffi::gen_d_desktop_services_show_file_item_properties(localFilePaths, startupId)
+        }
+    }
     pub fn show_file_item_property_2(url: &QUrl, startupId: &str) -> bool {
         crate::require_application();
         let _call = dtk_sys::NativeCall::new();
@@ -1087,6 +1109,11 @@ impl DDesktopServices {
         crate::require_application();
         let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_desktop_services_show_file_item(localFilePath, startupId) }
+    }
+    pub fn show_file_items(localFilePaths: Vec<String>, startupId: &str) -> bool {
+        crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_desktop_services_show_file_items(localFilePaths, startupId) }
     }
     pub fn show_file_item_2(url: &QUrl, startupId: &str) -> bool {
         crate::require_application();
@@ -1132,6 +1159,11 @@ impl DDesktopServices {
         crate::require_application();
         let _call = dtk_sys::NativeCall::new();
         unsafe { genffi::gen_d_desktop_services_error_message() }
+    }
+    pub fn trash_3(localFilePaths: Vec<String>) -> bool {
+        crate::require_application();
+        let _call = dtk_sys::NativeCall::new();
+        unsafe { genffi::gen_d_desktop_services_trash_3(localFilePaths) }
     }
 }
 

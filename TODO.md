@@ -134,8 +134,13 @@ Known gaps in dtk-rs, roughly in priority order.
 - [x] Reject DListView item mutation when a model has zero columns. Native
       addItems returned true/incremented rows while `(row,0)` remained invalid;
       generated shims now return false (`model_selfcheck`).
-- [ ] Other Qt containers `QList<T>`/`QVector<T>`/general `QMap` remain unsupported
-      (e.g. `DDrawerGroup::addWidget`, `DSimpleListView` item lists). The
+- [ ] Scalar/string containers are mapped: `QList<int>`/`QVector<int>` (`&[i32]`
+      in, `Vec<i32>` out), `QVector<quint32>` returns, `QList<QString>` like
+      `QStringList` (`container_selfcheck`); overloads that became bindable are
+      numbered after existing generated names. Still unsupported: pointer
+      element lists (`QList<QWidget*>`, `QList<QAbstractButton*>`), `QList<QUrl>`/
+      `QList<QLocale>` parameters, general `QMap` (e.g. `DDrawerGroup::addWidget`,
+      `DSimpleListView` item lists). The
       `QHash<QString,QString>` return of `DImageHandler::findAllMetaData` is
       now an owned `BTreeMap`, but its native contents depend on an optional
       FreeImage backend and may be empty for PNG text. Map other containers only
